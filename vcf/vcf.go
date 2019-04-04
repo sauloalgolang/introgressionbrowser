@@ -101,6 +101,23 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 
 			reg := new(interfaces.VCFRegister)
 
+			// type VCFRegister struct {
+			//  Samples      *[]string
+			// 	IsHomozygous bool
+			// 	IsIndel      bool
+			// 	IsMNP        bool
+			//  Row          uint64
+			// 	Chromosome   string
+			// 	Position     uint64
+			// 	Quality      float32
+			// 	Info         map[string]interface{}
+			// 	Filter       string
+			// 	NumAlt       uint64
+			// 	Phased       bool
+			// 	GT           [][]int
+			// 	Fields       map[string]string
+			// }
+
 			fmt.Printf("%d\t%s\t%d\t%s\t%s\t%v\n",
 				rowNum,
 				variant.Chromosome,

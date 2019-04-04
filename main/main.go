@@ -19,12 +19,14 @@ func main() {
 	// numPtr := flag.Int("n", 4, "an integer")
 
 	continueOnError := *flag.Bool("continueOnError", true, "continue reading the file on error")
+	blockSize := *flag.Uint64("Block Size", 10000, "block size")
+	keepEmptyBlock := *flag.Bool("Keep Empty Blocks", true, "keepEmptyBlock")
 
 	flag.Parse()
 
 	sourceFile := flag.Arg(0)
 
-	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf)
+	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, blockSize, keepEmptyBlock)
 
 	if sourceFile == "" {
 		fmt.Println("Dude, you didn't pass a input file!")
