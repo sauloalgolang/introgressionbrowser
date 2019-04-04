@@ -29,14 +29,14 @@ ibrowser.wasm: bin/ibrowser.wasm
 httpserver: bin/httpserver
 
 
-bin/ibrowser: src/main/main.go src/ibrowser/ibrowser.go
-	cd src/main/ && go build -v -o ../../$@ .
+bin/ibrowser: main/main.go ibrowser/ibrowser.go
+	cd main/ && go build -v -o ../$@ .
 
-bin/ibrowser.wasm: src/ibrowser/main.go src/ibrowser/ibrowser.go
-	cd src/main/ && GOOS=js GOARCH=wasm go build -v -o ../../$@ .
+bin/ibrowser.wasm: main/main.go ibrowser/ibrowser.go
+	cd main/ && GOOS=js GOARCH=wasm go build -v -o ../$@ .
 
-bin/httpserver: src/httpserver/httpserver.go
-	cd src/httpserver && go build -v -o ../../$@ .
+bin/httpserver: tools/httpserver/httpserver.go
+	cd tools/httpserver/ && go build -v -o ../../$@ .
 
 
 

@@ -1,4 +1,4 @@
-package IBrowser
+package openfile
 
 import (
 	"archive/tar"
@@ -8,7 +8,9 @@ import (
 	"os"
 )
 
-func openFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, callBack VCFMaskedReaderType) {
+import "github.com/sauloalgolang/introgressionbrowser/interfaces"
+
+func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, callBack interfaces.VCFMaskedReaderType) {
 	f, err := os.Open(sourceFile)
 	if err != nil {
 		fmt.Println(err)

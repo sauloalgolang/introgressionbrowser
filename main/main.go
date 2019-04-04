@@ -16,6 +16,12 @@ import (
 	"github.com/brentp/vcfgo"
 )
 
+import (
+	"github.com/sauloalgolang/introgressionbrowser/ibrowser"
+	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/openfile"
+)
+
 func main() {
 	// get the arguments from the command line
 
@@ -27,7 +33,7 @@ func main() {
 
 	sourceFile := flag.Arg(0)
 
-	ibrowser := NewIBrowser(processVcf)
+	ibrowser := ibrowser.NewIBrowser(processVcf)
 
 	if sourceFile == "" {
 		fmt.Println("Dude, you didn't pass a input file!")
@@ -38,20 +44,20 @@ func main() {
 
 	if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.tar.gz") {
 		fmt.Println(" .tar.gz format")
-		openFile(sourceFile, true, true, continueOnError, ibrowser.ReaderCallBack)
+		openfile.OpenFile(sourceFile, true, true, continueOnError, ibrowser.ReaderCallBack)
 	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.gz") {
 		fmt.Println(" .gz format")
-		openFile(sourceFile, false, true, continueOnError, ibrowser.ReaderCallBack)
+		openfile.OpenFile(sourceFile, false, true, continueOnError, ibrowser.ReaderCallBack)
 	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf") {
 		fmt.Println(" .vcf format")
-		openFile(sourceFile, false, false, continueOnError, ibrowser.ReaderCallBack)
+		openfile.OpenFile(sourceFile, false, false, continueOnError, ibrowser.ReaderCallBack)
 	} else {
 		fmt.Println("unknown file suffix!")
 		os.Exit(1)
 	}
 }
 
-func processVcf(r io.Reader, callback VCFCallBack, continueOnError bool) {
+func processVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
 	vr, err := vcfgo.NewReader(r, false)
 	if err != nil {
 		panic(err)
@@ -133,7 +139,7 @@ func processVcf(r io.Reader, callback VCFCallBack, continueOnError bool) {
 			fmt.Println("NO VARIANTS")
 		} else {
 
-			reg := new(VCFRegister)
+			reg := new(interfaces.VCFRegister)
 
 			fmt.Printf("%d\t%s\t%d\t%s\t%s\t%v\n",
 				rowNum,
