@@ -10,38 +10,11 @@ import (
 	"io"
 	"os"
 	"strings"
-
-	"archive/tar"
-	"compress/gzip"
-
-	"github.com/brentp/vcfgo"
 )
 
-type VCFCallBack func(*VCFRegister)
-type VCFReaderType func(io.Reader, VCFCallBack, bool)
-type VCFMaskedReaderType func(io.Reader, bool)
-
-type VCFRegister struct {
-	someint int
-}
-
-type IBrowser struct {
-	reader VCFReaderType
-}
-
-func NewIBrowser(reader VCFReaderType) *IBrowser {
-	ib := new(IBrowser)
-	ib.reader = reader
-	return ib
-}
-
-func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
-	ib.reader(r, ib.RegisterCallBack, continueOnError)
-}
-
-func (ib *IBrowser) RegisterCallBack(reg *VCFRegister) {
-	fmt.Println("got register", reg)
-}
+import (
+	"github.com/brentp/vcfgo"
+)
 
 func main() {
 	// get the arguments from the command line
@@ -75,65 +48,6 @@ func main() {
 	} else {
 		fmt.Println("unknown file suffix!")
 		os.Exit(1)
-	}
-}
-
-func openFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, callBack VCFMaskedReaderType) {
-	f, err := os.Open(sourceFile)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer f.Close()
-
-	if !isTar && !isGz {
-		callBack(io.Reader(f), continueOnError)
-	} else {
-		gzReader, err := gzip.NewReader(f)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer gzReader.Close()
-
-		if !isTar {
-			callBack(gzReader, continueOnError)
-		} else {
-			tarReader := tar.NewReader(gzReader)
-
-			i := 0
-			for {
-				header, err := tarReader.Next()
-
-				if err == io.EOF {
-					break
-				}
-
-				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				}
-
-				name := header.Name
-
-				switch header.Typeflag {
-				case tar.TypeDir:
-					continue
-				case tar.TypeReg:
-					fmt.Println("(", i, ")", "Name: ", name)
-					callBack(tarReader, continueOnError)
-				default:
-					fmt.Printf("%s : %c %s %s\n",
-						"Yikes! Unable to figure out type",
-						header.Typeflag,
-						"in file",
-						name,
-					)
-				}
-
-				i++
-			}
-		}
 	}
 }
 

@@ -3,35 +3,47 @@ GOROOT=$(shell go env GOROOT)
 $(info GOROOT $(GOROOT))
 
 .PHONY: help
+
 help:
-	@echo " examples"
-	@echo " get"
-	@echo " httpserver"
+	@echo " bin"
 	@echo " ibrowser"
 	@echo " ibrowser.wasm"
-	@echo " main"
-	@echo " requirements"
+	@echo " httpserver"
+	@echo ""
+	@echo " examples"
 	@echo " serve"
+	@echo ""
+	@echo " get"
+	@echo " requirements"
 	@echo " wasm_exec.js"
 
-main: src/main/main.go
+
+.PHONY: ibrowser ibrowser.wasm httpserver bin
+
+bin: ibrowser ibrowser.wasm httpserver
+
+ibrowser: bin/ibrowser
+
+ibrowser.wasm: bin/ibrowser.wasm
+
+httpserver: bin/httpserver
+
+
+bin/ibrowser: src/main/main.go src/ibrowser/ibrowser.go
 	cd src/main/ && go build -v -o ../../$@ .
 
-ibrowser: src/ibrowser/ibrowser.go
-	cd src/ibrowser/ && go build -v -o ../../$@ .
+bin/ibrowser.wasm: src/ibrowser/main.go src/ibrowser/ibrowser.go
+	cd src/main/ && GOOS=js GOARCH=wasm go build -v -o ../../$@ .
 
-ibrowser.wasm: src/ibrowser/ibrowser.go
-	cd src/ibrowser/ && GOOS=js GOARCH=wasm go build -v -o ../../$@ .
-
-httpserver: src/httpserver/httpserver.go
+bin/httpserver: src/httpserver/httpserver.go
 	cd src/httpserver && go build -v -o ../../$@ .
 
 
 
 .PHONY: serve
 
-serve: httpserver wasm_exec.js
-	./httpserver
+serve: bin/httpserver wasm_exec.js
+	bin/httpserver
 
 
 .PHONY: requirements get
@@ -39,7 +51,7 @@ serve: httpserver wasm_exec.js
 requirements: get httpserver wasm_exec.js
 
 get:
-	go get -v .
+	go mod tidy
 
 wasm_exec.js:
 	cp "$(GOROOT)/misc/wasm/wasm_exec.js" .

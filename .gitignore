@@ -1,5 +1,3 @@
 *.wasm
 *.gz
-main
-httpserver
-ibrowser
+bin/
