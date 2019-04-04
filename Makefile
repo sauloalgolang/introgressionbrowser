@@ -29,10 +29,10 @@ ibrowser.wasm: bin/ibrowser.wasm
 httpserver: bin/httpserver
 
 
-bin/ibrowser: main/main.go ibrowser/ibrowser.go
+bin/ibrowser: */*.go
 	cd main/ && go build -v -o ../$@ .
 
-bin/ibrowser.wasm: main/main.go ibrowser/ibrowser.go
+bin/ibrowser.wasm: */*.go
 	cd main/ && GOOS=js GOARCH=wasm go build -v -o ../$@ .
 
 bin/httpserver: tools/httpserver/httpserver.go
@@ -51,7 +51,8 @@ serve: bin/httpserver wasm_exec.js
 requirements: get httpserver wasm_exec.js
 
 get:
-	go mod tidy
+	go mod tidy -v
+	cat go.mod
 
 wasm_exec.js:
 	cp "$(GOROOT)/misc/wasm/wasm_exec.js" .

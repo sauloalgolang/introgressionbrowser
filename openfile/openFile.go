@@ -1,5 +1,8 @@
 package openfile
 
+// https://www.avitzurel.com/blog/2015/09/16/read-gzip-file-content-with-golang/
+// https://gist.github.com/indraniel/1a91458984179ab4cf80
+
 import (
 	"archive/tar"
 	"compress/gzip"
