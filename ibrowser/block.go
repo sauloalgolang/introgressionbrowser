@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 import "github.com/sauloalgolang/introgressionbrowser/tools"
 
 //
@@ -20,7 +19,7 @@ type IBBlock struct {
 	MaxPosition uint64
 	NumSNPS     uint64
 	NumSamples  uint64
-	Matrix      [][]uint64
+	Matrix      tools.DistanceMatrix
 }
 
 func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
@@ -30,32 +29,19 @@ func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
 		MaxPosition: 0,
 		NumSNPS:     0,
 		NumSamples:  numSamples,
-		Matrix:      make([][]uint64, numSamples*numSamples, numSamples*numSamples),
+		Matrix:      *tools.NewDistanceMatrix(numSamples),
 	}
 
 	return &ibb
 }
 
-func (ibb *IBBlock) Add(reg *interfaces.VCFRegister) {
-	// type Variant struct {
-	// 	Chromosome      string
-	// 	Pos        		uint64
-	// 	Id         		string
-	// 	Ref        		string
-	// 	Alt        		[]string
-	// 	Quality    		float32
-	// 	Filter     		string
-	// 	Info       		InfoMap
-	// 	Format     		[]string
-	// 	Samples    		[]*SampleGenotype
-	// 	Header     		*Header
-	// 	LineNumber 		int64
-	// }
-
+func (ibb *IBBlock) Add(position uint64, distance *tools.DistanceMatrix) {
 	ibb.NumSNPS++
 
-	ibb.MinPosition = tools.Min64(ibb.MinPosition, reg.Pos)
-	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, reg.Pos)
+	ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
+	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
+
+	ibb.Matrix.Add(distance)
 
 	if false {
 		fmt.Println("Failure getting block")

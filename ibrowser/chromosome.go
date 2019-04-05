@@ -7,7 +7,6 @@ import (
 
 import "runtime/debug"
 
-import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 import "github.com/sauloalgolang/introgressionbrowser/tools"
 
 //
@@ -24,6 +23,7 @@ type IBChromosome struct {
 	NumSNPS        uint64
 	NumSamples     uint64
 	KeepEmptyBlock bool
+	Block          *IBBlock
 	Blocks         []*IBBlock
 	BlockNames     map[uint64]uint64
 }
@@ -37,6 +37,7 @@ func NewIBChromosome(chromosome string, numSamples uint64, keepEmptyBlock bool) 
 		NumBlocks:      0,
 		NumSNPS:        0,
 		KeepEmptyBlock: keepEmptyBlock,
+		Block:          NewIBBlock(0, numSamples),
 		Blocks:         make([]*IBBlock, 0, 100),
 		BlockNames:     make(map[uint64]uint64, 100),
 	}
@@ -84,11 +85,12 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) {
 	}
 }
 
-func (ibc *IBChromosome) Add(blockNum uint64, reg *interfaces.VCFRegister) {
+func (ibc *IBChromosome) Add(blockNum uint64, position uint64, distance *tools.DistanceMatrix) {
 	ibc.normalizeBlocks(blockNum)
 
 	if block, success := ibc.GetBlock(blockNum); success {
-		block.Add(reg)
+		block.Add(position, distance)
+		ibc.Block.Add(position, distance)
 		ibc.NumSNPS++
 		ibc.MinPosition = tools.Min64(ibc.MinPosition, block.MinPosition)
 		ibc.MaxPosition = tools.Max64(ibc.MaxPosition, block.MaxPosition)

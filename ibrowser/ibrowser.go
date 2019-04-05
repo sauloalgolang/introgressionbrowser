@@ -9,6 +9,7 @@ import (
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
+import "github.com/sauloalgolang/introgressionbrowser/tools"
 
 //
 //
@@ -35,6 +36,8 @@ type IBrowser struct {
 	Chromosomes      map[string]*IBChromosome
 	ChromosomesNames []string
 	//
+	Block *IBBlock
+	//
 	// Parameters string
 	// Header string
 	//
@@ -60,6 +63,8 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		//
 		Chromosomes:      make(map[string]*IBChromosome, 100),
 		ChromosomesNames: make([]string, 0, 100),
+		//
+		Block: NewIBBlock(0, 0),
 	}
 
 	return &ib
@@ -69,6 +74,7 @@ func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	numSamples := len(*samples)
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
 	ib.NumSamples = uint64(numSamples)
+	ib.Block = NewIBBlock(0, ib.NumSamples)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -158,8 +164,9 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// }
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
-
-	blockNum := reg.Pos / ib.BlockSize
+	position := reg.Pos
+	blockNum := position / ib.BlockSize
+	distance := tools.CalculateDistance(ib.NumSamples, reg)
 
 	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
 		ib.NumBlocks++
@@ -167,12 +174,20 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	ib.NumSNPs++
 
-	chromosome.Add(blockNum, reg)
+	chromosome.Add(blockNum, position, distance)
+
+	ib.Block.Add(position, distance)
+
+	// ib.Save()
+
+	// os.Exit(0)
 }
 
 func (ib *IBrowser) Save() {
 	// ibB, _ := json.Marshal(ib)
 	// fmt.Println(string(ibB))
+
+	fmt.Println(ib.Block)
 
 	d, err := yaml.Marshal(ib)
 	if err != nil {
@@ -180,6 +195,4 @@ func (ib *IBrowser) Save() {
 		os.Exit(1)
 	}
 	fmt.Printf("--- dump:\n%s\n\n", d)
-
-	os.Exit(0)
 }
