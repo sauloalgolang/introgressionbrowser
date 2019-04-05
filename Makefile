@@ -35,8 +35,8 @@ bin/ibrowser: */*.go
 bin/ibrowser.wasm: */*.go
 	cd main/ && GOOS=js GOARCH=wasm go build -v -o ../$@ .
 
-bin/httpserver: tools/httpserver/httpserver.go
-	cd tools/httpserver/ && go build -v -o ../../$@ .
+bin/httpserver: opt/httpserver/httpserver.go
+	cd opt/httpserver/ && go build -v -o ../../$@ .
 
 
 
