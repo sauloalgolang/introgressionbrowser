@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+import "runtime/debug"
+
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 import "github.com/sauloalgolang/introgressionbrowser/tools"
 
@@ -48,16 +50,16 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) {
 	ibc.numBlocks++
 }
 
-func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
-	if _, ok := ibc.blockNames[blockNum]; ok {
-		return ok
-	} else {
-		return ok
-	}
-}
-
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (IBBlock, bool) {
 	if blockPos, ok := ibc.blockNames[blockNum]; ok {
+		if blockPos >= uint64(len(ibc.blocks)) {
+			fmt.Println(&ibc, "Index out of range. block num:", blockNum, "block pos:", blockPos, "len:", len(ibc.blocks), "numBlocks:", ibc.numBlocks)
+			fmt.Println(&ibc, "blockNames", ibc.blockNames)
+			fmt.Println(&ibc, "blocks", ibc.blocks)
+			debug.PrintStack()
+			os.Exit(1)
+		}
+
 		return ibc.blocks[blockPos], ok
 	} else {
 		return IBBlock{}, ok
@@ -65,7 +67,7 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (IBBlock, bool) {
 }
 
 func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) {
-	if !ibc.HasBlock(blockNum) {
+	if _, hasBlock := ibc.GetBlock(blockNum); !hasBlock {
 		if ibc.keepEmptyBlock {
 			lastBlockPos := uint64(0)
 			numBlocks := uint64(len(ibc.blocks))

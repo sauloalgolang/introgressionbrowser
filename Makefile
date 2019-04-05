@@ -16,7 +16,9 @@ help:
 	@echo " get"
 	@echo " requirements"
 	@echo " wasm_exec.js"
-
+	@echo ""
+	@echo " run150"
+	@echo " run360"
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin
 
@@ -68,3 +70,13 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 
 360_merged_2.50.vcf.gz:
 	wget ftp://ftp.solgenomics.net/genomes/tomato_360/360_merged_2.50.vcf.gz
+
+
+
+.PHONY: run150 run360
+
+run150: 150_VCFs_2.50.tar.gz
+	bin/ibrowser 150_VCFs_2.50.tar.gz
+
+run360: 360_merged_2.50.vcf.gz
+	bin/ibrowser 360_merged_2.50.vcf.gz

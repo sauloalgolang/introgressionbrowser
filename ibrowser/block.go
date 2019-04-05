@@ -37,27 +37,25 @@ func NewIBBlock(blockNumber uint64, numSamples uint64) IBBlock {
 }
 
 func (ibb *IBBlock) Add(reg *interfaces.VCFRegister) {
-	// type VCFRegister struct {
-	//  Samples      *[]string
-	// 	IsHomozygous bool
-	// 	IsIndel      bool
-	// 	IsMNP        bool
-	//  Row          uint64
-	// 	Chromosome   string
-	// 	Position     uint64
-	// 	Quality      float32
-	// 	Info         map[string]interface{}
-	// 	Filter       string
-	// 	NumAlt       uint64
-	// 	Phased       bool
-	// 	GT           [][]int
-	// 	Fields       map[string]string
+	// type Variant struct {
+	// 	Chromosome      string
+	// 	Pos        		uint64
+	// 	Id         		string
+	// 	Ref        		string
+	// 	Alt        		[]string
+	// 	Quality    		float32
+	// 	Filter     		string
+	// 	Info       		InfoMap
+	// 	Format     		[]string
+	// 	Samples    		[]*SampleGenotype
+	// 	Header     		*Header
+	// 	LineNumber 		int64
 	// }
 
 	ibb.numSNPS++
 
-	ibb.minPosition = tools.Min64(ibb.minPosition, reg.Position)
-	ibb.maxPosition = tools.Max64(ibb.maxPosition, reg.Position)
+	ibb.minPosition = tools.Min64(ibb.minPosition, reg.Pos)
+	ibb.maxPosition = tools.Max64(ibb.maxPosition, reg.Pos)
 
 	if false {
 		fmt.Println("Failure getting block")

@@ -13,6 +13,8 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 )
 
+const DEBUG = false
+
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
 func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
@@ -26,47 +28,49 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 
 	header := vr.Header
 	SampleNames := header.SampleNames // []string
-	Infos := header.Infos             // map[string]*Info
-	// // Id          string
-	// // Description string
-	// // Number      string // A G R . ''
-	// // Type        string // STRING INTEGER FLOAT FLAG CHARACTER UNKONWN
-	SampleFormats := header.SampleFormats // map[string]*SampleFormat
-	Filters := header.Filters             // map[string]string
-	Extras := header.Extras               // map[string]string
-	FileFormat := header.FileFormat       // string
-	Contigs := header.Contigs             // map[string]map[string]string
+	if DEBUG {
+		Infos := header.Infos // map[string]*Info
+		// // Id          string
+		// // Description string
+		// // Number      string // A G R . ''
+		// // Type        string // STRING INTEGER FLOAT FLAG CHARACTER UNKONWN
+		SampleFormats := header.SampleFormats // map[string]*SampleFormat
+		Filters := header.Filters             // map[string]string
+		Extras := header.Extras               // map[string]string
+		FileFormat := header.FileFormat       // string
+		Contigs := header.Contigs             // map[string]map[string]string
 
-	fmt.Println("FileFormat:", FileFormat)
+		fmt.Println("FileFormat:", FileFormat)
 
-	fmt.Println("SAMPLES")
-	for samplePos, sampleName := range SampleNames {
-		fmt.Println(samplePos, sampleName)
-	}
+		fmt.Println("SAMPLES")
+		for samplePos, sampleName := range SampleNames {
+			fmt.Println(samplePos, sampleName)
+		}
 
-	fmt.Println("INFO")
-	for infoID, info := range Infos {
-		fmt.Println(infoID, "Description:", info.Description, "Number:", info.Number, "Type:", info.Type)
-	}
+		fmt.Println("INFO")
+		for infoID, info := range Infos {
+			fmt.Println(infoID, "Description:", info.Description, "Number:", info.Number, "Type:", info.Type)
+		}
 
-	fmt.Println("SAMPLE FORMATS")
-	for sampleID, sampleFmt := range SampleFormats {
-		fmt.Println(sampleID, "Description:", sampleFmt.Description, "Number:", sampleFmt.Number, "Type:", sampleFmt.Type)
-	}
+		fmt.Println("SAMPLE FORMATS")
+		for sampleID, sampleFmt := range SampleFormats {
+			fmt.Println(sampleID, "Description:", sampleFmt.Description, "Number:", sampleFmt.Number, "Type:", sampleFmt.Type)
+		}
 
-	fmt.Println("FILTERS")
-	for filterId, filterName := range Filters {
-		fmt.Println(filterId, filterName)
-	}
+		fmt.Println("FILTERS")
+		for filterId, filterName := range Filters {
+			fmt.Println(filterId, filterName)
+		}
 
-	fmt.Println("CONTIGS")
-	for contigsId, contigsName := range Contigs {
-		fmt.Println(contigsId, contigsName)
-	}
+		fmt.Println("CONTIGS")
+		for contigsId, contigsName := range Contigs {
+			fmt.Println(contigsId, contigsName)
+		}
 
-	fmt.Println("EXTRAS")
-	for extrasId, extrasName := range Extras {
-		fmt.Println(extrasId, extrasName)
+		fmt.Println("EXTRAS")
+		for extrasId, extrasName := range Extras {
+			fmt.Println(extrasId, extrasName)
+		}
 	}
 
 	var rowNum int64
@@ -96,10 +100,12 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 		rowNum = vr.LineNumber
 
 		if len(variant.Samples) == 0 {
-			fmt.Println("NO VARIANTS")
+			if DEBUG {
+				fmt.Println("NO VARIANTS")
+			}
 		} else {
 
-			reg := new(interfaces.VCFRegister)
+			// reg := new(interfaces.VCFRegister)
 
 			// type VCFRegister struct {
 			//  Samples      *[]string
@@ -118,18 +124,20 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 			// 	Fields       map[string]string
 			// }
 
-			fmt.Printf("%d\t%s\t%d\t%s\t%s\t%v\n",
-				rowNum,
-				variant.Chromosome,
-				variant.Pos,
-				variant.Id(),
-				variant.Ref(),
-				variant.Alt())
-			fmt.Printf(" Qual: %v\n", variant.Quality)
-			fmt.Printf(" Filter: %v\n", variant.Filter)
-			fmt.Printf(" Info: %v\n", variant.Info())
-			fmt.Printf(" Format: %v\n", variant.Format)
-			fmt.Printf(" Samples: %v\n", variant.Samples)
+			if DEBUG {
+				fmt.Printf("%d\t%s\t%d\t%s\t%s\t%v\n",
+					rowNum,
+					variant.Chromosome,
+					variant.Pos,
+					variant.Id(),
+					variant.Ref(),
+					variant.Alt())
+				fmt.Printf(" Qual: %v\n", variant.Quality)
+				fmt.Printf(" Filter: %v\n", variant.Filter)
+				fmt.Printf(" Info: %v\n", variant.Info())
+				fmt.Printf(" Format: %v\n", variant.Format)
+				fmt.Printf(" Samples: %v\n", variant.Samples)
+			}
 
 			// type Variant struct {
 			// 	Chromosome      string
@@ -148,25 +156,29 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 
 			vinfo := variant.Info()
 
-			fmt.Println(" INFO:")
-			for _, infoKey := range vinfo.Keys() {
-				nfo, _ := vinfo.Get(infoKey)
-				fmt.Println("  ", infoKey, ":", nfo)
+			if DEBUG {
+				fmt.Println(" INFO:")
+				for _, infoKey := range vinfo.Keys() {
+					nfo, _ := vinfo.Get(infoKey)
+					fmt.Println("  ", infoKey, ":", nfo)
+				}
 			}
 
 			for samplePos, sampleName := range SampleNames {
 				sample := variant.Samples[samplePos]
 
 				if sample != nil {
-					fmt.Println("", "sample: #", samplePos,
-						"name:", sampleName,
-						"Phased:", sample.Phased,
-						"GT:", sample.GT,
-						"DP:", sample.DP,
-						"GL:", sample.GL,
-						"GQ:", sample.GQ,
-						"MQ:", sample.MQ,
-						"Fields:", sample.Fields)
+					if DEBUG {
+						fmt.Println("", "sample: #", samplePos,
+							"name:", sampleName,
+							"Phased:", sample.Phased,
+							"GT:", sample.GT,
+							"DP:", sample.DP,
+							"GL:", sample.GL,
+							"GQ:", sample.GQ,
+							"MQ:", sample.MQ,
+							"Fields:", sample.Fields)
+					}
 
 					// &{false [] 0 [] 0 0 map[]}
 					// type SampleGenotype struct {
@@ -194,15 +206,18 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 
 					// fmt.Println("", "PL:", pl, "GQ:", sample.GQ, "DP:", sample.DP)
 
-					fmt.Print(" FIELDS:")
-					for fieldId, fieldVal := range sample.Fields {
-						fmt.Print(" ", fieldId, ":", fieldVal)
+					if DEBUG {
+						fmt.Print(" FIELDS:")
+						for fieldId, fieldVal := range sample.Fields {
+							fmt.Print(" ", fieldId, ":", fieldVal)
+						}
+						fmt.Println("")
 					}
-					fmt.Println("")
 				}
 				vr.Clear()
 			} // for sample
-			callback(reg)
+			// callback(reg)
+			callback(&SampleNames, variant)
 		} // if has sample
 	} //for
 

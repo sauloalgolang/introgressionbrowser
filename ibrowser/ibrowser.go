@@ -17,7 +17,7 @@ import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 type IBrowser struct {
 	reader interfaces.VCFReaderType
 	//
-	samples    []string
+	samples    interfaces.VCFSamples
 	numSamples uint64
 	//
 	blockSize      uint64
@@ -30,7 +30,7 @@ type IBrowser struct {
 	lastChrom    string
 	lastPosition uint64
 	//
-	chromosomes      map[string]IBChromosome
+	chromosomes      map[string]*IBChromosome
 	chromosomesNames []string
 	//
 	// Parameters string
@@ -43,7 +43,7 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 	ib := IBrowser{
 		reader: reader,
 		//
-		samples:    make([]string, 0, 100),
+		samples:    make(interfaces.VCFSamples, 0, 100),
 		numSamples: 0,
 		//
 		blockSize:      blockSize,
@@ -56,54 +56,57 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		lastChrom:    "",
 		lastPosition: 0,
 		//
-		chromosomes:      make(map[string]IBChromosome, 100),
+		chromosomes:      make(map[string]*IBChromosome, 100),
 		chromosomesNames: make([]string, 0, 100),
 	}
 
 	return ib
 }
 
-func (ib *IBrowser) SetSamples(samples *[]string) {
-	ib.samples = *samples
-	ib.numSamples = uint64(len(ib.samples))
+func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
+	numSamples := len(*samples)
+	ib.samples = make(interfaces.VCFSamples, numSamples, numSamples)
+	ib.numSamples = uint64(numSamples)
+
+	for samplePos, sampleName := range *samples {
+		// fmt.Println(samplePos, sampleName)
+		ib.samples[samplePos] = sampleName
+	}
 }
 
-func (ib *IBrowser) GetSamples() []string {
+func (ib *IBrowser) GetSamples() interfaces.VCFSamples {
 	return ib.samples
 }
 
-func (ib *IBrowser) HasChromosome(chromosome string) bool {
-	if _, ok := ib.chromosomes[chromosome]; ok {
-		return true
+func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
+	if chromosome, ok := ib.chromosomes[chromosomeName]; ok {
+		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
+		return chromosome, ok
 	} else {
-		return false
+		// fmt.Println("GetChromosome", chromosomeName, "DOES NOT exists")
+		return &IBChromosome{}, ok
 	}
 }
 
-func (ib *IBrowser) AddChromosome(chromosome string) IBChromosome {
-	if ib.HasChromosome(chromosome) {
-		fmt.Println("Failed to add chromosome", chromosome, ". Already exists")
+func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
+	if chromosome, hasChromosome := ib.GetChromosome(chromosomeName); hasChromosome {
+		fmt.Println("Failed to add chromosome", chromosomeName, ". Already exists", &chromosome)
 		os.Exit(1)
 	}
 
-	ib.chromosomes[chromosome] = NewIBChromosome(chromosome, ib.numSamples, ib.keepEmptyBlock)
-	ib.chromosomesNames = append(ib.chromosomesNames, chromosome)
+	nchr := NewIBChromosome(chromosomeName, ib.numSamples, ib.keepEmptyBlock)
+	ib.chromosomes[chromosomeName] = &nchr
+	ib.chromosomesNames = append(ib.chromosomesNames, chromosomeName)
 
-	return ib.chromosomes[chromosome]
+	return &nchr
 }
 
-func (ib *IBrowser) GetChromosome(chromosome string) (IBChromosome, bool) {
-	if chromosome, ok := ib.chromosomes[chromosome]; ok {
-		return chromosome, true
-	} else {
-		return IBChromosome{}, false
-	}
-}
-
-func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) IBChromosome {
+func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
 	if chromosome, ok := ib.GetChromosome(chromosomeName); ok {
+		// fmt.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome
 	} else {
+		// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
 		return ib.AddChromosome(chromosomeName)
 	}
 }
@@ -112,15 +115,13 @@ func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
 	ib.reader(r, ib.RegisterCallBack, continueOnError)
 }
 
-func (ib *IBrowser) RegisterCallBack(reg *interfaces.VCFRegister) {
-	fmt.Println("got register", reg)
-
+func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
 	if ib.numSamples == 0 {
-		ib.SetSamples(reg.Samples)
+		ib.SetSamples(samples)
 	} else {
-		if len(ib.samples) != len(*reg.Samples) {
+		if len(ib.samples) != len(*samples) {
 			fmt.Println("Sample mismatch")
-			fmt.Println(len(ib.samples), "!=", len(*reg.Samples))
+			fmt.Println(len(ib.samples), "!=", len(*samples))
 			os.Exit(1)
 		}
 	}
@@ -129,9 +130,9 @@ func (ib *IBrowser) RegisterCallBack(reg *interfaces.VCFRegister) {
 		ib.lastChrom = reg.Chromosome
 		ib.lastPosition = 0
 	} else {
-		if !(reg.Position > ib.lastPosition) {
+		if !(reg.Pos > ib.lastPosition) {
 			fmt.Println("Coordinate mismatch")
-			fmt.Println(ib.lastPosition, ">=", reg.Position)
+			fmt.Println(ib.lastPosition, ">=", reg.Pos)
 			os.Exit(1)
 		}
 	}
@@ -140,28 +141,26 @@ func (ib *IBrowser) RegisterCallBack(reg *interfaces.VCFRegister) {
 
 	//TODO: FILTERING
 	//
-	// type VCFRegister struct {
-	//  Samples      *[]string
-	// 	IsHomozygous bool
-	// 	IsIndel      bool
-	// 	IsMNP        bool
-	//  Row          uint64
-	// 	Chromosome   string
-	// 	Position     uint64
-	// 	Quality      float32
-	// 	Info         map[string]interface{}
-	// 	Filter       string
-	// 	NumAlt       uint64
-	// 	Phased       bool
-	// 	GT           [][]int
-	// 	Fields       map[string]string
+	// type Variant struct {
+	// 	Chromosome      string
+	// 	Pos        		uint64
+	// 	Id         		string
+	// 	Ref        		string
+	// 	Alt        		[]string
+	// 	Quality    		float32
+	// 	Filter     		string
+	// 	Info       		InfoMap
+	// 	Format     		[]string
+	// 	Samples    		[]*SampleGenotype
+	// 	Header     		*Header
+	// 	LineNumber 		int64
 	// }
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
-	blockNum := reg.Position / ib.blockSize
+	blockNum := reg.Pos / ib.blockSize
 
-	if !chromosome.HasBlock(blockNum) {
+	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
 		ib.numBlocks++
 	}
 
