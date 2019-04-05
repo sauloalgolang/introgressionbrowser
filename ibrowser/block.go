@@ -15,25 +15,25 @@ import "github.com/sauloalgolang/introgressionbrowser/tools"
 //
 
 type IBBlock struct {
-	blockNumber uint64
-	minPosition uint64
-	maxPosition uint64
-	numSNPS     uint64
-	numSamples  uint64
-	matrix      [][]uint64
+	BlockNumber uint64
+	MinPosition uint64
+	MaxPosition uint64
+	NumSNPS     uint64
+	NumSamples  uint64
+	Matrix      [][]uint64
 }
 
-func NewIBBlock(blockNumber uint64, numSamples uint64) IBBlock {
+func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
 	ibb := IBBlock{
-		blockNumber: blockNumber,
-		minPosition: 0,
-		maxPosition: 0,
-		numSNPS:     0,
-		numSamples:  numSamples,
-		matrix:      make([][]uint64, numSamples*numSamples, numSamples*numSamples),
+		BlockNumber: blockNumber,
+		MinPosition: 0,
+		MaxPosition: 0,
+		NumSNPS:     0,
+		NumSamples:  numSamples,
+		Matrix:      make([][]uint64, numSamples*numSamples, numSamples*numSamples),
 	}
 
-	return ibb
+	return &ibb
 }
 
 func (ibb *IBBlock) Add(reg *interfaces.VCFRegister) {
@@ -52,10 +52,10 @@ func (ibb *IBBlock) Add(reg *interfaces.VCFRegister) {
 	// 	LineNumber 		int64
 	// }
 
-	ibb.numSNPS++
+	ibb.NumSNPS++
 
-	ibb.minPosition = tools.Min64(ibb.minPosition, reg.Pos)
-	ibb.maxPosition = tools.Max64(ibb.maxPosition, reg.Pos)
+	ibb.MinPosition = tools.Min64(ibb.MinPosition, reg.Pos)
+	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, reg.Pos)
 
 	if false {
 		fmt.Println("Failure getting block")

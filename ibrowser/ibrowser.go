@@ -1,7 +1,9 @@
 package ibrowser
 
 import (
+	// "encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 )
@@ -17,21 +19,21 @@ import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 type IBrowser struct {
 	reader interfaces.VCFReaderType
 	//
-	samples    interfaces.VCFSamples
-	numSamples uint64
+	Samples    interfaces.VCFSamples
+	NumSamples uint64
 	//
-	blockSize      uint64
-	keepEmptyBlock bool
+	BlockSize      uint64
+	KeepEmptyBlock bool
 	//
-	numRegisters uint64
-	numSNPs      uint64
-	numBlocks    uint64
+	NumRegisters uint64
+	NumSNPs      uint64
+	NumBlocks    uint64
 	//
 	lastChrom    string
 	lastPosition uint64
 	//
-	chromosomes      map[string]*IBChromosome
-	chromosomesNames []string
+	Chromosomes      map[string]*IBChromosome
+	ChromosomesNames []string
 	//
 	// Parameters string
 	// Header string
@@ -39,47 +41,47 @@ type IBrowser struct {
 	// TODO: per sample stats
 }
 
-func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlock bool) IBrowser {
+func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlock bool) *IBrowser {
 	ib := IBrowser{
 		reader: reader,
 		//
-		samples:    make(interfaces.VCFSamples, 0, 100),
-		numSamples: 0,
+		Samples:    make(interfaces.VCFSamples, 0, 100),
+		NumSamples: 0,
 		//
-		blockSize:      blockSize,
-		keepEmptyBlock: keepEmptyBlock,
+		BlockSize:      blockSize,
+		KeepEmptyBlock: keepEmptyBlock,
 		//
-		numRegisters: 0,
-		numSNPs:      0,
-		numBlocks:    0,
+		NumRegisters: 0,
+		NumSNPs:      0,
+		NumBlocks:    0,
 		//
 		lastChrom:    "",
 		lastPosition: 0,
 		//
-		chromosomes:      make(map[string]*IBChromosome, 100),
-		chromosomesNames: make([]string, 0, 100),
+		Chromosomes:      make(map[string]*IBChromosome, 100),
+		ChromosomesNames: make([]string, 0, 100),
 	}
 
-	return ib
+	return &ib
 }
 
 func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	numSamples := len(*samples)
-	ib.samples = make(interfaces.VCFSamples, numSamples, numSamples)
-	ib.numSamples = uint64(numSamples)
+	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
+	ib.NumSamples = uint64(numSamples)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
-		ib.samples[samplePos] = sampleName
+		ib.Samples[samplePos] = sampleName
 	}
 }
 
 func (ib *IBrowser) GetSamples() interfaces.VCFSamples {
-	return ib.samples
+	return ib.Samples
 }
 
 func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
-	if chromosome, ok := ib.chromosomes[chromosomeName]; ok {
+	if chromosome, ok := ib.Chromosomes[chromosomeName]; ok {
 		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome, ok
 	} else {
@@ -94,11 +96,10 @@ func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 		os.Exit(1)
 	}
 
-	nchr := NewIBChromosome(chromosomeName, ib.numSamples, ib.keepEmptyBlock)
-	ib.chromosomes[chromosomeName] = &nchr
-	ib.chromosomesNames = append(ib.chromosomesNames, chromosomeName)
+	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.ChromosomesNames = append(ib.ChromosomesNames, chromosomeName)
 
-	return &nchr
+	return ib.Chromosomes[chromosomeName]
 }
 
 func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
@@ -116,12 +117,12 @@ func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
-	if ib.numSamples == 0 {
+	if ib.NumSamples == 0 {
 		ib.SetSamples(samples)
 	} else {
-		if len(ib.samples) != len(*samples) {
+		if len(ib.Samples) != len(*samples) {
 			fmt.Println("Sample mismatch")
-			fmt.Println(len(ib.samples), "!=", len(*samples))
+			fmt.Println(len(ib.Samples), "!=", len(*samples))
 			os.Exit(1)
 		}
 	}
@@ -137,7 +138,7 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 		}
 	}
 
-	ib.numRegisters++
+	ib.NumRegisters++
 
 	//TODO: FILTERING
 	//
@@ -158,13 +159,27 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
-	blockNum := reg.Pos / ib.blockSize
+	blockNum := reg.Pos / ib.BlockSize
 
 	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
-		ib.numBlocks++
+		ib.NumBlocks++
 	}
 
-	ib.numSNPs++
+	ib.NumSNPs++
 
 	chromosome.Add(blockNum, reg)
+}
+
+func (ib *IBrowser) Save() {
+	// ibB, _ := json.Marshal(ib)
+	// fmt.Println(string(ibB))
+
+	d, err := yaml.Marshal(ib)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		os.Exit(1)
+	}
+	fmt.Printf("--- dump:\n%s\n\n", d)
+
+	os.Exit(0)
 }
