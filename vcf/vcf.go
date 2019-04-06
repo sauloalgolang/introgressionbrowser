@@ -20,6 +20,7 @@ import (
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 	"github.com/sauloalgolang/introgressionbrowser/openfile"
+	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
 const DEBUG = false
@@ -211,7 +212,8 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 	contents.Buffer(cbuffer, bufio.MaxScanTokenSize*50) // Otherwise long lines crash the scanner.
 
-	var SampleNames []string
+	SampleNames := make([]string, 0, 100)
+	numSampleNames := uint64(0)
 
 	gtIndex := -1
 	lastChromosomeName := ""
@@ -237,6 +239,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 					// fmt.Println("columnNames", columnNames)
 
 					SampleNames = columnNames[9:]
+					numSampleNames = uint64(len(SampleNames))
 					// fmt.Println("SampleNames", SampleNames)
 				}
 			}
@@ -294,6 +297,10 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		info := cols[8]
 		infoCols := strings.Split(info, ";")
 
+		if len(altCols) > 1 { // no polymorphic SNPs
+			continue
+		}
+
 		if gtIndex == -1 || infoCols[gtIndex] != "GT" {
 			gtIndex = SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
 		}
@@ -317,14 +324,14 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		}
 
 		samples := cols[9:]
-		numSamples := len(samples)
+		numSamples := uint64(len(samples))
 		samplesGT := make([]interfaces.VCFGT, numSamples, numSamples)
 
-		if len(samples) != len(SampleNames) {
+		if numSamples != numSampleNames {
 			if continueOnError {
 				continue
 			} else {
-				fmt.Println("wrong number of columns: expected ", len(SampleNames), " got ", len(samples))
+				fmt.Println("wrong number of columns: expected ", numSampleNames, " got ", numSamples)
 				os.Exit(1)
 			}
 		}
@@ -396,6 +403,8 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 			Alt:        altCols,
 			Samples:    samplesGT,
 		}
+
+		register.Distance = tools.CalculateDistance(numSamples, &register)
 
 		callback(&SampleNames, &register)
 	}

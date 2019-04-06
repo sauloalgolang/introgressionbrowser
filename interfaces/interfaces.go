@@ -8,6 +8,21 @@ import (
 	"github.com/brentp/vcfgo"
 )
 
+type DistanceRow []uint64
+type DistanceMatrix [][]uint64
+type DistanceTable []uint64
+
+func (d *DistanceMatrix) Add(e *DistanceMatrix) {
+	for i := range *d {
+		di := &(*d)[i]
+		ei := &(*e)[i]
+		for j := i + 1; j < len(*d); j++ {
+			(*di)[j] += (*ei)[j]
+			// (*d)[j][i] += (*e)[j][i]
+		}
+	}
+}
+
 type VCFRegisterVcfGo = vcfgo.Variant
 type VCFSamples = []string
 type VCFGTVal []int
@@ -32,6 +47,7 @@ type VCFRegisterRaw struct {
 	Alt     []string
 	Samples VCFSamplesGT
 	// Fields       map[string]string
+	Distance *DistanceMatrix
 }
 
 type VCFRegister = VCFRegisterRaw

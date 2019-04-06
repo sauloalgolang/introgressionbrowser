@@ -10,7 +10,6 @@ import (
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
-import "github.com/sauloalgolang/introgressionbrowser/tools"
 
 //
 //
@@ -157,18 +156,13 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// FILTERING
 	//
 
-	if len(reg.Alt) > 1 { // no polymorphic SNPs
-		return
-	}
-
 	//
 	// Adding distance
 	//
 
 	ib.NumSNPs++
 
-	distance := tools.CalculateDistance(ib.NumSamples, reg)
-	ib.Block.Add(0, distance)
+	ib.Block.Add(0, reg.Distance)
 
 	position := reg.Position
 	blockNum := position / ib.BlockSize
@@ -178,7 +172,7 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 		ib.NumBlocks++
 	}
 
-	chromosome.Add(blockNum, position, distance)
+	chromosome.Add(blockNum, position, reg.Distance)
 }
 
 func (ib *IBrowser) SaveChromosomes(outPrefix string) {

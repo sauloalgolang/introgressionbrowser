@@ -7,20 +7,9 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 
-type DistanceRow []uint64
-type DistanceMatrix [][]uint64
-type DistanceTable []uint64
-
-func (d *DistanceMatrix) Add(e *DistanceMatrix) {
-	for i := range *d {
-		di := &(*d)[i]
-		ei := &(*e)[i]
-		for j := i + 1; j < len(*d); j++ {
-			(*di)[j] += (*ei)[j]
-			// (*d)[j][i] += (*e)[j][i]
-		}
-	}
-}
+type DistanceRow = interfaces.DistanceRow
+type DistanceMatrix = interfaces.DistanceMatrix
+type DistanceTable = interfaces.DistanceTable
 
 type GT struct {
 	Position  uint64
