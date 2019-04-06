@@ -119,8 +119,8 @@ func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
 	}
 }
 
-func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
-	ib.reader(r, ib.RegisterCallBack, continueOnError)
+func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool, chromosomeName string) {
+	ib.reader(r, ib.RegisterCallBack, continueOnError, chromosomeName)
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
@@ -134,22 +134,22 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 		}
 	}
 
-	if reg.Chromosome != ib.lastChrom {
-		if ib.lastChrom != "" {
-			ib.GetOrCreateChromosome(ib.lastChrom).Save("output." + ib.lastChrom + ".yml")
-		}
+	// if reg.Chromosome != ib.lastChrom {
+	// 	if ib.lastChrom != "" {
+	// 		ib.GetOrCreateChromosome(ib.lastChrom).Save("output")
+	// 	}
 
-		ib.lastChrom = reg.Chromosome
-		ib.lastPosition = 0
-		fmt.Println("New chromosome: ", reg.Chromosome)
+	// 	ib.lastChrom = reg.Chromosome
+	// 	ib.lastPosition = 0
+	// 	fmt.Println("New chromosome: ", reg.Chromosome)
 
-	} else {
-		if !(reg.Position > ib.lastPosition) {
-			fmt.Println("Coordinate mismatch")
-			fmt.Println(ib.lastPosition, ">=", reg.Position)
-			os.Exit(1)
-		}
-	}
+	// } else {
+	// 	if !(reg.Position > ib.lastPosition) {
+	// 		fmt.Println("Coordinate mismatch")
+	// 		fmt.Println(ib.lastPosition, ">=", reg.Position)
+	// 		os.Exit(1)
+	// 	}
+	// }
 
 	ib.NumRegisters++
 
@@ -186,9 +186,9 @@ func (ib *IBrowser) SaveChromosomes(outPrefix string) {
 
 		fmt.Print("saving chromosome: ", chromosomeName)
 
-		outfile := outPrefix + "." + chromosomeName
+		outfile := outPrefix + "." + chromosomeName + ".yaml"
 
-		if _, err := os.Stat(outfile + ".yaml"); err == nil {
+		if _, err := os.Stat(outfile); err == nil {
 			// path/to/whatever exists
 			fmt.Println(" exists")
 			continue
@@ -202,11 +202,11 @@ func (ib *IBrowser) SaveChromosomes(outPrefix string) {
 
 			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
 		}
-		chromosome.Save(outfile)
+		chromosome.Save(outPrefix)
 	}
 }
 
-func (ib *IBrowser) Save(outfile string) {
+func (ib *IBrowser) Save(outPrefix string) {
 	// ibB, _ := json.Marshal(ib)
 	// fmt.Println(string(ibB))
 
@@ -230,7 +230,8 @@ func (ib *IBrowser) Save(outfile string) {
 	}
 
 	// fmt.Printf("--- dump:\n%s\n\n", d)
+	outfile := outPrefix + ".yaml"
 	fmt.Println("saving ibrowser to ", outfile)
-	err = ioutil.WriteFile(outfile+".yaml", d, 0644)
+	err = ioutil.WriteFile(outfile, d, 0644)
 	fmt.Println("done")
 }

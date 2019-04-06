@@ -7,6 +7,45 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 
+type DistanceRow []uint64
+type DistanceMatrix [][]uint64
+type DistanceTable []uint64
+
+func (d *DistanceMatrix) Add(e *DistanceMatrix) {
+	for i := range *d {
+		di := &(*d)[i]
+		ei := &(*e)[i]
+		for j := i + 1; j < len(*d); j++ {
+			(*di)[j] += (*ei)[j]
+			// (*d)[j][i] += (*e)[j][i]
+		}
+	}
+}
+
+type GT struct {
+	Position  uint64
+	Gt        *interfaces.VCFGTVal
+	Lgt       int
+	IsDiploid bool
+}
+
+var TempDistanceMatrix DistanceMatrix
+
+var DistanceTableValues = DistanceTable{
+	3, 1, 1, 0, //  0  1  2  3
+	1, 2, 2, 1, //  4  5  6  7
+	1, 2, 2, 1, //  8  9 10 11
+	0, 1, 1, 3, // 12 13 14 15
+	//      | AA AB BA BB
+	//      |  0  1  2  3
+	// -----|------------
+	// AA 0 |  3  1  1  0
+	// AB 1 |  1  2  2  1
+	// BA 2 |  1  2  2  1
+	// BB 3 |  0  1  1  3
+	//-------------------
+}
+
 func Min64(a uint64, b uint64) uint64 {
 	if a < b {
 		return a
@@ -27,68 +66,30 @@ func Max64(a uint64, b uint64) uint64 {
 	}
 }
 
-type DistanceRow []uint64
-type DistanceMatrix [][]uint64
-
-func (d *DistanceMatrix) Add(e *DistanceMatrix) {
-	for i := range *d {
-		for j := i + 1; j < len(*d); j++ {
-			(*d)[i][j] += (*e)[i][j]
-			// (*d)[j][i] += (*e)[j][i]
-		}
-	}
-}
-
 func NewDistanceMatrix(dimention uint64) *DistanceMatrix {
 	r := make(DistanceMatrix, dimention, dimention)
 
 	for i := range r {
 		r[i] = make(DistanceRow, dimention, dimention)
-		for j := range r[i] {
-			r[i][j] = uint64(0)
+		ri := &r[i]
+		for j := range *ri {
+			(*ri)[j] = uint64(0)
 		}
 	}
 
 	return &r
 }
 
-var TempDistanceMatrix DistanceMatrix
-
 func CleanTempDistanceMatrix() {
 	for i := range TempDistanceMatrix {
-		for j := range TempDistanceMatrix {
-			TempDistanceMatrix[i][j] = uint64(0)
+		ti := &TempDistanceMatrix[i]
+		for j := i + 1; j < len(TempDistanceMatrix); j++ {
+			(*ti)[j] = uint64(0)
 		}
 	}
 }
 
-type VCFGTVal interfaces.VCFGTVal
-
-type GT struct {
-	Position  uint64
-	Gt        VCFGTVal
-	Lgt       int
-	IsDiploid bool
-}
-
-type DistanceTable [][]uint64
-
-var DistanceTableValues = DistanceTable{
-	{3, 1, 1, 0},
-	{1, 2, 2, 1},
-	{1, 2, 2, 1},
-	{0, 1, 1, 3},
-	//      | AA AB BA BB
-	//      | 0  1  2  3
-	// -----|-----------
-	// AA 0 | 3  1  1  0
-	// AB 1 | 1  2  2  1
-	// BA 2 | 1  2  2  1
-	// BB 3 | 0  1  1  3
-	//------------------
-}
-
-func (a *VCFGTVal) CalculateDistanceDiploid(b *VCFGTVal) uint64 {
+func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
 	// fmt.Println("DistanceTableValues", DistanceTableValues)
 
 	a0 := (*a)[0]
@@ -96,12 +97,11 @@ func (a *VCFGTVal) CalculateDistanceDiploid(b *VCFGTVal) uint64 {
 	b0 := (*b)[0]
 	b1 := (*b)[1]
 
-	x := a0*2 + a1
-	y := b0*2 + b1
+	i := a0*8 + a1*4 + b0*2 + b1*0
 
 	// fmt.Print(a0, a1, b0, b1, x, y)
 
-	d := DistanceTableValues[x][y]
+	d := DistanceTableValues[i]
 
 	// fmt.Println(d, DistanceTableValues)
 
@@ -128,27 +128,21 @@ func (a *VCFGTVal) CalculateDistanceDiploid(b *VCFGTVal) uint64 {
 	// return uint64(0)
 }
 
-func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *DistanceMatrix {
-	if uint64(len(TempDistanceMatrix)) != numSamples {
-		fmt.Println("CalculateDistance NewDistanceMatrix")
-		TempDistanceMatrix = *NewDistanceMatrix(numSamples)
-	} else {
-		CleanTempDistanceMatrix()
-	}
-
-	numValids := 0
-	valids := make([]GT, numSamples, numSamples)
+func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
+	numSamples := uint64(len(samples))
+	numValids = 0
+	valids = make([]GT, numSamples, numSamples)
 
 	for samplePos := uint64(0); samplePos < numSamples; samplePos++ {
-		sample := reg.Samples[samplePos]
-		gt := sample.GT
-		lgt := len(gt)
+		sample := samples[samplePos]
+		gt := &sample.GT
+		lgt := len(*gt)
 
 		if lgt == 0 { // wrong.
 			fmt.Print(" samplePos ", samplePos, " GT ", gt, " ", "WRONG 0")
 			os.Exit(1)
 		} else if lgt == 1 { // maybe no call
-			if gt[0] == -1 { // is no call
+			if (*gt)[0] == -1 { // is no call
 				// fmt.Print(" 1 samplePos ", samplePos, " GT ", gt, " ", "NC")
 				continue
 			} else {
@@ -157,18 +151,31 @@ func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *Distance
 			}
 		} else if lgt == 2 { // alts
 			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "DIPLOID")
-			if gt[0] == -1 {
+			if (*gt)[0] == -1 {
 				continue
 			} else {
-				valids[numValids] = GT{samplePos, VCFGTVal(gt), lgt, true}
+				valids[numValids] = GT{samplePos, gt, lgt, true}
 				numValids++
 			}
 		} else { // weird
 			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "POLYPLOYD")
-			valids[numValids] = GT{samplePos, VCFGTVal(gt), lgt, false}
+			valids[numValids] = GT{samplePos, gt, lgt, false}
 			numValids++
 		}
 	}
+
+	return valids, numValids
+}
+
+func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *DistanceMatrix {
+	if uint64(len(TempDistanceMatrix)) != numSamples {
+		fmt.Println("CalculateDistance NewDistanceMatrix")
+		TempDistanceMatrix = *NewDistanceMatrix(numSamples)
+	} else {
+		CleanTempDistanceMatrix()
+	}
+
+	valids, numValids := GetValids(reg.Samples)
 
 	// fmt.Println("valids", numValids, valids, numSamples)
 
@@ -188,7 +195,7 @@ func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *Distance
 
 			if isDiploid1 && isDiploid2 {
 				// fmt.Print("    BOTH DIPLOYD ")
-				dist := gt1.CalculateDistanceDiploid(&gt2)
+				dist := CalculateDistanceDiploid(gt1, gt2)
 				TempDistanceMatrix[samplePos1][samplePos2] += dist
 				// TempDistanceMatrix[samplePos2][samplePos1] += dist
 				// fmt.Println(gt1, " ", gt2, " ", dist)

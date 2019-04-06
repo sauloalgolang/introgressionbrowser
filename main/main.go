@@ -7,12 +7,10 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"strings"
 )
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/ibrowser"
-	"github.com/sauloalgolang/introgressionbrowser/openfile"
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
@@ -20,14 +18,12 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 var outfile = *flag.String("outfile prefix", "output", "write memory profile to `file`")
 var continueOnError = *flag.Bool("continueOnError", true, "continue reading the file on error")
-var blockSize = *flag.Uint64("Block Size", 1000000, "block size")
-var keepEmptyBlock = *flag.Bool("Keep Empty Blocks", true, "keepEmptyBlock")
+var blockSize = *flag.Uint64("BlockSize", 1000000, "Block size")
+var keepEmptyBlock = *flag.Bool("KeepEmptyBlocks", true, "Keep empty blocks")
+var numThreads = *flag.Int("NumberThreads", 4, "Number of threads")
 
 func main() {
 	// get the arguments from the command line
-
-	// numPtr := flag.Int("n", 4, "an integer")
-
 	flag.Parse()
 
 	if *cpuprofile != "" {
@@ -43,6 +39,7 @@ func main() {
 	}
 
 	sourceFile := flag.Arg(0)
+
 	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, blockSize, keepEmptyBlock)
 
 	if sourceFile == "" {
@@ -52,19 +49,7 @@ func main() {
 		fmt.Println("Openning", sourceFile)
 	}
 
-	if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.tar.gz") {
-		fmt.Println(" .tar.gz format")
-		openfile.OpenFile(sourceFile, true, true, continueOnError, ibrowser.ReaderCallBack)
-	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.gz") {
-		fmt.Println(" .gz format")
-		openfile.OpenFile(sourceFile, false, true, continueOnError, ibrowser.ReaderCallBack)
-	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf") {
-		fmt.Println(" .vcf format")
-		openfile.OpenFile(sourceFile, false, false, continueOnError, ibrowser.ReaderCallBack)
-	} else {
-		fmt.Println("unknown file suffix!")
-		os.Exit(1)
-	}
+	vcf.OpenVcfFile(sourceFile, continueOnError, numThreads, ibrowser.ReaderCallBack)
 
 	ibrowser.SaveChromosomes(outfile)
 	ibrowser.Save(outfile)

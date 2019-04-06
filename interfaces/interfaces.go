@@ -14,6 +14,7 @@ type VCFGTVal []int
 type VCFGT struct {
 	GT VCFGTVal
 }
+type VCFSamplesGT = []VCFGT
 
 type VCFRegisterRaw struct {
 	// SampleNames []string
@@ -29,12 +30,13 @@ type VCFRegisterRaw struct {
 	// NumAlt       uint64
 	// Phased       bool
 	Alt     []string
-	Samples []VCFGT
+	Samples VCFSamplesGT
 	// Fields       map[string]string
 }
 
 type VCFRegister = VCFRegisterRaw
 
 type VCFCallBack func(*VCFSamples, *VCFRegister)
-type VCFReaderType func(io.Reader, VCFCallBack, bool)
+type VCFReaderType func(io.Reader, VCFCallBack, bool, string)
 type VCFMaskedReaderType func(io.Reader, bool)
+type VCFMaskedReaderChromosomeType func(io.Reader, bool, string)

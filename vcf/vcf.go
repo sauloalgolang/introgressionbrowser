@@ -3,30 +3,190 @@ package vcf
 import (
 	"bufio"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+	// "sync"
 )
 
 import (
 	"github.com/brentp/vcfgo"
+	"github.com/remeh/sizedwaitgroup"
 )
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/openfile"
 )
 
 const DEBUG = false
-const BREAKAT = 1500000
+const BREAKAT = 500000
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
-func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
-	bufreader := bufio.NewReader(r)
-	ProcessVcfRaw(bufreader, callback, continueOnError)
-	// ProcessVcfVcfGo(bufreader, callback, continueOnError)
+//
+//
+// Chromosome Gather
+//
+//
+
+type chromosomeNamesType struct {
+	Names []string
 }
+
+func (cn *chromosomeNamesType) IndexFileName(outPrefix string) (indexFile string) {
+	indexFile = outPrefix + ".ibindex"
+	return indexFile
+}
+
+func (cn *chromosomeNamesType) Save(outPrefix string) {
+	d, err := yaml.Marshal(cn)
+
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		os.Exit(1)
+	}
+
+	// fmt.Printf("--- dump:\n%s\n\n", d)
+	outfile := cn.IndexFileName(outPrefix)
+	fmt.Println(" saving index to ", outfile)
+	err = ioutil.WriteFile(outfile, d, 0644)
+	fmt.Println(" done")
+}
+
+func (cn *chromosomeNamesType) Load(outPrefix string) {
+	outfile := cn.IndexFileName(outPrefix)
+
+	data, err := ioutil.ReadFile(outfile)
+
+	if err != nil {
+		fmt.Printf("yamlFile. Get err   #%v ", err)
+	}
+
+	err = yaml.Unmarshal(data, &cn)
+
+	if err != nil {
+		fmt.Printf("cannot unmarshal data: %v", err)
+	}
+}
+
+func (cn *chromosomeNamesType) Add(chromosomeName string) {
+	cn.Names = append(cn.Names, chromosomeName)
+}
+
+func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnError bool) (chromosomeNames chromosomeNamesType) {
+	indexfile := chromosomeNames.IndexFileName(sourceFile)
+
+	if _, err := os.Stat(indexfile); err == nil {
+		// path/to/whatever exists
+		fmt.Println(" exists")
+		chromosomeNames.Load(sourceFile)
+		// fmt.Println(chromosomeNames)
+
+	} else if os.IsNotExist(err) {
+		// path/to/whatever does *not* exist
+		fmt.Println(" creating")
+
+		addToNames := func(SampleNames *interfaces.VCFSamples, register *interfaces.VCFRegister) {
+			fmt.Println("adding chromosome ", register.Chromosome, chromosomeNames)
+			chromosomeNames.Add(register.Chromosome)
+		}
+
+		getNames := func(r io.Reader, continueOnError bool) {
+			ProcessVcfRaw(r, addToNames, continueOnError, "")
+		}
+
+		openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, getNames)
+
+		chromosomeNames.Save(sourceFile)
+	}
+
+	return chromosomeNames
+}
+
+//
+//
+// Chrosmosome Callback
+//
+//
+
+type ChromosomeCallbackRegister struct {
+	callBack       interfaces.VCFMaskedReaderChromosomeType
+	chromosomeName string
+	wg             *sizedwaitgroup.SizedWaitGroup
+	// wg             *sync.WaitGroup
+}
+
+func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, continueOnError bool) {
+	defer cc.wg.Done()
+	cc.callBack(r, continueOnError, cc.chromosomeName)
+}
+
+//
+//
+// Open VCF
+//
+//
+
+func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBack interfaces.VCFMaskedReaderChromosomeType) {
+	fmt.Println("OpenVcfFile :: ",
+		"sourceFile", sourceFile,
+		"continueOnError", continueOnError,
+		"numThreads", numThreads)
+
+	isTar := false
+	isGz := false
+
+	if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.tar.gz") {
+		fmt.Println(" .tar.gz format")
+		isTar = true
+		isGz = true
+	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf.gz") {
+		fmt.Println(" .gz format")
+		isTar = false
+		isGz = true
+	} else if strings.HasSuffix(strings.ToLower(sourceFile), ".vcf") {
+		fmt.Println(" .vcf format")
+		isTar = false
+		isGz = false
+	} else {
+		fmt.Println("unknown file suffix!")
+		os.Exit(1)
+	}
+
+	chromosomeNames := GatherChromosomeNames(sourceFile, isTar, isGz, continueOnError)
+	for _, chromosomeName := range chromosomeNames.Names {
+		fmt.Println("Gathered Chromosome Names :: ", chromosomeName)
+	}
+
+	// wg := sync.WaitGroup
+	wg := sizedwaitgroup.New(numThreads)
+	for _, chromosomeName := range chromosomeNames.Names {
+		ccr := ChromosomeCallbackRegister{
+			callBack:       callBack,
+			chromosomeName: chromosomeName,
+			wg:             &wg,
+		}
+
+		// wg.Add(1)
+		wg.Add()
+
+		go openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallback)
+	}
+
+	fmt.Println("Waiting for all chromosomes to complete")
+	wg.Wait()
+	fmt.Println("All chromosomes completed")
+}
+
+//
+//
+// Process VCF
+//
+//
 
 func SliceIndex(limit int, predicate func(i int) bool) int {
 	for i := 0; i < limit; i++ {
@@ -37,7 +197,15 @@ func SliceIndex(limit int, predicate func(i int) bool) int {
 	return -1
 }
 
-func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
+func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
+	bufreader := bufio.NewReader(r)
+	ProcessVcfRaw(bufreader, callback, continueOnError, chromosomeName)
+	// ProcessVcfVcfGo(bufreader, callback, continueOnError, chromosomeName)
+}
+
+func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
+	fmt.Println("Opening file to read chromosome:", chromosomeName)
+
 	contents := bufio.NewScanner(r)
 	cbuffer := make([]byte, 0, bufio.MaxScanTokenSize)
 
@@ -45,13 +213,13 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 	var SampleNames []string
 
+	gtIndex := -1
+	lastChromosomeName := ""
 	lineNumber := int64(0)
+	registerNumber := int64(0)
+	foundChromosome := false
 	for contents.Scan() {
 		lineNumber++
-
-		if BREAKAT > 0 && lineNumber >= BREAKAT {
-			return
-		}
 
 		row := contents.Text()
 		rowLen := len(row)
@@ -66,23 +234,69 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 				} else {
 					columnNames := strings.Split(row, "\t")
-					fmt.Println("columnNames", columnNames)
+					// fmt.Println("columnNames", columnNames)
 
 					SampleNames = columnNames[9:]
-					fmt.Println("SampleNames", SampleNames)
+					// fmt.Println("SampleNames", SampleNames)
 				}
 			}
 			continue
 		}
 
 		cols := strings.Split(row, "\t")
+
+		if len(cols) < 9 {
+			fmt.Println("less than 9 columns. can't continue")
+			os.Exit(1)
+		}
+
 		chrom := cols[0]
+
+		if chromosomeName == "" { // return only chromosome names
+			if chrom != lastChromosomeName { // first time to see it
+				lastChromosomeName = chrom
+				register := interfaces.VCFRegisterRaw{
+					LineNumber: lineNumber,
+					Chromosome: chrom,
+					Position:   0,
+					Alt:        nil,
+					Samples:    nil,
+				}
+
+				callback(&SampleNames, &register)
+			}
+			continue
+		} else {
+			if chrom != chromosomeName {
+				if foundChromosome { // already found, therefore finished
+					fmt.Println("Finished reading chromosome", chromosomeName)
+					return
+				} else { // not found yet, therefore continue
+					continue
+				}
+			} else {
+				if !foundChromosome { // first time found. let system know
+					fmt.Println("Found chromosome", chromosomeName)
+					foundChromosome = true
+				}
+			}
+		}
+
+		registerNumber++
+
+		if BREAKAT > 0 && registerNumber >= BREAKAT {
+			return
+		}
+
 		pos, pos_err := strconv.ParseUint(cols[1], 10, 64)
 		alt := cols[4]
 		altCols := strings.Split(alt, ",")
 		info := cols[8]
 		infoCols := strings.Split(info, ";")
-		gtIndex := SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
+
+		if gtIndex == -1 || infoCols[gtIndex] != "GT" {
+			gtIndex = SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
+		}
 
 		if pos_err != nil {
 			if continueOnError {
@@ -164,6 +378,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 		if lineNumber%100000 == 0 && lineNumber != 0 {
 			fmt.Println(lineNumber,
+				registerNumber,
 				// row,
 				// cols,
 				chrom,
@@ -186,7 +401,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 	}
 }
 
-func ProcessVcfVcfGo(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
+func ProcessVcfVcfGo(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
 	vr, err := vcfgo.NewReader(r, false)
 
 	if err != nil {

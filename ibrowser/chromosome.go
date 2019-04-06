@@ -102,7 +102,7 @@ func (ibc *IBChromosome) Add(blockNum uint64, position uint64, distance *tools.D
 	}
 }
 
-func (ibc *IBChromosome) Save(outfile string) {
+func (ibc *IBChromosome) Save(outPrefix string) {
 	// ibB, _ := json.Marshal(ib)
 	// fmt.Println(string(ibB))
 
@@ -113,7 +113,8 @@ func (ibc *IBChromosome) Save(outfile string) {
 	}
 
 	// fmt.Printf("--- dump:\n%s\n\n", d)
+	outfile := outPrefix + "." + ibc.Chromosome + ".yaml"
 	fmt.Println("saving chromosome ", ibc.Chromosome, " to ", outfile)
-	err = ioutil.WriteFile(outfile+"yaml", d, 0644)
+	err = ioutil.WriteFile(outfile, d, 0644)
 	fmt.Println("done")
 }

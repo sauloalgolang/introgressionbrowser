@@ -20,7 +20,7 @@ help:
 	@echo " run150"
 	@echo " run360"
 	@echo ""
-	@echo "prof"
+	@echo " prof"
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin
 
@@ -35,6 +35,9 @@ httpserver: bin/httpserver
 
 bin/ibrowser: */*.go
 	cd main/ && go build -v -o ../$@ .
+
+bin/ibrowser.exe: */*.go
+	cd main/ && GOOS=windows GOARCH=amd64 go build -v -o ../$@ .
 
 bin/ibrowser.wasm: */*.go
 	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -o ../$@ .
@@ -75,7 +78,7 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 
 
 
-.PHONY: clean run150 run360 prof
+.PHONY: clean run150 run360 prof prof_run
 
 clean:
 	rm -v output*.yaml | true
@@ -86,8 +89,12 @@ run150: clean ibrowser 150_VCFs_2.50.tar.gz
 run360: clean ibrowser 360_merged_2.50.vcf.gz
 	time bin/ibrowser 360_merged_2.50.vcf.gz
 
-prof: clean ibrowser 360_merged_2.50.vcf.gz
-	rm -v ibrowser.cpu.prof ibrowser.mem.prof || true
-	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
+prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.mem.prof
+
+ibrowser.cpu.prof: clean
+	rm -v ibrowser.cpu.prof ibrowser.mem.prof || true
+	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
+
+prof_run: clean ibrowser 360_merged_2.50.vcf.gz
