@@ -24,7 +24,7 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 		panic(err)
 	}
 
-	fmt.Printf("VR %v\n", vr)
+	// fmt.Printf("VR %v\n", vr)
 
 	header := vr.Header
 	SampleNames := header.SampleNames // []string
@@ -78,6 +78,18 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 	for {
 		variant := vr.Read()
 
+		rowNum = vr.LineNumber
+
+		// if rowNum >= 30000 {
+		// 	break
+		// }
+
+		if rowNum%100000 == 0 && rowNum != 0 {
+			fmt.Println(rowNum)
+		}
+
+		// continue
+
 		if variant == nil {
 			if e := vr.Error(); e != io.EOF && e != nil {
 				vr.Clear()
@@ -93,18 +105,6 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 			} else {
 				break
 			}
-		}
-
-		vr.Clear()
-
-		rowNum = vr.LineNumber
-
-		// if rowNum >= 30000 {
-		// 	break
-		// }
-
-		if rowNum%100000 == 0 && rowNum != 0 {
-			fmt.Println(rowNum)
 		}
 
 		if len(variant.Samples) == 0 {
