@@ -18,7 +18,7 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
-var outfile = *flag.String("outfile", "output.yaml", "write memory profile to `file`")
+var outfile = *flag.String("outfile prefix", "output", "write memory profile to `file`")
 var continueOnError = *flag.Bool("continueOnError", true, "continue reading the file on error")
 var blockSize = *flag.Uint64("Block Size", 1000000, "block size")
 var keepEmptyBlock = *flag.Bool("Keep Empty Blocks", true, "keepEmptyBlock")
@@ -66,6 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	ibrowser.SaveChromosomes(outfile)
 	ibrowser.Save(outfile)
 
 	if *memprofile != "" {

@@ -124,8 +124,6 @@ func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
-	return
-
 	if ib.NumSamples == 0 {
 		ib.SetSamples(samples)
 	} else {
@@ -137,55 +135,75 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	}
 
 	if reg.Chromosome != ib.lastChrom {
+		if ib.lastChrom != "" {
+			ib.GetOrCreateChromosome(ib.lastChrom).Save("output." + ib.lastChrom + ".yml")
+		}
+
 		ib.lastChrom = reg.Chromosome
 		ib.lastPosition = 0
 		fmt.Println("New chromosome: ", reg.Chromosome)
 
 	} else {
-		if !(reg.Pos > ib.lastPosition) {
+		if !(reg.Position > ib.lastPosition) {
 			fmt.Println("Coordinate mismatch")
-			fmt.Println(ib.lastPosition, ">=", reg.Pos)
+			fmt.Println(ib.lastPosition, ">=", reg.Position)
 			os.Exit(1)
 		}
 	}
 
 	ib.NumRegisters++
 
-	//TODO: FILTERING
+	//
+	// FILTERING
+	//
 
-	if len(reg.Alt()) > 1 { // no polymorphic SNPs
+	if len(reg.Alt) > 1 { // no polymorphic SNPs
 		return
 	}
 
 	//
-	// type Variant struct {
-	// 	Chromosome      string
-	// 	Pos        		uint64
-	// 	Id         		string
-	// 	Ref        		string
-	// 	Alt        		[]string
-	// 	Quality    		float32
-	// 	Filter     		string
-	// 	Info       		InfoMap
-	// 	Format     		[]string
-	// 	Samples    		[]*SampleGenotype
-	// 	Header     		*Header
-	// 	LineNumber 		int64
-	// }
+	// Adding distance
+	//
 
 	ib.NumSNPs++
 
 	distance := tools.CalculateDistance(ib.NumSamples, reg)
 	ib.Block.Add(0, distance)
 
-	// position := reg.Pos
-	// blockNum := position / ib.BlockSize
-	// chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
-	// if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
-	// 	ib.NumBlocks++
-	// }
+	position := reg.Position
+	blockNum := position / ib.BlockSize
+	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
-	// chromosome.Add(blockNum, position, distance)
+	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
+		ib.NumBlocks++
+	}
+
+	chromosome.Add(blockNum, position, distance)
+}
+
+func (ib *IBrowser) SaveChromosomes(outPrefix string) {
+	for chromosomeName, chromosome := range ib.Chromosomes {
+
+		fmt.Print("saving chromosome: ", chromosomeName)
+
+		outfile := outPrefix + "." + chromosomeName
+
+		if _, err := os.Stat(outfile + ".yaml"); err == nil {
+			// path/to/whatever exists
+			fmt.Println(" exists")
+			continue
+
+		} else if os.IsNotExist(err) {
+			fmt.Println(" creating")
+			// path/to/whatever does *not* exist
+
+		} else {
+			// Schrodinger: file may or may not exist. See err for details.
+
+			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
+		}
+		chromosome.Save(outfile)
+	}
 }
 
 func (ib *IBrowser) Save(outfile string) {
@@ -210,8 +228,9 @@ func (ib *IBrowser) Save(outfile string) {
 		fmt.Printf("error: %v", err)
 		os.Exit(1)
 	}
+
 	// fmt.Printf("--- dump:\n%s\n\n", d)
-	fmt.Println("saving")
-	err = ioutil.WriteFile(outfile, d, 0644)
+	fmt.Println("saving ibrowser to ", outfile)
+	err = ioutil.WriteFile(outfile+".yaml", d, 0644)
 	fmt.Println("done")
 }

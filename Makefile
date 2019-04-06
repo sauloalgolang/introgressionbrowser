@@ -19,6 +19,8 @@ help:
 	@echo ""
 	@echo " run150"
 	@echo " run360"
+	@echo ""
+	@echo "prof"
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin
 
@@ -73,16 +75,19 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 
 
 
-.PHONY: run150 run360 prof
+.PHONY: clean run150 run360 prof
 
-run150: 150_VCFs_2.50.tar.gz
+clean:
+	rm -v output*.yaml | true
+
+run150: clean ibrowser 150_VCFs_2.50.tar.gz
 	time bin/ibrowser 150_VCFs_2.50.tar.gz
 
-run360: 360_merged_2.50.vcf.gz
+run360: clean ibrowser 360_merged_2.50.vcf.gz
 	time bin/ibrowser 360_merged_2.50.vcf.gz
 
-prof:
-	rm ibrowser.cpu.prof ibrowser.mem.prof || true
-	bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
+prof: clean ibrowser 360_merged_2.50.vcf.gz
+	rm -v ibrowser.cpu.prof ibrowser.mem.prof || true
+	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.mem.prof

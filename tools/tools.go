@@ -62,11 +62,11 @@ func CleanTempDistanceMatrix() {
 	}
 }
 
-type GTField []int
+type VCFGTVal interfaces.VCFGTVal
 
 type GT struct {
 	Position  uint64
-	Gt        GTField
+	Gt        VCFGTVal
 	Lgt       int
 	IsDiploid bool
 }
@@ -88,7 +88,7 @@ var DistanceTableValues = DistanceTable{
 	//------------------
 }
 
-func (a *GTField) CalculateDistanceDiploid(b *GTField) uint64 {
+func (a *VCFGTVal) CalculateDistanceDiploid(b *VCFGTVal) uint64 {
 	// fmt.Println("DistanceTableValues", DistanceTableValues)
 
 	a0 := (*a)[0]
@@ -157,11 +157,15 @@ func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *Distance
 			}
 		} else if lgt == 2 { // alts
 			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "DIPLOID")
-			valids[numValids] = GT{samplePos, gt, lgt, true}
-			numValids++
+			if gt[0] == -1 {
+				continue
+			} else {
+				valids[numValids] = GT{samplePos, VCFGTVal(gt), lgt, true}
+				numValids++
+			}
 		} else { // weird
 			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "POLYPLOYD")
-			valids[numValids] = GT{samplePos, gt, lgt, false}
+			valids[numValids] = GT{samplePos, VCFGTVal(gt), lgt, false}
 			numValids++
 		}
 	}

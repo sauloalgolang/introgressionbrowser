@@ -1,8 +1,12 @@
 package vcf
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
+	"strings"
 )
 
 import (
@@ -14,10 +18,175 @@ import (
 )
 
 const DEBUG = false
+const BREAKAT = 1500000
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
 func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
+	bufreader := bufio.NewReader(r)
+	ProcessVcfRaw(bufreader, callback, continueOnError)
+	// ProcessVcfVcfGo(bufreader, callback, continueOnError)
+}
+
+func SliceIndex(limit int, predicate func(i int) bool) int {
+	for i := 0; i < limit; i++ {
+		if predicate(i) {
+			return i
+		}
+	}
+	return -1
+}
+
+func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
+	contents := bufio.NewScanner(r)
+	cbuffer := make([]byte, 0, bufio.MaxScanTokenSize)
+
+	contents.Buffer(cbuffer, bufio.MaxScanTokenSize*50) // Otherwise long lines crash the scanner.
+
+	var SampleNames []string
+
+	lineNumber := int64(0)
+	for contents.Scan() {
+		lineNumber++
+
+		if BREAKAT > 0 && lineNumber >= BREAKAT {
+			return
+		}
+
+		row := contents.Text()
+		rowLen := len(row)
+
+		if rowLen == 0 {
+			continue
+		}
+
+		if row[0] == '#' {
+			if rowLen > 1 {
+				if row[1] == '#' {
+
+				} else {
+					columnNames := strings.Split(row, "\t")
+					fmt.Println("columnNames", columnNames)
+
+					SampleNames = columnNames[9:]
+					fmt.Println("SampleNames", SampleNames)
+				}
+			}
+			continue
+		}
+
+		cols := strings.Split(row, "\t")
+		chrom := cols[0]
+		pos, pos_err := strconv.ParseUint(cols[1], 10, 64)
+		alt := cols[4]
+		altCols := strings.Split(alt, ",")
+		info := cols[8]
+		infoCols := strings.Split(info, ";")
+		gtIndex := SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
+
+		if pos_err != nil {
+			if continueOnError {
+				continue
+			} else {
+				fmt.Println(pos_err)
+				os.Exit(1)
+			}
+		}
+
+		if gtIndex == -1 {
+			if continueOnError {
+				continue
+			} else {
+				fmt.Println("no genotype info field")
+				os.Exit(1)
+			}
+		}
+
+		samples := cols[9:]
+		numSamples := len(samples)
+		samplesGT := make([]interfaces.VCFGT, numSamples, numSamples)
+
+		if len(samples) != len(SampleNames) {
+			if continueOnError {
+				continue
+			} else {
+				fmt.Println("wrong number of columns: expected ", len(SampleNames), " got ", len(samples))
+				os.Exit(1)
+			}
+		}
+
+		for samplePos, sample := range samples {
+			sampleCols := strings.Split(sample, ";")
+			sampleGT := sampleCols[gtIndex]
+			sampleGTVal := make(interfaces.VCFGTVal, 2, 2)
+
+			if sampleGT[0] == '.' {
+				sampleGTVal[0] = -1
+				sampleGTVal[1] = -1
+
+			} else {
+				if len(sampleGT) == 3 {
+					sampleGT0, sampleGT0_err := strconv.Atoi(string(sampleGT[0]))
+					sampleGT1, sampleGT1_err := strconv.Atoi(string(sampleGT[2]))
+
+					if sampleGT0_err != nil {
+						if continueOnError {
+							continue
+						} else {
+							fmt.Println(sampleGT0_err)
+							os.Exit(1)
+						}
+					}
+
+					if sampleGT1_err != nil {
+						if continueOnError {
+							continue
+						} else {
+							fmt.Println(sampleGT1_err)
+							os.Exit(1)
+						}
+					}
+
+					sampleGTVal[0] = sampleGT0
+					sampleGTVal[1] = sampleGT1
+				}
+			}
+			samplesGT[samplePos].GT = sampleGTVal
+		}
+
+		//  0          1        2 3 4 5      6
+		// [SL2.50ch01 73633505 . G A 120.91 .
+		//
+		// 7
+		// AC1=2;AC=60;AF1=0.5086;AN=70;DP4=46,40,297,318;DP=1223;MQ=117;SF=5,7,19,27,39,45,54,55,56,67,78,123,130,134,156,161,164,186,216,223,252,266,269,271,272,276,278,287,288,298,299,307,336,338,358
+		// 8  9
+		// GT . . . . . 0|1
+
+		if lineNumber%100000 == 0 && lineNumber != 0 {
+			fmt.Println(lineNumber,
+				// row,
+				// cols,
+				chrom,
+				pos,
+				// info,
+				// samples,
+				// samplesGT,
+			)
+		}
+
+		register := interfaces.VCFRegisterRaw{
+			LineNumber: lineNumber,
+			Chromosome: chrom,
+			Position:   pos,
+			Alt:        altCols,
+			Samples:    samplesGT,
+		}
+
+		callback(&SampleNames, &register)
+	}
+}
+
+func ProcessVcfVcfGo(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool) {
 	vr, err := vcfgo.NewReader(r, false)
 
 	if err != nil {
@@ -28,6 +197,8 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 
 	header := vr.Header
 	SampleNames := header.SampleNames // []string
+	numSamples := len(SampleNames)
+
 	if DEBUG {
 		Infos := header.Infos // map[string]*Info
 		// // Id          string
@@ -78,14 +249,19 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 	for {
 		variant := vr.Read()
 
-		rowNum = vr.LineNumber
-
-		// if rowNum >= 30000 {
+		// if vr.LineNumber >= 30000 {
 		// 	break
 		// }
 
-		if rowNum%100000 == 0 && rowNum != 0 {
-			fmt.Println(rowNum)
+		if vr.LineNumber%100000 == 0 && vr.LineNumber != 0 {
+			fmt.Println(vr.LineNumber,
+				variant.Chromosome,
+				variant.Pos,
+			)
+
+			if BREAKAT > 0 && vr.LineNumber >= BREAKAT {
+				return
+			}
 		}
 
 		// continue
@@ -218,7 +394,36 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 					vr.Clear()
 				} // for sample
 			} // if debug
-			callback(&SampleNames, variant)
+
+			samplesGT := make([]interfaces.VCFGT, numSamples, numSamples)
+
+			for samplePos, _ := range variant.Samples {
+				sample := variant.Samples[samplePos]
+
+				if sample != nil {
+					// fmt.Println("", "sample: #", samplePos,
+					// 	"name:", sampleName,
+					// 	"Phased:", sample.Phased,
+					// 	"GT:", sample.GT,
+					// 	"DP:", sample.DP,
+					// 	"GL:", sample.GL,
+					// 	"GQ:", sample.GQ,
+					// 	"MQ:", sample.MQ,
+					// 	"Fields:", sample.Fields)
+					samplesGT[samplePos].GT = sample.GT
+				} else {
+					samplesGT[samplePos].GT = interfaces.VCFGTVal{-1, -1}
+				}
+			}
+
+			register := interfaces.VCFRegisterRaw{
+				LineNumber: variant.LineNumber,
+				Chromosome: variant.Chromosome,
+				Position:   variant.Pos,
+				Alt:        variant.Alt(),
+				Samples:    samplesGT,
+			}
+			callback(&SampleNames, &register)
 		} // if has variant
 	} //for variant
 

@@ -2,6 +2,8 @@ package ibrowser
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 )
 
@@ -98,4 +100,20 @@ func (ibc *IBChromosome) Add(blockNum uint64, position uint64, distance *tools.D
 		fmt.Println("Failure getting block", blockNum)
 		os.Exit(1)
 	}
+}
+
+func (ibc *IBChromosome) Save(outfile string) {
+	// ibB, _ := json.Marshal(ib)
+	// fmt.Println(string(ibB))
+
+	d, err := yaml.Marshal(ibc)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		os.Exit(1)
+	}
+
+	// fmt.Printf("--- dump:\n%s\n\n", d)
+	fmt.Println("saving chromosome ", ibc.Chromosome, " to ", outfile)
+	err = ioutil.WriteFile(outfile+"yaml", d, 0644)
+	fmt.Println("done")
 }

@@ -2,4 +2,4 @@
 *.gz
 *.prof
 bin/
-output.yaml
+output*.yaml
