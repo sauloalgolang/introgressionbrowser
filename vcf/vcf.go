@@ -86,7 +86,7 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 		}
 
 		if vr.Error() != nil {
-			fmt.Println("vr error", vr.Error())
+			// fmt.Println(" -- vr error", vr.Error())
 			vr.Clear()
 			if continueOnError {
 				continue
@@ -98,6 +98,14 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 		vr.Clear()
 
 		rowNum = vr.LineNumber
+
+		// if rowNum >= 30000 {
+		// 	break
+		// }
+
+		if rowNum%100000 == 0 && rowNum != 0 {
+			fmt.Println(rowNum)
+		}
 
 		if len(variant.Samples) == 0 {
 			if DEBUG {
@@ -137,38 +145,34 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 				fmt.Printf(" Info: %v\n", variant.Info())
 				fmt.Printf(" Format: %v\n", variant.Format)
 				fmt.Printf(" Samples: %v\n", variant.Samples)
-			}
 
-			// type Variant struct {
-			// 	Chromosome      string
-			// 	Pos        		uint64
-			// 	Id         		string
-			// 	Ref        		string
-			// 	Alt        		[]string
-			// 	Quality    		float32
-			// 	Filter     		string
-			// 	Info       		InfoMap
-			// 	Format     		[]string
-			// 	Samples    		[]*SampleGenotype
-			// 	Header     		*Header
-			// 	LineNumber 		int64
-			// }
+				// type Variant struct {
+				// 	Chromosome      string
+				// 	Pos        		uint64
+				// 	Id         		string
+				// 	Ref        		string
+				// 	Alt        		[]string
+				// 	Quality    		float32
+				// 	Filter     		string
+				// 	Info       		InfoMap
+				// 	Format     		[]string
+				// 	Samples    		[]*SampleGenotype
+				// 	Header     		*Header
+				// 	LineNumber 		int64
+				// }
 
-			vinfo := variant.Info()
+				vinfo := variant.Info()
 
-			if DEBUG {
 				fmt.Println(" INFO:")
 				for _, infoKey := range vinfo.Keys() {
 					nfo, _ := vinfo.Get(infoKey)
 					fmt.Println("  ", infoKey, ":", nfo)
 				}
-			}
 
-			for samplePos, sampleName := range SampleNames {
-				sample := variant.Samples[samplePos]
+				for samplePos, sampleName := range SampleNames {
+					sample := variant.Samples[samplePos]
 
-				if sample != nil {
-					if DEBUG {
+					if sample != nil {
 						fmt.Println("", "sample: #", samplePos,
 							"name:", sampleName,
 							"Phased:", sample.Phased,
@@ -178,48 +182,45 @@ func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bo
 							"GQ:", sample.GQ,
 							"MQ:", sample.MQ,
 							"Fields:", sample.Fields)
-					}
 
-					// &{false [] 0 [] 0 0 map[]}
-					// type SampleGenotype struct {
-					// 	Phased bool
-					// 	GT     []int
-					// 	DP     int
-					// 	GL     []float32
-					// 	GQ     int
-					// 	MQ     int
-					// 	Fields map[string]string
-					// }
+						// &{false [] 0 [] 0 0 map[]}
+						// type SampleGenotype struct {
+						// 	Phased bool
+						// 	GT     []int
+						// 	DP     int
+						// 	GL     []float32
+						// 	GQ     int
+						// 	MQ     int
+						// 	Fields map[string]string
+						// }
 
-					// var pl interface{}
+						// var pl interface{}
 
-					// if hasPL {
-					// 	pl, err = variant.GetGenotypeField(sample, "PL", plFmt)
+						// if hasPL {
+						// 	pl, err = variant.GetGenotypeField(sample, "PL", plFmt)
 
-					// 	if err != nil && sample != nil {
-					// 		fmt.Println("", "ERR PL:", err)
-					// 		log.Fatal(err)
-					// 	}
-					// } else {
-					// 	pl = nil
-					// }
+						// 	if err != nil && sample != nil {
+						// 		fmt.Println("", "ERR PL:", err)
+						// 		log.Fatal(err)
+						// 	}
+						// } else {
+						// 	pl = nil
+						// }
 
-					// fmt.Println("", "PL:", pl, "GQ:", sample.GQ, "DP:", sample.DP)
+						// fmt.Println("", "PL:", pl, "GQ:", sample.GQ, "DP:", sample.DP)
 
-					if DEBUG {
 						fmt.Print(" FIELDS:")
 						for fieldId, fieldVal := range sample.Fields {
 							fmt.Print(" ", fieldId, ":", fieldVal)
 						}
 						fmt.Println("")
-					}
-				}
-				vr.Clear()
-			} // for sample
-			// callback(reg)
+					} // if sample
+					vr.Clear()
+				} // for sample
+			} // if debug
 			callback(&SampleNames, variant)
-		} // if has sample
-	} //for
+		} // if has variant
+	} //for variant
 
 	fmt.Println("Finished")
 }

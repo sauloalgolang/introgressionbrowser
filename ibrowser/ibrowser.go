@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -123,6 +124,8 @@ func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool) {
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
+	return
+
 	if ib.NumSamples == 0 {
 		ib.SetSamples(samples)
 	} else {
@@ -136,6 +139,8 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	if reg.Chromosome != ib.lastChrom {
 		ib.lastChrom = reg.Chromosome
 		ib.lastPosition = 0
+		fmt.Println("New chromosome: ", reg.Chromosome)
+
 	} else {
 		if !(reg.Pos > ib.lastPosition) {
 			fmt.Println("Coordinate mismatch")
@@ -147,6 +152,11 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	ib.NumRegisters++
 
 	//TODO: FILTERING
+
+	if len(reg.Alt()) > 1 { // no polymorphic SNPs
+		return
+	}
+
 	//
 	// type Variant struct {
 	// 	Chromosome      string
@@ -163,36 +173,45 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// 	LineNumber 		int64
 	// }
 
-	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
-	position := reg.Pos
-	blockNum := position / ib.BlockSize
-	distance := tools.CalculateDistance(ib.NumSamples, reg)
-
-	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
-		ib.NumBlocks++
-	}
-
 	ib.NumSNPs++
 
-	chromosome.Add(blockNum, position, distance)
+	distance := tools.CalculateDistance(ib.NumSamples, reg)
+	ib.Block.Add(0, distance)
 
-	ib.Block.Add(position, distance)
+	// position := reg.Pos
+	// blockNum := position / ib.BlockSize
+	// chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
+	// if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
+	// 	ib.NumBlocks++
+	// }
 
-	// ib.Save()
-
-	// os.Exit(0)
+	// chromosome.Add(blockNum, position, distance)
 }
 
-func (ib *IBrowser) Save() {
+func (ib *IBrowser) Save(outfile string) {
 	// ibB, _ := json.Marshal(ib)
 	// fmt.Println(string(ibB))
 
-	fmt.Println(ib.Block)
+	// fmt.Println("ib.Block", ib.Block)
+	// fmt.Println()
+
+	// chromosome := ib.Chromosomes[ib.ChromosomesNames[0]]
+
+	// fmt.Println("chromosome.Block", chromosome.Block)
+	// fmt.Println()
+
+	// block := chromosome.Blocks[0]
+
+	// fmt.Println("chromosome.Blocks[0]", block)
+	// fmt.Println()
 
 	d, err := yaml.Marshal(ib)
 	if err != nil {
 		fmt.Printf("error: %v", err)
 		os.Exit(1)
 	}
-	fmt.Printf("--- dump:\n%s\n\n", d)
+	// fmt.Printf("--- dump:\n%s\n\n", d)
+	fmt.Println("saving")
+	err = ioutil.WriteFile(outfile, d, 0644)
+	fmt.Println("done")
 }

@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 )
 
@@ -13,19 +16,33 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+var outfile = *flag.String("outfile", "output.yaml", "write memory profile to `file`")
+var continueOnError = *flag.Bool("continueOnError", true, "continue reading the file on error")
+var blockSize = *flag.Uint64("Block Size", 1000000, "block size")
+var keepEmptyBlock = *flag.Bool("Keep Empty Blocks", true, "keepEmptyBlock")
+
 func main() {
 	// get the arguments from the command line
 
 	// numPtr := flag.Int("n", 4, "an integer")
 
-	continueOnError := *flag.Bool("continueOnError", true, "continue reading the file on error")
-	blockSize := *flag.Uint64("Block Size", 10000, "block size")
-	keepEmptyBlock := *flag.Bool("Keep Empty Blocks", true, "keepEmptyBlock")
-
 	flag.Parse()
 
-	sourceFile := flag.Arg(0)
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
+	sourceFile := flag.Arg(0)
 	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, blockSize, keepEmptyBlock)
 
 	if sourceFile == "" {
@@ -47,5 +64,19 @@ func main() {
 	} else {
 		fmt.Println("unknown file suffix!")
 		os.Exit(1)
+	}
+
+	ibrowser.Save(outfile)
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
 	}
 }

@@ -5,10 +5,12 @@ package openfile
 
 import (
 	"archive/tar"
-	"compress/gzip"
+	// "compress/gzip"
 	"fmt"
+	gzip "github.com/klauspost/pgzip"
 	"io"
 	"os"
+	"runtime"
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
@@ -24,7 +26,9 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, ca
 	if !isTar && !isGz {
 		callBack(io.Reader(f), continueOnError)
 	} else {
-		gzReader, err := gzip.NewReader(f)
+		runtime.GOMAXPROCS(runtime.NumCPU())
+
+		gzReader, err := gzip.NewReaderN(f, 2500000, 32)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

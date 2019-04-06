@@ -35,7 +35,7 @@ bin/ibrowser: */*.go
 	cd main/ && go build -v -o ../$@ .
 
 bin/ibrowser.wasm: */*.go
-	cd main/ && GOOS=js GOARCH=wasm go build -v -o ../$@ .
+	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -o ../$@ .
 
 bin/httpserver: opt/httpserver/httpserver.go
 	cd opt/httpserver/ && go build -v -o ../../$@ .
@@ -73,10 +73,16 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 
 
 
-.PHONY: run150 run360
+.PHONY: run150 run360 prof
 
 run150: 150_VCFs_2.50.tar.gz
-	bin/ibrowser 150_VCFs_2.50.tar.gz
+	time bin/ibrowser 150_VCFs_2.50.tar.gz
 
 run360: 360_merged_2.50.vcf.gz
-	bin/ibrowser 360_merged_2.50.vcf.gz
+	time bin/ibrowser 360_merged_2.50.vcf.gz
+
+prof:
+	rm ibrowser.cpu.prof ibrowser.mem.prof || true
+	bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
+	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof
+	go tool pprof -tree bin/ibrowser ibrowser.mem.prof

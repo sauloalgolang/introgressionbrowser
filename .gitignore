@@ -1,3 +1,5 @@
 *.wasm
 *.gz
+*.prof
 bin/
+output.yaml
