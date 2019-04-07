@@ -7,9 +7,9 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 
-type DistanceRow = interfaces.DistanceRow
-type DistanceMatrix = interfaces.DistanceMatrix
-type DistanceTable = interfaces.DistanceTable
+// type DistanceRow = interfaces.DistanceRow
+// type DistanceMatrix = interfaces.DistanceMatrix
+// type DistanceTable = interfaces.DistanceTable
 
 type GT struct {
 	Position  uint64
@@ -20,7 +20,7 @@ type GT struct {
 
 // var TempDistanceMatrix DistanceMatrix
 
-var DistanceTableValues = DistanceTable{
+var DistanceTableValues = interfaces.DistanceTable{
 	3, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7
 	1, 2, 2, 1, //  8  9 10 11
@@ -53,20 +53,6 @@ func Max64(a uint64, b uint64) uint64 {
 	} else {
 		return b
 	}
-}
-
-func NewDistanceMatrix(dimention uint64) *DistanceMatrix {
-	r := make(DistanceMatrix, dimention, dimention)
-
-	for i := range r {
-		r[i] = make(DistanceRow, dimention, dimention)
-		ri := &r[i]
-		for j := range *ri {
-			(*ri)[j] = uint64(0)
-		}
-	}
-
-	return &r
 }
 
 func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
@@ -147,7 +133,7 @@ func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
 	return valids, numValids
 }
 
-func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *DistanceMatrix {
+func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *interfaces.DistanceMatrix {
 	// if uint64(len(TempDistanceMatrix)) != numSamples {
 	// 	fmt.Println("CalculateDistance NewDistanceMatrix")
 	// 	TempDistanceMatrix = *NewDistanceMatrix(numSamples)

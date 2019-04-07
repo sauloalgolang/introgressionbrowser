@@ -41,10 +41,10 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 	numSampleNames := uint64(0)
 
 	register := interfaces.VCFRegisterRaw{
-		LineNumber:   0,
-		Chromosome:   "",
-		Position:     0,
-		TempDistance: tools.NewDistanceMatrix(0),
+		LineNumber: 0,
+		Chromosome: "",
+		Position:   0,
+		// TempDistance: interfaces.NewDistanceMatrix(0),
 	}
 
 	gtIndex := -1
@@ -72,7 +72,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
-					register.TempDistance = tools.NewDistanceMatrix(numSampleNames)
+					register.TempDistance = interfaces.NewDistanceMatrix(numSampleNames)
 					// fmt.Println("SampleNames", SampleNames)
 				}
 			}

@@ -7,7 +7,10 @@ import (
 	"sync/atomic"
 )
 
-import "github.com/sauloalgolang/introgressionbrowser/tools"
+import (
+	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/tools"
+)
 
 //
 //
@@ -21,7 +24,7 @@ type IBBlock struct {
 	MaxPosition uint64
 	NumSNPS     uint64
 	NumSamples  uint64
-	Matrix      *tools.DistanceMatrix
+	Matrix      *interfaces.DistanceMatrix
 }
 
 func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
@@ -31,13 +34,13 @@ func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
 		MaxPosition: 0,
 		NumSNPS:     0,
 		NumSamples:  numSamples,
-		Matrix:      tools.NewDistanceMatrix(numSamples),
+		Matrix:      interfaces.NewDistanceMatrix(numSamples),
 	}
 
 	return &ibb
 }
 
-func (ibb *IBBlock) add(position uint64, distance *tools.DistanceMatrix, isAtomic bool) {
+func (ibb *IBBlock) add(position uint64, distance *interfaces.DistanceMatrix, isAtomic bool) {
 	if isAtomic {
 		atomic.AddUint64(&ibb.NumSNPS, 1)
 	} else {
@@ -59,10 +62,10 @@ func (ibb *IBBlock) add(position uint64, distance *tools.DistanceMatrix, isAtomi
 	}
 }
 
-func (ibb *IBBlock) Add(position uint64, distance *tools.DistanceMatrix) {
+func (ibb *IBBlock) Add(position uint64, distance *interfaces.DistanceMatrix) {
 	ibb.add(position, distance, false)
 }
 
-func (ibb *IBBlock) AddAtomic(position uint64, distance *tools.DistanceMatrix) {
+func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatrix) {
 	ibb.add(position, distance, true)
 }

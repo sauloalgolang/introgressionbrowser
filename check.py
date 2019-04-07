@@ -61,18 +61,19 @@ chromosomes:
       0: 0
 """
 
-def checkBlockOfBlocks(block, blocks):
+def checkBlockOfBlocks(block, blocks, checkPos=True):
     minposition = block["minposition"]
     maxposition = block["maxposition"]
     numsnps = block["numsnps"]
 
-    minpositionCalc = min([b["minposition"] for b in blocks])
-    assert minposition == minpositionCalc, "minposition mismatch: {} != {}".format(minposition, minpositionCalc)
-    print(" min position OK", minposition)
+    if checkPos:
+        minpositionCalc = min([b["minposition"] for b in blocks])
+        assert minposition == minpositionCalc, "minposition mismatch: {} != {}".format(minposition, minpositionCalc)
+        print(" min position OK", minposition)
 
-    maxpositionCalc = max([b["maxposition"] for b in blocks])
-    assert maxposition == maxpositionCalc, "maxposition mismatch: {} != {}".format(maxposition, maxpositionCalc)
-    print(" max position OK", maxposition)
+        maxpositionCalc = max([b["maxposition"] for b in blocks])
+        assert maxposition == maxpositionCalc, "maxposition mismatch: {} != {}".format(maxposition, maxpositionCalc)
+        print(" max position OK", maxposition)
 
     numsnpsCalc = sum([b["numsnps"] for b in blocks])
     assert numsnps == numsnpsCalc, "numsnps mismatch: {} != {}".format(numsnps, numsnpsCalc)
@@ -116,7 +117,7 @@ def main(prefix):
         assert numblocks == numblocksCalc, "numblocks mismatch: {} != {}".format(numblocks, numblocksCalc)
         print(" num blocks OK", numblocks)
 
-        assert checkBlockOfBlocks(block, [b["block"] for b in chromosomes.values()])
+        assert checkBlockOfBlocks(block, [b["block"] for b in chromosomes.values()], checkPos=False)
         print(" block OK")
 
         for chromosomeName, chromosome in chromosomes.items():

@@ -51,7 +51,7 @@ func main() {
 
 	vcf.OpenVcfFile(sourceFile, continueOnError, numThreads, ibrowser.ReaderCallBack)
 
-	ibrowser.SaveChromosomes(outfile)
+	// ibrowser.SaveChromosomes(outfile)
 	ibrowser.Save(outfile)
 
 	if *memprofile != "" {

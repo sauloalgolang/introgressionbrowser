@@ -169,9 +169,9 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	// ib.Block.AddAtomic(0, reg.Distance) // did not work
 
-	mutex.Lock()
+	// mutex.Lock()
 	ib.Block.Add(0, reg.Distance)
-	mutex.Unlock()
+	// mutex.Unlock()
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 

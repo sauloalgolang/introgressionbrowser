@@ -98,3 +98,7 @@ ibrowser.cpu.prof: clean
 	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof 360_merged_2.50.vcf.gz
 
 prof_run: clean ibrowser 360_merged_2.50.vcf.gz
+
+check: output.yaml
+	grep -v " -" output.yaml
+	./check.py output
