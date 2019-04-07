@@ -18,7 +18,7 @@ type GT struct {
 	IsDiploid bool
 }
 
-var TempDistanceMatrix DistanceMatrix
+// var TempDistanceMatrix DistanceMatrix
 
 var DistanceTableValues = DistanceTable{
 	3, 1, 1, 0, //  0  1  2  3
@@ -67,15 +67,6 @@ func NewDistanceMatrix(dimention uint64) *DistanceMatrix {
 	}
 
 	return &r
-}
-
-func CleanTempDistanceMatrix() {
-	for i := range TempDistanceMatrix {
-		ti := &TempDistanceMatrix[i]
-		for j := i + 1; j < len(TempDistanceMatrix); j++ {
-			(*ti)[j] = uint64(0)
-		}
-	}
 }
 
 func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
@@ -157,12 +148,13 @@ func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
 }
 
 func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *DistanceMatrix {
-	if uint64(len(TempDistanceMatrix)) != numSamples {
-		fmt.Println("CalculateDistance NewDistanceMatrix")
-		TempDistanceMatrix = *NewDistanceMatrix(numSamples)
-	} else {
-		CleanTempDistanceMatrix()
-	}
+	// if uint64(len(TempDistanceMatrix)) != numSamples {
+	// 	fmt.Println("CalculateDistance NewDistanceMatrix")
+	// 	TempDistanceMatrix = *NewDistanceMatrix(numSamples)
+	// } else {
+	// 	TempDistanceMatrix.Clean()
+	// }
+	reg.TempDistance.Clean()
 
 	valids, numValids := GetValids(reg.Samples)
 
@@ -185,12 +177,12 @@ func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *Distance
 			if isDiploid1 && isDiploid2 {
 				// fmt.Print("    BOTH DIPLOYD ")
 				dist := CalculateDistanceDiploid(gt1, gt2)
-				TempDistanceMatrix[samplePos1][samplePos2] += dist
+				reg.TempDistance.Set(samplePos1, samplePos2, dist)
 				// TempDistanceMatrix[samplePos2][samplePos1] += dist
 				// fmt.Println(gt1, " ", gt2, " ", dist)
 			}
 		}
 	}
 
-	return &TempDistanceMatrix
+	return reg.TempDistance
 }

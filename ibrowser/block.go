@@ -3,6 +3,7 @@ package ibrowser
 import (
 	"fmt"
 	"os"
+	"sync/atomic"
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/tools"
@@ -19,7 +20,7 @@ type IBBlock struct {
 	MaxPosition uint64
 	NumSNPS     uint64
 	NumSamples  uint64
-	Matrix      tools.DistanceMatrix
+	Matrix      *tools.DistanceMatrix
 }
 
 func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
@@ -29,22 +30,43 @@ func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
 		MaxPosition: 0,
 		NumSNPS:     0,
 		NumSamples:  numSamples,
-		Matrix:      *tools.NewDistanceMatrix(numSamples),
+		Matrix:      tools.NewDistanceMatrix(numSamples),
 	}
 
 	return &ibb
 }
 
-func (ibb *IBBlock) Add(position uint64, distance *tools.DistanceMatrix) {
-	ibb.NumSNPS++
+func (ibb *IBBlock) add(position uint64, distance *tools.DistanceMatrix, isAtomic bool) {
+	if isAtomic {
+		atomic.AddUint64(&ibb.NumSNPS, 1)
+	} else {
+		ibb.NumSNPS++
+	}
 
-	ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
-	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
+	if isAtomic {
+		atomic.StoreUint64(&ibb.MinPosition, tools.Min64(atomic.LoadUint64(&ibb.MinPosition), position))
+		atomic.StoreUint64(&ibb.MaxPosition, tools.Max64(atomic.LoadUint64(&ibb.MaxPosition), position))
+	} else {
+		ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
+		ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
+	}
 
-	ibb.Matrix.Add(distance)
+	if isAtomic {
+		ibb.Matrix.Add(distance)
+	} else {
+		ibb.Matrix.AddAtomic(distance)
+	}
 
 	if false {
 		fmt.Println("Failure getting block")
 		os.Exit(1)
 	}
+}
+
+func (ibb *IBBlock) Add(position uint64, distance *tools.DistanceMatrix) {
+	ibb.add(position, distance, false)
+}
+
+func (ibb *IBBlock) AddAtomic(position uint64, distance *tools.DistanceMatrix) {
+	ibb.add(position, distance, true)
 }

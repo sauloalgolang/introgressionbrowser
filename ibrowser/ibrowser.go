@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sync/atomic"
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
@@ -73,8 +74,8 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	numSamples := len(*samples)
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
-	ib.NumSamples = uint64(numSamples)
-	ib.Block = NewIBBlock(0, ib.NumSamples)
+	atomic.StoreUint64(&ib.NumSamples, uint64(numSamples))
+	ib.Block = NewIBBlock(0, atomic.LoadUint64(&ib.NumSamples))
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -123,7 +124,7 @@ func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool, chromosome
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
-	if ib.NumSamples == 0 {
+	if atomic.LoadUint64(&ib.NumSamples) == 0 {
 		ib.SetSamples(samples)
 	} else {
 		if len(ib.Samples) != len(*samples) {
@@ -150,9 +151,9 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// 	}
 	// }
 
-	ib.NumRegisters++
+	atomic.AddUint64(&ib.NumRegisters, 1)
 
-	//
+	// TODO
 	// FILTERING
 	//
 
@@ -160,16 +161,16 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// Adding distance
 	//
 
-	ib.NumSNPs++
+	atomic.AddUint64(&ib.NumSNPs, 1)
 
-	ib.Block.Add(0, reg.Distance)
+	ib.Block.AddAtomic(0, reg.Distance)
 
 	position := reg.Position
 	blockNum := position / ib.BlockSize
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
 	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
-		ib.NumBlocks++
+		atomic.AddUint64(&ib.NumBlocks, 1)
 	}
 
 	chromosome.Add(blockNum, position, reg.Distance)
