@@ -10,7 +10,10 @@ import (
 
 import "runtime/debug"
 
-import "github.com/sauloalgolang/introgressionbrowser/tools"
+import (
+	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/tools"
+)
 
 //
 //
@@ -20,6 +23,7 @@ import "github.com/sauloalgolang/introgressionbrowser/tools"
 
 type IBChromosome struct {
 	Chromosome     string
+	BlockSize      uint64
 	MinPosition    uint64
 	MaxPosition    uint64
 	NumBlocks      uint64
@@ -31,9 +35,10 @@ type IBChromosome struct {
 	BlockNames     map[uint64]uint64
 }
 
-func NewIBChromosome(chromosome string, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
+func NewIBChromosome(chromosome string, blockSize uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
 	ibc := IBChromosome{
 		Chromosome:     chromosome,
+		BlockSize:      blockSize,
 		NumSamples:     numSamples,
 		MinPosition:    math.MaxUint64,
 		MaxPosition:    0,
@@ -70,8 +75,9 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	}
 }
 
-func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) {
+func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (isNew bool) {
 	if _, hasBlock := ibc.GetBlock(blockNum); !hasBlock {
+		isNew = false
 		if ibc.KeepEmptyBlock {
 			lastBlockPos := uint64(0)
 			NumBlocks := uint64(len(ibc.Blocks))
@@ -85,11 +91,18 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) {
 			}
 		}
 		ibc.AppendBlock(blockNum)
+	} else {
+		isNew = true
 	}
+	return isNew
 }
 
-func (ibc *IBChromosome) Add(blockNum uint64, position uint64, distance *tools.DistanceMatrix) {
-	ibc.normalizeBlocks(blockNum)
+func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (blockNum uint64, isNew bool) {
+	position := reg.Position
+	distance := reg.Distance
+	blockNum = position / ibc.BlockSize
+
+	isNew = ibc.normalizeBlocks(blockNum)
 
 	if block, success := ibc.GetBlock(blockNum); success {
 		block.Add(position, distance)
@@ -101,6 +114,8 @@ func (ibc *IBChromosome) Add(blockNum uint64, position uint64, distance *tools.D
 		fmt.Println("Failure getting block", blockNum)
 		os.Exit(1)
 	}
+
+	return blockNum, isNew
 }
 
 func (ibc *IBChromosome) Save(outPrefix string) {

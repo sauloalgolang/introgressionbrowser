@@ -1,9 +1,9 @@
 package ibrowser
 
 import (
-	"fmt"
+	// "fmt"
 	"math"
-	"os"
+	// "os"
 	"sync/atomic"
 )
 
@@ -53,14 +53,9 @@ func (ibb *IBBlock) add(position uint64, distance *tools.DistanceMatrix, isAtomi
 	}
 
 	if isAtomic {
-		ibb.Matrix.Add(distance)
-	} else {
 		ibb.Matrix.AddAtomic(distance)
-	}
-
-	if false {
-		fmt.Println("Failure getting block")
-		os.Exit(1)
+	} else {
+		ibb.Matrix.Add(distance)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sync"
 	"sync/atomic"
 )
 
@@ -17,6 +18,8 @@ import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 // IBROWSER SECTION
 //
 //
+
+var mutex = &sync.Mutex{}
 
 type IBrowser struct {
 	reader interfaces.VCFReaderType
@@ -65,7 +68,7 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		Chromosomes:      make(map[string]*IBChromosome, 100),
 		ChromosomesNames: make([]string, 0, 100),
 		//
-		Block: NewIBBlock(0, 0),
+		// Block: NewIBBlock(0, 0),
 	}
 
 	return &ib
@@ -74,8 +77,9 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	numSamples := len(*samples)
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
-	atomic.StoreUint64(&ib.NumSamples, uint64(numSamples))
-	ib.Block = NewIBBlock(0, atomic.LoadUint64(&ib.NumSamples))
+
+	ib.NumSamples = uint64(numSamples)
+	ib.Block = NewIBBlock(0, ib.NumSamples)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -103,7 +107,7 @@ func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 		os.Exit(1)
 	}
 
-	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumSamples, ib.KeepEmptyBlock)
 	ib.ChromosomesNames = append(ib.ChromosomesNames, chromosomeName)
 
 	return ib.Chromosomes[chromosomeName]
@@ -163,17 +167,19 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	atomic.AddUint64(&ib.NumSNPs, 1)
 
-	ib.Block.AddAtomic(0, reg.Distance)
+	// ib.Block.AddAtomic(0, reg.Distance) // did not work
 
-	position := reg.Position
-	blockNum := position / ib.BlockSize
+	mutex.Lock()
+	ib.Block.Add(0, reg.Distance)
+	mutex.Unlock()
+
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
-	if _, hasBlock := chromosome.GetBlock(blockNum); !hasBlock {
+	_, isNew := chromosome.Add(reg)
+
+	if !isNew {
 		atomic.AddUint64(&ib.NumBlocks, 1)
 	}
-
-	chromosome.Add(blockNum, position, reg.Distance)
 }
 
 func (ib *IBrowser) SaveChromosomes(outPrefix string) {
