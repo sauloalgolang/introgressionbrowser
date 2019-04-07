@@ -2,6 +2,7 @@ package ibrowser
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"sync/atomic"
 )
@@ -26,7 +27,7 @@ type IBBlock struct {
 func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
 	ibb := IBBlock{
 		BlockNumber: blockNumber,
-		MinPosition: 0,
+		MinPosition: math.MaxUint64,
 		MaxPosition: 0,
 		NumSNPS:     0,
 		NumSamples:  numSamples,

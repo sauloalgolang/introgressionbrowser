@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"math"
 	"os"
 )
 
@@ -34,7 +35,7 @@ func NewIBChromosome(chromosome string, numSamples uint64, keepEmptyBlock bool) 
 	ibc := IBChromosome{
 		Chromosome:     chromosome,
 		NumSamples:     numSamples,
-		MinPosition:    0,
+		MinPosition:    math.MaxUint64,
 		MaxPosition:    0,
 		NumBlocks:      0,
 		NumSNPS:        0,
