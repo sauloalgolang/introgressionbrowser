@@ -1,6 +1,8 @@
 package interfaces
 
 import (
+	"fmt"
+	"math"
 	"sync/atomic"
 )
 
@@ -10,11 +12,12 @@ type DistanceMatrix2D [][]uint64
 type DistanceMatrix1D struct {
 	Data      DistanceRow
 	Dimension uint64
+	Size      uint64
 }
 
-type DistanceMatrix = DistanceMatrix2D
+type DistanceMatrix = DistanceMatrix1D
 
-var NewDistanceMatrix = NewDistanceMatrix2D
+var NewDistanceMatrix = NewDistanceMatrix1D
 
 //
 //
@@ -82,53 +85,32 @@ func (d *DistanceMatrix2D) Get(p1 uint64, p2 uint64) uint64 {
 //
 //
 
-// https://stackoverflow.com/questions/3187957/how-to-store-a-symmetric-matrix
-//
-// Here is a good method to store a symmetric matrix, it requires only N(N+1)/2 memory:
-//
-// int fromMatrixToVector(int i, int j, int N)
-// {
-//    if (i <= j)
-//       return i * N - (i - 1) * i / 2 + j - i;
-//    else
-//       return j * N - (j - 1) * j / 2 + i - j;
-// }
-// For some triangular matrix
-//
-// 0 1 2 3
-//   4 5 6
-//     7 8
-//       9
-// 1D representation (stored in std::vector, for example) looks like as follows:
-//
-// [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-// And call fromMatrixToVector(1, 2, 4) returns 5, so the matrix data is vector[5] -> 5.
-//
-// The first expression can be rewritten as (2*N - i - 1)*i/2 + j
-
-func fromMatrixToVector(i uint64, j uint64, N uint64) uint64 {
-	if i <= j {
-		return i*N - (i-1)*i/2 + j - i
-	} else {
-		return j*N - (j-1)*j/2 + i - j
-	}
-}
-
 func NewDistanceMatrix1D(dimension uint64) *DistanceMatrix1D {
+	size := dimension * (dimension - 1) / 2
+
+	fmt.Println("NewDistanceMatrix1D :: dimension:", dimension, "size:", size)
+
 	r := DistanceMatrix1D{
-		Data:      make(DistanceRow, dimension, dimension),
+		Data:      make(DistanceRow, size, size),
+		Size:      size,
 		Dimension: dimension,
 	}
 
-	for i := range r.Data {
-		r.Data[i] = uint64(0)
-	}
+	r.Clean()
 
 	return &r
 }
 
 func (d *DistanceMatrix1D) add(e *DistanceMatrix1D, isAtomic bool) {
-	// TODO
+	if isAtomic {
+		for i := range (*d).Data {
+			atomic.AddUint64(&(*d).Data[i], atomic.LoadUint64(&(*e).Data[i]))
+		}
+	} else {
+		for i := range (*d).Data {
+			(*d).Data[i] += (*e).Data[i]
+		}
+	}
 
 	// for i := range *d {
 	// 	di := &(*d)[i]
@@ -159,10 +141,32 @@ func (d *DistanceMatrix1D) Clean() {
 	}
 }
 
+// # https://stackoverflow.com/questions/27086195/linear-index-upper-triangular-matrix
+
+func (d *DistanceMatrix1D) ijToK(i uint64, j uint64) uint64 {
+	dim := float64(d.Dimension)
+	fi := float64(i)
+	fj := float64(j)
+
+	fk := (dim * (dim - 1) / 2) - (dim-fi)*((dim-fi)-1)/2 + fj - fi - 1
+
+	return uint64(fk)
+}
+
+func (d *DistanceMatrix1D) kToIJ(k uint64) (uint64, uint64) {
+	dim := float64(d.Dimension)
+	idx := float64(k)
+
+	fi := dim - 2 - math.Floor(math.Sqrt(-8*idx+4*dim*(dim-1)-7)/2.0-0.5)
+	fj := idx + fi + 1 - dim*(dim-1)/2 + (dim-fi)*((dim-fi)-1)/2
+
+	return uint64(fi), uint64(fj)
+}
+
 func (d *DistanceMatrix1D) Set(p1 uint64, p2 uint64, val uint64) {
-	(*d).Data[fromMatrixToVector(p1, p2, d.Dimension)] += val
+	(*d).Data[d.ijToK(p1, p2)] += val
 }
 
 func (d *DistanceMatrix1D) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
-	return (*d).Data[fromMatrixToVector(p1, p2, (*d).Dimension)]
+	return (*d).Data[d.ijToK(p1, p2)]
 }
