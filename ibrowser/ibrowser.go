@@ -3,15 +3,16 @@ package ibrowser
 import (
 	// "encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 	"sync/atomic"
 )
 
-import "github.com/sauloalgolang/introgressionbrowser/interfaces"
+import (
+	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/save"
+)
 
 //
 //
@@ -123,8 +124,8 @@ func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
 	}
 }
 
-func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool, chromosomeName string) {
-	ib.reader(r, ib.RegisterCallBack, continueOnError, chromosomeName)
+func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool, chromosomeNames []string) {
+	ib.reader(r, ib.RegisterCallBack, continueOnError, chromosomeNames)
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
@@ -138,28 +139,7 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 		}
 	}
 
-	// if reg.Chromosome != ib.lastChrom {
-	// 	if ib.lastChrom != "" {
-	// 		ib.GetOrCreateChromosome(ib.lastChrom).Save("output")
-	// 	}
-
-	// 	ib.lastChrom = reg.Chromosome
-	// 	ib.lastPosition = 0
-	// 	fmt.Println("New chromosome: ", reg.Chromosome)
-
-	// } else {
-	// 	if !(reg.Position > ib.lastPosition) {
-	// 		fmt.Println("Coordinate mismatch")
-	// 		fmt.Println(ib.lastPosition, ">=", reg.Position)
-	// 		os.Exit(1)
-	// 	}
-	// }
-
 	atomic.AddUint64(&ib.NumRegisters, 1)
-
-	// TODO
-	// FILTERING
-	//
 
 	//
 	// Adding distance
@@ -169,7 +149,7 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	// ib.Block.AddAtomic(0, reg.Distance) // did not work
 
-	// mutex.Lock()
+	// mutex.Lock() // did not work
 	ib.Block.Add(0, reg.Distance)
 	// mutex.Unlock()
 
@@ -182,12 +162,14 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	}
 }
 
-func (ib *IBrowser) SaveChromosomes(outPrefix string) {
+func (ib *IBrowser) SaveChromosomes(outPrefix string, format string) {
 	for chromosomeName, chromosome := range ib.Chromosomes {
 
 		fmt.Print("saving chromosome: ", chromosomeName)
 
-		outfile := outPrefix + "." + chromosomeName + ".yaml"
+		baseName := outPrefix + "." + chromosomeName
+
+		outfile := save.GenFilename(baseName, format)
 
 		if _, err := os.Stat(outfile); err == nil {
 			// path/to/whatever exists
@@ -203,36 +185,11 @@ func (ib *IBrowser) SaveChromosomes(outPrefix string) {
 
 			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
 		}
-		chromosome.Save(outPrefix)
+
+		chromosome.Save(outPrefix, format)
 	}
 }
 
-func (ib *IBrowser) Save(outPrefix string) {
-	// ibB, _ := json.Marshal(ib)
-	// fmt.Println(string(ibB))
-
-	// fmt.Println("ib.Block", ib.Block)
-	// fmt.Println()
-
-	// chromosome := ib.Chromosomes[ib.ChromosomesNames[0]]
-
-	// fmt.Println("chromosome.Block", chromosome.Block)
-	// fmt.Println()
-
-	// block := chromosome.Blocks[0]
-
-	// fmt.Println("chromosome.Blocks[0]", block)
-	// fmt.Println()
-
-	d, err := yaml.Marshal(ib)
-	if err != nil {
-		fmt.Printf("error: %v", err)
-		os.Exit(1)
-	}
-
-	// fmt.Printf("--- dump:\n%s\n\n", d)
-	outfile := outPrefix + ".yaml"
-	fmt.Println("saving ibrowser to ", outfile)
-	err = ioutil.WriteFile(outfile, d, 0644)
-	fmt.Println("done")
+func (ib *IBrowser) Save(outPrefix string, format string) {
+	save.Save(outPrefix, format, ib)
 }

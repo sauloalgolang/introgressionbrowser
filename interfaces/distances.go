@@ -111,20 +111,6 @@ func (d *DistanceMatrix1D) add(e *DistanceMatrix1D, isAtomic bool) {
 			(*d).Data[i] += (*e).Data[i]
 		}
 	}
-
-	// for i := range *d {
-	// 	di := &(*d)[i]
-	// 	ei := &(*e)[i]
-
-	// 	for j := i + 1; j < len(*d); j++ {
-	// 		if isAtomic {
-	// 			atomic.AddUint64(&(*di)[j], atomic.LoadUint64(&(*ei)[j]))
-
-	// 		} else {
-	// 			(*di)[j] += (*ei)[j]
-	// 		}
-	// 	}
-	// }
 }
 
 func (d *DistanceMatrix1D) Add(e *DistanceMatrix1D) {

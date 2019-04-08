@@ -1,10 +1,9 @@
 package vcf
 
 import (
+	"bufio"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -29,51 +28,7 @@ const BREAKAT = 100
 //
 //
 
-type chromosomeNamesType struct {
-	Names []string
-}
-
-func (cn *chromosomeNamesType) IndexFileName(outPrefix string) (indexFile string) {
-	indexFile = outPrefix + ".ibindex"
-	return indexFile
-}
-
-func (cn *chromosomeNamesType) Save(outPrefix string) {
-	d, err := yaml.Marshal(cn)
-
-	if err != nil {
-		fmt.Printf("error: %v", err)
-		os.Exit(1)
-	}
-
-	// fmt.Printf("--- dump:\n%s\n\n", d)
-	outfile := cn.IndexFileName(outPrefix)
-	fmt.Println(" saving index to ", outfile)
-	err = ioutil.WriteFile(outfile, d, 0644)
-	fmt.Println(" done")
-}
-
-func (cn *chromosomeNamesType) Load(outPrefix string) {
-	outfile := cn.IndexFileName(outPrefix)
-
-	data, err := ioutil.ReadFile(outfile)
-
-	if err != nil {
-		fmt.Printf("yamlFile. Get err   #%v ", err)
-	}
-
-	err = yaml.Unmarshal(data, &cn)
-
-	if err != nil {
-		fmt.Printf("cannot unmarshal data: %v", err)
-	}
-}
-
-func (cn *chromosomeNamesType) Add(chromosomeName string) {
-	cn.Names = append(cn.Names, chromosomeName)
-}
-
-func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnError bool) (chromosomeNames chromosomeNamesType) {
+func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnError bool) (chromosomeNames interfaces.ChromosomeNamesType) {
 	indexfile := chromosomeNames.IndexFileName(sourceFile)
 
 	if _, err := os.Stat(indexfile); err == nil {
@@ -88,11 +43,11 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnE
 
 		addToNames := func(SampleNames *interfaces.VCFSamples, register *interfaces.VCFRegister) {
 			fmt.Println("adding chromosome ", register.Chromosome, chromosomeNames)
-			chromosomeNames.Add(register.Chromosome)
+			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}
 
 		getNames := func(r io.Reader, continueOnError bool) {
-			ProcessVcfRaw(r, addToNames, continueOnError, "")
+			ProcessVcfRaw(r, addToNames, continueOnError, []string{""})
 		}
 
 		openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, getNames)
@@ -110,17 +65,18 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnE
 //
 
 type ChromosomeCallbackRegister struct {
-	callBack       interfaces.VCFMaskedReaderChromosomeType
-	chromosomeName string
-	wg             *sizedwaitgroup.SizedWaitGroup
+	callBack        interfaces.VCFMaskedReaderChromosomeType
+	chromosomeNames []string
+	wg              *sizedwaitgroup.SizedWaitGroup
 	// wg             *sync.WaitGroup
 }
 
 func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, continueOnError bool) {
 	defer cc.wg.Done()
-	cc.callBack(r, continueOnError, cc.chromosomeName)
 
-	fmt.Println("Finished reading chromosome    :", cc.chromosomeName)
+	cc.callBack(r, continueOnError, cc.chromosomeNames)
+
+	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
 }
 
 //
@@ -156,17 +112,19 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 	}
 
 	chromosomeNames := GatherChromosomeNames(sourceFile, isTar, isGz, continueOnError)
-	for _, chromosomeName := range chromosomeNames.Names {
-		fmt.Println("Gathered Chromosome Names :: ", chromosomeName)
+	for _, chromosomeInfo := range chromosomeNames.Infos {
+		fmt.Println("Gathered Chromosome Names :: ", chromosomeInfo.ChromosomeName, " ", chromosomeInfo.NumRegisters)
 	}
+
+	chromosomeGroups := make([][]string, numThreads, numThreads)
 
 	// wg := sync.WaitGroup
 	wg := sizedwaitgroup.New(numThreads)
-	for _, chromosomeName := range chromosomeNames.Names {
+	for _, chromosomeGroup := range chromosomeGroups {
 		ccr := ChromosomeCallbackRegister{
-			callBack:       callBack,
-			chromosomeName: chromosomeName,
-			wg:             &wg,
+			callBack:        callBack,
+			chromosomeNames: chromosomeGroup,
+			wg:              &wg,
 		}
 
 		// wg.Add(1)
@@ -178,4 +136,10 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 	fmt.Println("Waiting for all chromosomes to complete")
 	wg.Wait()
 	fmt.Println("All chromosomes completed")
+}
+
+func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {
+	bufreader := bufio.NewReader(r)
+	ProcessVcfRaw(bufreader, callback, continueOnError, chromosomeNames)
+	// ProcessVcfVcfGo(bufreader, callback, continueOnError, chromosomeNames)
 }

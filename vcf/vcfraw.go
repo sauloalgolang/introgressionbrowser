@@ -23,14 +23,8 @@ func SliceIndex(limit int, predicate func(i int) bool) int {
 	return -1
 }
 
-func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
-	bufreader := bufio.NewReader(r)
-	ProcessVcfRaw(bufreader, callback, continueOnError, chromosomeName)
-	// ProcessVcfVcfGo(bufreader, callback, continueOnError, chromosomeName)
-}
-
-func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
-	fmt.Println("Opening file to read chromosome:", chromosomeName)
+func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {
+	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
 	contents := bufio.NewScanner(r)
 	cbuffer := make([]byte, 0, bufio.MaxScanTokenSize)
@@ -47,11 +41,14 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		// TempDistance: interfaces.NewDistanceMatrix(0),
 	}
 
+	sendOnlyChromosomeNames := len(chromosomeNames) == 1 && chromosomeNames[0] == ""
+
 	gtIndex := -1
 	lastChromosomeName := ""
 	lineNumber := int64(0)
 	registerNumber := int64(0)
 	foundChromosome := false
+
 	for contents.Scan() {
 		lineNumber++
 
@@ -88,9 +85,12 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 		chrom := cols[0]
 
-		if chromosomeName == "" { // return only chromosome names
+		chromIndex := SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
+
+		if sendOnlyChromosomeNames { // return only chromosome names
 			if chrom != lastChromosomeName { // first time to see it
 				lastChromosomeName = chrom
+
 				register := interfaces.VCFRegisterRaw{
 					LineNumber: lineNumber,
 					Chromosome: chrom,
@@ -103,16 +103,16 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 			}
 			continue
 		} else {
-			if chrom != chromosomeName {
+			if chromIndex == -1 {
 				if foundChromosome { // already found, therefore finished
-					fmt.Println("Finished reading chromosome", chromosomeName)
+					fmt.Println("Finished reading chromosome", chromosomeNames)
 					return
 				} else { // not found yet, therefore continue
 					continue
 				}
 			} else {
 				if !foundChromosome { // first time found. let system know
-					fmt.Println("Found chromosome", chromosomeName)
+					fmt.Println("Found chromosome", chrom)
 					foundChromosome = true
 				}
 			}
@@ -238,4 +238,19 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 		callback(&SampleNames, &register)
 	}
+
+	if sendOnlyChromosomeNames { // return only chromosome names
+		// return final count
+
+		register := interfaces.VCFRegisterRaw{
+			LineNumber: lineNumber,
+			Chromosome: "",
+			Position:   0,
+			Alt:        nil,
+			Samples:    nil,
+		}
+
+		callback(&SampleNames, &register)
+	}
+
 }

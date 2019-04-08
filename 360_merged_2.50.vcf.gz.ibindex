@@ -1,14 +1,40 @@
-names:
-- SL2.50ch00
-- SL2.50ch01
-- SL2.50ch02
-- SL2.50ch03
-- SL2.50ch04
-- SL2.50ch05
-- SL2.50ch06
-- SL2.50ch07
-- SL2.50ch08
-- SL2.50ch09
-- SL2.50ch10
-- SL2.50ch11
-- SL2.50ch12
+infos:
+- chromosomename: SL2.50ch00
+  startposition: 16
+  numregisters: 196167
+- chromosomename: SL2.50ch01
+  startposition: 196183
+  numregisters: 1220209
+- chromosomename: SL2.50ch02
+  startposition: 1416392
+  numregisters: 661454
+- chromosomename: SL2.50ch03
+  startposition: 2077846
+  numregisters: 885683
+- chromosomename: SL2.50ch04
+  startposition: 2963529
+  numregisters: 1063878
+- chromosomename: SL2.50ch05
+  startposition: 4027407
+  numregisters: 1014026
+- chromosomename: SL2.50ch06
+  startposition: 5041433
+  numregisters: 813858
+- chromosomename: SL2.50ch07
+  startposition: 5855291
+  numregisters: 1131425
+- chromosomename: SL2.50ch08
+  startposition: 6986716
+  numregisters: 1032516
+- chromosomename: SL2.50ch09
+  startposition: 8019232
+  numregisters: 1160963
+- chromosomename: SL2.50ch10
+  startposition: 9180195
+  numregisters: 831011
+- chromosomename: SL2.50ch11
+  startposition: 10011206
+  numregisters: 785079
+- chromosomename: SL2.50ch12
+  startposition: 10796285
+  numregisters: 1609326

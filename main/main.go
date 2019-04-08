@@ -14,17 +14,27 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
-var outfile = *flag.String("outfile prefix", "output", "write memory profile to `file`")
-var continueOnError = *flag.Bool("continueOnError", true, "continue reading the file on error")
-var blockSize = *flag.Uint64("BlockSize", 1000000, "Block size")
-var keepEmptyBlock = *flag.Bool("KeepEmptyBlocks", true, "Keep empty blocks")
-var numThreads = *flag.Int("NumberThreads", 4, "Number of threads")
+var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to `file`")
+var memprofile = flag.String("memprofile", "", "Write memory profile to `file`")
+var outfile = flag.String("outfile", "output", "Outfile prefix")
+var format = flag.String("format", "yaml", "File format: yaml, bson")
+var continueOnError = flag.Bool("continueonerror", true, "Continue reading the file on error")
+var blockSize = flag.Uint64("blocksize", 1000000, "Block size")
+var keepEmptyBlock = flag.Bool("keepemptyblocks", true, "Keep empty blocks")
+var numThreads = flag.Int("numberthreads", 4, "Number of threads")
 
 func main() {
 	// get the arguments from the command line
 	flag.Parse()
+
+	fmt.Println("cpuprofile     :", *cpuprofile)
+	fmt.Println("memprofile     :", *memprofile)
+	fmt.Println("outfile        :", *outfile)
+	fmt.Println("format         :", *format)
+	fmt.Println("continueonerror:", *continueOnError)
+	fmt.Println("blocksize      :", *blockSize)
+	fmt.Println("keepemptyblock :", *keepEmptyBlock)
+	fmt.Println("numthreads     :", *numThreads)
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -40,8 +50,6 @@ func main() {
 
 	sourceFile := flag.Arg(0)
 
-	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, blockSize, keepEmptyBlock)
-
 	if sourceFile == "" {
 		fmt.Println("Dude, you didn't pass a input file!")
 		os.Exit(1)
@@ -49,10 +57,12 @@ func main() {
 		fmt.Println("Openning", sourceFile)
 	}
 
-	vcf.OpenVcfFile(sourceFile, continueOnError, numThreads, ibrowser.ReaderCallBack)
+	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, *blockSize, *keepEmptyBlock)
 
-	// ibrowser.SaveChromosomes(outfile)
-	ibrowser.Save(outfile)
+	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.ReaderCallBack)
+
+	// ibrowser.SaveChromosomes(*outfile, *format)
+	ibrowser.Save(*outfile, *format)
 
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)

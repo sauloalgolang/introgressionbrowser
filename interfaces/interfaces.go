@@ -45,6 +45,6 @@ type VCFRegisterRaw struct {
 type VCFRegister = VCFRegisterRaw
 
 type VCFCallBack func(*VCFSamples, *VCFRegister)
-type VCFReaderType func(io.Reader, VCFCallBack, bool, string)
+type VCFReaderType func(io.Reader, VCFCallBack, bool, []string)
 type VCFMaskedReaderType func(io.Reader, bool)
-type VCFMaskedReaderChromosomeType func(io.Reader, bool, string)
+type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)

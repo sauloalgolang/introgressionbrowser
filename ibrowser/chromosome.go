@@ -2,8 +2,6 @@ package ibrowser
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"math"
 	"os"
 )
@@ -12,6 +10,7 @@ import "runtime/debug"
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/save"
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
@@ -118,19 +117,6 @@ func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (blockNum uint64, isNe
 	return blockNum, isNew
 }
 
-func (ibc *IBChromosome) Save(outPrefix string) {
-	// ibB, _ := json.Marshal(ib)
-	// fmt.Println(string(ibB))
-
-	d, err := yaml.Marshal(ibc)
-	if err != nil {
-		fmt.Printf("error: %v", err)
-		os.Exit(1)
-	}
-
-	// fmt.Printf("--- dump:\n%s\n\n", d)
-	outfile := outPrefix + "." + ibc.Chromosome + ".yaml"
-	fmt.Println("saving chromosome ", ibc.Chromosome, " to ", outfile)
-	err = ioutil.WriteFile(outfile, d, 0644)
-	fmt.Println("done")
+func (ibc *IBChromosome) Save(outPrefix string, format string) {
+	save.Save(outPrefix+"."+ibc.Chromosome, format, ibc)
 }
