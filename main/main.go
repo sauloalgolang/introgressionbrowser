@@ -19,7 +19,8 @@ var memprofile = flag.String("memprofile", "", "Write memory profile to `file`")
 var outfile = flag.String("outfile", "output", "Outfile prefix")
 var format = flag.String("format", "yaml", "File format: yaml, bson")
 var continueOnError = flag.Bool("continueonerror", true, "Continue reading the file on error")
-var blockSize = flag.Uint64("blocksize", 1000000, "Block size")
+var blockSize = flag.Uint64("blocksize", 100000, "Block size")
+var minSnpPerBlock = flag.Uint64("minsnpperblock", 10, "Minimum number of SNPs per block")
 var keepEmptyBlock = flag.Bool("keepemptyblocks", true, "Keep empty blocks")
 var numThreads = flag.Int("numberthreads", 4, "Number of threads")
 
@@ -33,6 +34,7 @@ func main() {
 	fmt.Println("format         :", *format)
 	fmt.Println("continueonerror:", *continueOnError)
 	fmt.Println("blocksize      :", *blockSize)
+	fmt.Println("minsnpperblock :", *minSnpPerBlock) // TODO: implement
 	fmt.Println("keepemptyblock :", *keepEmptyBlock)
 	fmt.Println("numthreads     :", *numThreads)
 
@@ -61,7 +63,6 @@ func main() {
 
 	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.ReaderCallBack)
 
-	// ibrowser.SaveChromosomes(*outfile, *format)
 	ibrowser.Save(*outfile, *format)
 
 	if *memprofile != "" {

@@ -25,7 +25,7 @@ func EmptyUnMarshaler(data []byte, v interface{}) error {
 }
 
 func GenFilename(outPrefix string, extension string) string {
-	return outPrefix + extension
+	return outPrefix + "." + extension
 }
 
 func GetExtensionAndMarshaler(format string) (string, Marshaler, UnMarshaler) {

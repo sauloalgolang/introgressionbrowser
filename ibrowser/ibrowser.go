@@ -38,7 +38,7 @@ type IBrowser struct {
 	lastChrom    string
 	lastPosition uint64
 	//
-	Chromosomes      map[string]*IBChromosome
+	chromosomes      map[string]*IBChromosome
 	ChromosomesNames []string
 	//
 	Block *IBBlock
@@ -66,7 +66,7 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		lastChrom:    "",
 		lastPosition: 0,
 		//
-		Chromosomes:      make(map[string]*IBChromosome, 100),
+		chromosomes:      make(map[string]*IBChromosome, 100),
 		ChromosomesNames: make([]string, 0, 100),
 		//
 		// Block: NewIBBlock(0, 0),
@@ -80,7 +80,7 @@ func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.Block = NewIBBlock(0, ib.NumSamples)
+	ib.Block = NewIBBlock("", ib.BlockSize, 0, 0, ib.NumSamples)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -93,7 +93,7 @@ func (ib *IBrowser) GetSamples() interfaces.VCFSamples {
 }
 
 func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
-	if chromosome, ok := ib.Chromosomes[chromosomeName]; ok {
+	if chromosome, ok := ib.chromosomes[chromosomeName]; ok {
 		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome, ok
 	} else {
@@ -108,10 +108,10 @@ func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 		os.Exit(1)
 	}
 
-	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumSamples, ib.KeepEmptyBlock)
 	ib.ChromosomesNames = append(ib.ChromosomesNames, chromosomeName)
 
-	return ib.Chromosomes[chromosomeName]
+	return ib.chromosomes[chromosomeName]
 }
 
 func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
@@ -162,14 +162,16 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	}
 }
 
-func (ib *IBrowser) SaveChromosomes(outPrefix string, format string) {
-	for chromosomeName, chromosome := range ib.Chromosomes {
+func (ib *IBrowser) Save(outPrefix string, format string) {
+	save.Save(outPrefix, format, ib)
+	ib.saveChromosomes(outPrefix, format)
+}
 
+func (ib *IBrowser) saveChromosomes(outPrefix string, format string) {
+	for chromosomeName, chromosome := range ib.chromosomes {
 		fmt.Print("saving chromosome: ", chromosomeName)
 
-		baseName := outPrefix + "." + chromosomeName
-
-		outfile := save.GenFilename(baseName, format)
+		outfile := chromosome.GenFilename(outPrefix, format)
 
 		if _, err := os.Stat(outfile); err == nil {
 			// path/to/whatever exists
@@ -188,8 +190,4 @@ func (ib *IBrowser) SaveChromosomes(outPrefix string, format string) {
 
 		chromosome.Save(outPrefix, format)
 	}
-}
-
-func (ib *IBrowser) Save(outPrefix string, format string) {
-	save.Save(outPrefix, format, ib)
 }

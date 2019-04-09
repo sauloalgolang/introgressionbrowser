@@ -8,7 +8,7 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/save"
 
-const IndexExtension = ".ibindex"
+const IndexExtension = "ibindex"
 
 type ChromosomeInfo struct {
 	ChromosomeName string

@@ -20,7 +20,7 @@ import (
 )
 
 const DEBUG = false
-const BREAKAT = 0
+const BREAKAT = 75000
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 

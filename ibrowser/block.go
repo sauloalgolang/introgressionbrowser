@@ -1,7 +1,7 @@
 package ibrowser
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	// "os"
 	"sync/atomic"
@@ -9,6 +9,7 @@ import (
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
+	"github.com/sauloalgolang/introgressionbrowser/save"
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
@@ -19,22 +20,28 @@ import (
 //
 
 type IBBlock struct {
-	BlockNumber uint64
-	MinPosition uint64
-	MaxPosition uint64
-	NumSNPS     uint64
-	NumSamples  uint64
-	Matrix      *interfaces.DistanceMatrix
+	ChromosomeName string
+	BlockSize      uint64
+	BlockPosition  uint64
+	BlockNumber    uint64
+	MinPosition    uint64
+	MaxPosition    uint64
+	NumSNPS        uint64
+	NumSamples     uint64
+	Matrix         *interfaces.DistanceMatrix
 }
 
-func NewIBBlock(blockNumber uint64, numSamples uint64) *IBBlock {
+func NewIBBlock(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, numSamples uint64) *IBBlock {
 	ibb := IBBlock{
-		BlockNumber: blockNumber,
-		MinPosition: math.MaxUint64,
-		MaxPosition: 0,
-		NumSNPS:     0,
-		NumSamples:  numSamples,
-		Matrix:      interfaces.NewDistanceMatrix(numSamples),
+		ChromosomeName: chromosomeName,
+		BlockSize:      blockSize,
+		BlockPosition:  blockPosition,
+		BlockNumber:    blockNumber,
+		MinPosition:    math.MaxUint64,
+		MaxPosition:    0,
+		NumSNPS:        0,
+		NumSamples:     numSamples,
+		Matrix:         interfaces.NewDistanceMatrix(numSamples),
 	}
 
 	return &ibb
@@ -68,4 +75,15 @@ func (ibb *IBBlock) Add(position uint64, distance *interfaces.DistanceMatrix) {
 
 func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatrix) {
 	ibb.add(position, distance, true)
+}
+
+func (ibb *IBBlock) GenFilename(outPrefix string, format string) (fileName string) {
+	baseName := outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
+	fileName = save.GenFilename(baseName, format)
+	return fileName
+}
+
+func (ibb *IBBlock) Save(outPrefix string, format string) {
+	fileName := ibb.GenFilename(outPrefix, format)
+	save.Save(fileName, format, ibb)
 }

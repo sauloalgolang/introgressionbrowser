@@ -21,7 +21,7 @@ import (
 //
 
 type IBChromosome struct {
-	Chromosome     string
+	ChromosomeName string
 	BlockSize      uint64
 	MinPosition    uint64
 	MaxPosition    uint64
@@ -30,13 +30,13 @@ type IBChromosome struct {
 	NumSamples     uint64
 	KeepEmptyBlock bool
 	Block          *IBBlock
-	Blocks         []*IBBlock
 	BlockNames     map[uint64]uint64
+	blocks         []*IBBlock
 }
 
-func NewIBChromosome(chromosome string, blockSize uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
+func NewIBChromosome(chromosomeName string, blockSize uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
 	ibc := IBChromosome{
-		Chromosome:     chromosome,
+		ChromosomeName: chromosomeName,
 		BlockSize:      blockSize,
 		NumSamples:     numSamples,
 		MinPosition:    math.MaxUint64,
@@ -44,31 +44,32 @@ func NewIBChromosome(chromosome string, blockSize uint64, numSamples uint64, kee
 		NumBlocks:      0,
 		NumSNPS:        0,
 		KeepEmptyBlock: keepEmptyBlock,
-		Block:          NewIBBlock(0, numSamples),
-		Blocks:         make([]*IBBlock, 0, 100),
+		Block:          NewIBBlock(chromosomeName, blockSize, 0, 0, numSamples),
 		BlockNames:     make(map[uint64]uint64, 100),
+		blocks:         make([]*IBBlock, 0, 100),
 	}
 
 	return &ibc
 }
 
 func (ibc *IBChromosome) AppendBlock(blockNum uint64) {
-	ibc.Blocks = append(ibc.Blocks, NewIBBlock(blockNum, ibc.NumSamples))
-	ibc.BlockNames[blockNum] = uint64(len(ibc.Blocks)) - uint64(1)
+	blockPos := uint64(len(ibc.blocks))
+	ibc.blocks = append(ibc.blocks, NewIBBlock(ibc.ChromosomeName, ibc.BlockSize, blockNum, blockPos, ibc.NumSamples))
+	ibc.BlockNames[blockNum] = blockPos
 	ibc.NumBlocks++
 }
 
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	if blockPos, ok := ibc.BlockNames[blockNum]; ok {
-		if blockPos >= uint64(len(ibc.Blocks)) {
-			fmt.Println(&ibc, "Index out of range. block num:", blockNum, "block pos:", blockPos, "len:", len(ibc.Blocks), "NumBlocks:", ibc.NumBlocks)
+		if blockPos >= uint64(len(ibc.blocks)) {
+			fmt.Println(&ibc, "Index out of range. block num:", blockNum, "block pos:", blockPos, "len:", len(ibc.blocks), "NumBlocks:", ibc.NumBlocks)
 			fmt.Println(&ibc, "BlockNames", ibc.BlockNames)
-			fmt.Println(&ibc, "Blocks", ibc.Blocks)
+			fmt.Println(&ibc, "Blocks", ibc.blocks)
 			debug.PrintStack()
 			os.Exit(1)
 		}
 
-		return ibc.Blocks[blockPos], ok
+		return ibc.blocks[blockPos], ok
 	} else {
 		return &IBBlock{}, ok
 	}
@@ -79,7 +80,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (isNew bool) {
 		isNew = false
 		if ibc.KeepEmptyBlock {
 			lastBlockPos := uint64(0)
-			NumBlocks := uint64(len(ibc.Blocks))
+			NumBlocks := uint64(len(ibc.blocks))
 
 			if NumBlocks != 0 {
 				lastBlockPos = NumBlocks - 1
@@ -117,6 +118,44 @@ func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (blockNum uint64, isNe
 	return blockNum, isNew
 }
 
+func (ibc *IBChromosome) GenFilename(outPrefix string, format string) (fileName string) {
+	baseName := outPrefix + "." + ibc.ChromosomeName
+	fileName = save.GenFilename(baseName, format)
+	return fileName
+}
+
 func (ibc *IBChromosome) Save(outPrefix string, format string) {
-	save.Save(outPrefix+"."+ibc.Chromosome, format, ibc)
+	baseName := ibc.GenFilename(outPrefix, format)
+	save.Save(baseName, format, ibc)
+	ibc.saveBlocks(baseName, format)
+}
+
+func (ibc *IBChromosome) saveBlocks(outPrefix string, format string) {
+	// BlockNames:     make(map[uint64]uint64, 100),
+	// blocks:         make([]*IBBlock, 0, 100),
+
+	for blockNum, blockPos := range ibc.BlockNames {
+		block := ibc.blocks[blockPos]
+
+		fmt.Print("saving block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+
+		outfile := block.GenFilename(outPrefix, format)
+
+		if _, err := os.Stat(outfile); err == nil {
+			// path/to/whatever exists
+			fmt.Println(" exists")
+			continue
+
+		} else if os.IsNotExist(err) {
+			fmt.Println(" creating")
+			// path/to/whatever does *not* exist
+
+		} else {
+			// Schrodinger: file may or may not exist. See err for details.
+
+			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
+		}
+
+		block.Save(outPrefix, format)
+	}
 }

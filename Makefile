@@ -1,12 +1,23 @@
 GOROOT=$(shell go env GOROOT)
 
-$(info GOROOT $(GOROOT))
+$(info GOROOT  $(GOROOT))
+
+
 
 ifndef FORMAT
 FORMAT=yaml
 endif
 
-$(info FORMAT $(FORMAT))
+$(info FORMAT  $(FORMAT))
+
+
+ifndef OUTFILE
+OUTFILE=res/output
+endif
+
+$(info OUTFILE $(OUTFILE))
+
+
 
 .PHONY: help
 
@@ -87,14 +98,14 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 .PHONY: clean run150 run360 prof prof_run
 
 clean:
-	rm -v output*.yaml | true
-	rm -v output*.bson | true
+	rm -v $(OUTFILE)*.yaml | true
+	rm -v $(OUTFILE)*.bson | true
 
 run150: clean ibrowser 150_VCFs_2.50.tar.gz
-	time bin/ibrowser -format $(FORMAT) 150_VCFs_2.50.tar.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 150_VCFs_2.50.tar.gz
 
 run360: clean ibrowser 360_merged_2.50.vcf.gz
-	time bin/ibrowser -format $(FORMAT) 360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 360_merged_2.50.vcf.gz
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof
