@@ -3,6 +3,8 @@ package vcf
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"io"
 	"os"
 	"strings"
@@ -18,7 +20,7 @@ import (
 )
 
 const DEBUG = false
-const BREAKAT = 100
+const BREAKAT = 0
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
@@ -42,7 +44,7 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnE
 		fmt.Println(" creating")
 
 		addToNames := func(SampleNames *interfaces.VCFSamples, register *interfaces.VCFRegister) {
-			fmt.Println("adding chromosome ", register.Chromosome, chromosomeNames)
+			fmt.Println("adding chromosome ", register.Chromosome)
 			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}
 
@@ -74,6 +76,12 @@ type ChromosomeCallbackRegister struct {
 func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, continueOnError bool) {
 	defer cc.wg.Done()
 
+	cc.callBack(r, continueOnError, cc.chromosomeNames)
+
+	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
+}
+
+func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, continueOnError bool) {
 	cc.callBack(r, continueOnError, cc.chromosomeNames)
 
 	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
@@ -112,30 +120,89 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 	}
 
 	chromosomeNames := GatherChromosomeNames(sourceFile, isTar, isGz, continueOnError)
-	for _, chromosomeInfo := range chromosomeNames.Infos {
-		fmt.Println("Gathered Chromosome Names :: ", chromosomeInfo.ChromosomeName, " ", chromosomeInfo.NumRegisters)
-	}
 
-	chromosomeGroups := make([][]string, numThreads, numThreads)
+	p := message.NewPrinter(language.English)
+	p.Print("Gathered Chromosome Names:\n")
+	p.Printf(" NumChromosomes : %12d\n", chromosomeNames.NumChromosomes)
+	p.Printf(" StartPosition  : %12d\n", chromosomeNames.StartPosition)
+	p.Printf(" EndPosition    : %12d\n", chromosomeNames.EndPosition)
+	p.Printf(" NumRegisters   : %12d\n", chromosomeNames.NumRegisters)
 
-	// wg := sync.WaitGroup
-	wg := sizedwaitgroup.New(numThreads)
-	for _, chromosomeGroup := range chromosomeGroups {
+	if numThreads == 1 {
+		fmt.Println("Running single threaded")
+
+		chromosomeGroup := make([]string, chromosomeNames.NumChromosomes, chromosomeNames.NumChromosomes)
+
+		for _, chromosomeInfo := range chromosomeNames.Infos {
+			chromosomeGroup = append(chromosomeGroup, chromosomeInfo.ChromosomeName)
+		}
+
 		ccr := ChromosomeCallbackRegister{
 			callBack:        callBack,
 			chromosomeNames: chromosomeGroup,
-			wg:              &wg,
 		}
 
-		// wg.Add(1)
-		wg.Add()
+		openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallbackSingleThreaded)
 
-		go openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallback)
+		fmt.Println("Finished reading file")
+
+	} else {
+		chromosomeGroups := make([][]string, numThreads, numThreads)
+		chromosomeGroupsSizes := make([]int64, numThreads, numThreads)
+		fraq := chromosomeNames.NumRegisters / int64(numThreads) / int64(numThreads)
+
+		p.Printf(" Fraction       : %12d\n", fraq)
+		p.Println()
+
+		cummChromSize := int64(0)
+		for _, chromosomeInfo := range chromosomeNames.Infos {
+			idx := cummChromSize / fraq / int64(numThreads+(numThreads/3))
+
+			if idx >= int64(numThreads) {
+				p.Printf("%12d\n", idx)
+				idx = int64(numThreads) - 1
+			}
+
+			cummChromSize += chromosomeInfo.NumRegisters
+
+			p.Printf(" Chromosome Name: %s\n", chromosomeInfo.ChromosomeName)
+			p.Printf("  Start Position: %12d\n", chromosomeInfo.StartPosition)
+			p.Printf("  Registers     : %12d\n", chromosomeInfo.NumRegisters)
+			p.Printf("  Cumm Registers: %12d\n", cummChromSize)
+			p.Printf("  Thread        : %12d\n", idx)
+
+			if len(chromosomeGroups[idx]) == 0 {
+				chromosomeGroups[idx] = make([]string, 0, 0)
+			}
+
+			chromosomeGroupsSizes[idx] += chromosomeInfo.NumRegisters
+			chromosomeGroups[idx] = append(chromosomeGroups[idx], chromosomeInfo.ChromosomeName)
+
+			p.Printf("  Group Size    : %12d\n", chromosomeGroupsSizes[idx])
+			p.Printf("  Group         : %v\n", chromosomeGroups[idx])
+			p.Println()
+		}
+		p.Println()
+
+		// wg := sync.WaitGroup
+		wg := sizedwaitgroup.New(numThreads)
+		for _, chromosomeGroup := range chromosomeGroups {
+			ccr := ChromosomeCallbackRegister{
+				callBack:        callBack,
+				chromosomeNames: chromosomeGroup,
+				wg:              &wg,
+			}
+
+			// wg.Add(1)
+			wg.Add()
+
+			go openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallback)
+		}
+
+		fmt.Println("Waiting for all chromosomes to complete")
+		wg.Wait()
+		fmt.Println("All chromosomes completed")
 	}
-
-	fmt.Println("Waiting for all chromosomes to complete")
-	wg.Wait()
-	fmt.Println("All chromosomes completed")
 }
 
 func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {

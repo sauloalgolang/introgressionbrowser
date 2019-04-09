@@ -17,7 +17,11 @@ type ChromosomeInfo struct {
 }
 
 type ChromosomeNamesType struct {
-	Infos []ChromosomeInfo
+	Infos          []ChromosomeInfo
+	NumChromosomes int64
+	StartPosition  int64
+	EndPosition    int64
+	NumRegisters   int64
 }
 
 func NewChromosomeNames(size int, cap int) (cn *ChromosomeNamesType) {
@@ -63,13 +67,20 @@ func (cn *ChromosomeNamesType) Add(chromosomeName string, startPosition int64) {
 	} else {
 		fmt.Println("got last chromosome", cn)
 
-		for p := 0; p < len(cn.Infos)-1; p++ {
+		cn.NumChromosomes = int64(len(cn.Infos))
+		cn.NumRegisters = 0
+
+		for p := int64(0); p < cn.NumChromosomes-1; p++ {
 			infoC := &cn.Infos[p]
 			infoN := &cn.Infos[p+1]
 			infoC.NumRegisters = infoN.StartPosition - infoC.StartPosition
+			cn.NumRegisters += infoC.NumRegisters
 		}
 
-		cn.Infos[len(cn.Infos)-1].NumRegisters = startPosition - cn.Infos[len(cn.Infos)-2].StartPosition
+		cn.Infos[cn.NumChromosomes-1].NumRegisters = startPosition - cn.Infos[cn.NumChromosomes-2].StartPosition
+
+		cn.StartPosition = cn.Infos[0].StartPosition
+		cn.EndPosition = cn.Infos[cn.NumChromosomes-1].StartPosition
 
 		fmt.Println("fixed chromosome sizes", cn)
 	}

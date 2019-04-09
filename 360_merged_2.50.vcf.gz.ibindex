@@ -38,3 +38,7 @@ infos:
 - chromosomename: SL2.50ch12
   startposition: 10796285
   numregisters: 1609326
+numchromosomes: 13
+startposition: 16
+endposition: 10796285
+numregisters: 10796269
