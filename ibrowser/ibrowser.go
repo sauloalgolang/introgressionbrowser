@@ -180,7 +180,10 @@ func (ib *IBrowser) saveBlock(outPrefix string, format string) {
 }
 
 func (ib *IBrowser) saveChromosomes(outPrefix string, format string) {
-	for chromosomeName, chromosome := range ib.chromosomes {
+	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
+		chromosomeName := ib.ChromosomesNames[chromosomePos]
+		chromosome := ib.chromosomes[chromosomeName]
+
 		_, fileName := chromosome.GenFilename(outPrefix, format)
 
 		fmt.Print("saving chromosome: ", chromosomeName, " to: ", fileName)

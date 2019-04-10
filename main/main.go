@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 )
 
 import (
@@ -22,9 +24,11 @@ var format = flag.String("format", "yaml", "File format: yaml, bson, binary")
 var continueOnError = flag.Bool("continueonerror", true, "Continue reading the file on parsing error")
 var blockSize = flag.Uint64("blocksize", 100000, "Block size")
 var minSnpPerBlock = flag.Uint64("minsnpperblock", 10, "Minimum number of SNPs per block")
+var maxSnpPerBlock = flag.Uint64("maxsnpperblock", math.MaxUint64, "Maximum number of SNPs per block")
 var keepEmptyBlock = flag.Bool("keepemptyblocks", true, "Keep empty blocks")
 var numThreads = flag.Int("numberthreads", 4, "Number of threads")
 var version = flag.Bool("version", false, "Print version and exit")
+var BREAKAT string
 
 func main() {
 	// get the arguments from the command line
@@ -37,9 +41,23 @@ func main() {
 	fmt.Println("continueonerror :", *continueOnError)
 	fmt.Println("blocksize       :", *blockSize)
 	fmt.Println("minsnpperblock  :", *minSnpPerBlock) // TODO: implement
+	fmt.Println("maxsnpperblock  :", *maxSnpPerBlock) // TODO: implement
 	fmt.Println("keepemptyblock  :", *keepEmptyBlock)
 	fmt.Println("numthreads      :", *numThreads)
 	fmt.Println("version         :", *version)
+
+	if BREAKAT != "" {
+		BREAKATINT, err := strconv.ParseInt(BREAKAT, 10, 64)
+
+		if err != nil {
+			fmt.Println("Error parsing BREAKAT compile time variable: ", BREAKAT, err)
+		}
+
+		if BREAKATINT != 0 {
+			vcf.BREAKAT = BREAKATINT
+			fmt.Println("BREAKAT         :", vcf.BREAKAT)
+		}
+	}
 
 	if *version {
 		fmt.Println("IBROWSER_GIT_COMMIT_HASH    :", IBROWSER_GIT_COMMIT_HASH)
@@ -48,7 +66,7 @@ func main() {
 		fmt.Println("IBROWSER_GIT_COMMIT_NOTES   :", IBROWSER_GIT_COMMIT_NOTES)
 		fmt.Println("IBROWSER_GIT_COMMIT_TITLE   :", IBROWSER_GIT_COMMIT_TITLE)
 		fmt.Println("IBROWSER_GIT_STATUS         :", IBROWSER_GIT_STATUS)
-		fmt.Println("IBROWSER_GIT_DIFF           :", GIT_DIFF)
+		fmt.Println("IBROWSER_GIT_DIFF           :", IBROWSER_GIT_DIFF)
 		os.Exit(0)
 	}
 

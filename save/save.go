@@ -18,13 +18,14 @@ import (
 //
 
 var Formats = map[string]SaveFormat{
-	"yaml": SaveFormat{"yaml", true, yaml.Marshal, yaml.Unmarshal},
-	"bson": SaveFormat{"bson", true, bson.Marshal, bson.Unmarshal},
-	// "json": SaveFormat{".json", true, json.Marshal, json.Unmarshal}, // no numerical key
-	// "binary": SaveFormat{"bin", true, binary.Marshal, binary.Unmarshal}, // fail to export reader
+	"yaml": SaveFormat{"yaml", false, yaml.Marshal, yaml.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
+	"bson": SaveFormat{"bson", false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
+	// "json": SaveFormat{".json", false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
+	// "binary": SaveFormat{"bin", false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
+	"gob": SaveFormat{"gob", false, emptyMarshaler, emptyUnMarshaler, gobMarsheler, gobUnMarsheler},
 }
 
-var FormatNames = []string{"yaml", "bson", "binary"}
+var FormatNames = []string{"yaml", "bson", "gob"}
 
 //
 //
@@ -32,23 +33,35 @@ var FormatNames = []string{"yaml", "bson", "binary"}
 //
 //
 
-type Marshaler func(val interface{}) ([]byte, error)
-type UnMarshaler func(data []byte, v interface{}) error
+type Marshaler func(interface{}) ([]byte, error)
+type UnMarshaler func([]byte, interface{}) error
+type MarshalerStreamer func(string, interface{}) ([]byte, error)
+type UnMarshalerStreamer func(string, interface{}) error
 
 type SaveFormat struct {
-	Extension   string
-	AsByte      bool // returns bytes or write directly to stream
-	Marshaler   Marshaler
-	UnMarshaler UnMarshaler
+	Extension           string
+	Streamer            bool // returns bytes or write directly to stream
+	Marshaler           Marshaler
+	UnMarshaler         UnMarshaler
+	MarshalerStreamer   MarshalerStreamer
+	UnMarshalerStreamer UnMarshalerStreamer
 }
 
-// func emptyMarshaler(val interface{}) ([]byte, error) {
-// 	return []byte{}, *new(error)
-// }
+func emptyMarshaler(val interface{}) ([]byte, error) {
+	return []byte{}, *new(error)
+}
 
-// func emptyUnMarshaler(data []byte, v interface{}) error {
-// 	return *new(error)
-// }
+func emptyUnMarshaler(data []byte, val interface{}) error {
+	return *new(error)
+}
+
+func emptyMarshalerStreamer(filename string, val interface{}) ([]byte, error) {
+	return []byte{}, *new(error)
+}
+
+func emptyUnMarshalerStreamer(filename string, val interface{}) error {
+	return *new(error)
+}
 
 //
 //

@@ -1,6 +1,7 @@
 GOROOT=$(shell go env GOROOT)
 $(info GOROOT  $(GOROOT))
 
+
 ifndef FORMAT
 FORMAT=yaml
 endif
@@ -13,6 +14,9 @@ OUTFILE=res/output
 endif
 
 $(info OUTFILE $(OUTFILE))
+
+BREAKAT=100
+$(info BREAKAT $(BREAKAT))
 
 GIT_COMMIT_HASH=$(shell git log --pretty=format:'%H' -n 1 | sed "s/\"/'/g"))
 GIT_COMMIT_AUTHOR=$(shell git log --pretty=format:'%an (%aE) %ai' -n 1 | sed "s/\"/'/g")
@@ -80,7 +84,7 @@ version:
 	cat main/commit.go
 
 bin/ibrowser: version */*.go
-	cd main/ && go build -v -race -msan -p 4 -o ../$@ .
+	cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
 	bin/ibrowser --version
 
 bin/ibrowser.exe: version */*.go

@@ -10,6 +10,8 @@ import (
 //
 //
 
+type DistanceMatrix2D [][]uint64
+
 func NewDistanceMatrix2D(dimension uint64) *DistanceMatrix2D {
 	r := make(DistanceMatrix2D, dimension, dimension)
 

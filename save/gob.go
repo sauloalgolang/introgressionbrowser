@@ -10,7 +10,7 @@ import (
 // type Marshaler func(val interface{}) ([]byte, error)
 // type UnMarshaler func(data []byte, v interface{}) error
 
-func globMarsheler(filePath string, object interface{}) ([]byte, error) {
+func gobMarsheler(filePath string, object interface{}) ([]byte, error) {
 	file, err := os.Create(filePath)
 	defer file.Close()
 
@@ -22,7 +22,7 @@ func globMarsheler(filePath string, object interface{}) ([]byte, error) {
 	return []byte{}, err
 }
 
-func globUnMarsheler(filePath string, object interface{}) error {
+func gobUnMarsheler(filePath string, object interface{}) error {
 	file, err := os.Open(filePath)
 	defer file.Close()
 

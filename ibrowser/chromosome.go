@@ -168,8 +168,9 @@ func (ibc *IBChromosome) saveBlocks(outPrefix string, format string) {
 
 	outPrefix = outPrefix + "_blocks"
 
-	for blockNum, blockPos := range ibc.BlockNames {
+	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
 		block := ibc.blocks[blockPos]
+		blockNum := block.BlockNumber
 
 		_, fileName := block.GenFilename(outPrefix, format)
 
