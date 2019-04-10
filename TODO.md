@@ -10,3 +10,7 @@
 - Ibrowser per sample stats (?)
 - Try to write to parquet
     - https://github.com/xitongsys/parquet-go
+- Consider TABIX
+    - https://github.com/brentp/bix
+    - https://github.com/biogo/hts
+    - https://github.com/brentp/cgotabix

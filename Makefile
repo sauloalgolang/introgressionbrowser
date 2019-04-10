@@ -137,6 +137,7 @@ clean:
 	rm -v $(OUTFILE)*.yaml | true
 	rm -v $(OUTFILE)*.bson | true
 	rm -v $(OUTFILE)*.bin  | true
+	rm -v $(OUTFILE)*.gob  | true
 
 run150: clean ibrowser 150_VCFs_2.50.tar.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 150_VCFs_2.50.tar.gz

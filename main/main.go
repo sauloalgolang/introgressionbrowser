@@ -8,7 +8,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"strconv"
+	// "strconv"
 )
 
 import (
@@ -28,7 +28,8 @@ var maxSnpPerBlock = flag.Uint64("maxsnpperblock", math.MaxUint64, "Maximum numb
 var keepEmptyBlock = flag.Bool("keepemptyblocks", true, "Keep empty blocks")
 var numThreads = flag.Int("numberthreads", 4, "Number of threads")
 var version = flag.Bool("version", false, "Print version and exit")
-var BREAKAT string
+
+// var BREAKAT string
 
 func main() {
 	// get the arguments from the command line
@@ -46,18 +47,18 @@ func main() {
 	fmt.Println("numthreads      :", *numThreads)
 	fmt.Println("version         :", *version)
 
-	if BREAKAT != "" {
-		BREAKATINT, err := strconv.ParseInt(BREAKAT, 10, 64)
+	// if BREAKAT != "" {
+	// 	BREAKATINT, err := strconv.ParseInt(BREAKAT, 10, 64)
 
-		if err != nil {
-			fmt.Println("Error parsing BREAKAT compile time variable: ", BREAKAT, err)
-		}
+	// 	if err != nil {
+	// 		fmt.Println("Error parsing BREAKAT compile time variable: ", BREAKAT, err)
+	// 	}
 
-		if BREAKATINT != 0 {
-			vcf.BREAKAT = BREAKATINT
-			fmt.Println("BREAKAT         :", vcf.BREAKAT)
-		}
-	}
+	// 	if BREAKATINT != 0 {
+	// 		vcf.BREAKAT = BREAKATINT
+	// 		fmt.Println("BREAKAT         :", vcf.BREAKAT)
+	// 	}
+	// }
 
 	if *version {
 		fmt.Println("IBROWSER_GIT_COMMIT_HASH    :", IBROWSER_GIT_COMMIT_HASH)

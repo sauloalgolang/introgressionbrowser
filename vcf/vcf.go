@@ -21,7 +21,7 @@ import (
 
 const DEBUG = false
 
-var BREAKAT int64
+const BREAKAT = int64(100)
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 

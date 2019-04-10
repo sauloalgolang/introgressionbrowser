@@ -1,11 +1,11 @@
 package main
 
-const IBROWSER_GIT_COMMIT_HASH     = "4a2c0397ca0774159b0bbe89a6788dcbe82ca4d1)"
-const IBROWSER_GIT_COMMIT_AUTHOR   = "Saulo Aflitos (sauloal@gmail.com) 2019-04-10 21:45:54 +0200"
-const IBROWSER_GIT_COMMIT_COMMITER = "Saulo Aflitos (sauloal@gmail.com) 2019-04-10 21:45:54 +0200"
+const IBROWSER_GIT_COMMIT_HASH     = "b26ca3c6b3009924a8be443b0574103250d30072)"
+const IBROWSER_GIT_COMMIT_AUTHOR   = "Saulo Aflitos (sauloal@gmail.com) 2019-04-10 23:15:47 +0200"
+const IBROWSER_GIT_COMMIT_COMMITER = "Saulo Aflitos (sauloal@gmail.com) 2019-04-10 23:15:47 +0200"
 const IBROWSER_GIT_COMMIT_NOTES    = ""
-const IBROWSER_GIT_COMMIT_TITLE    = "separated commit fields"
+const IBROWSER_GIT_COMMIT_TITLE    = "todo; break at as build variable; exporting chromosomes and blocks in correct order; move matrix definition; added but not tested gob"
 const IBROWSER_GIT_STATUS          = "dirty"
-const IBROWSER_GIT_DIFF            = "e76c00d940285aad7254096a721ff80f"
+const IBROWSER_GIT_DIFF            = "9ff9e58a5576fe9fcfe797f13f23f30a"
 
 

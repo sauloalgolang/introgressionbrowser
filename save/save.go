@@ -18,14 +18,15 @@ import (
 //
 
 var Formats = map[string]SaveFormat{
-	"yaml": SaveFormat{"yaml", false, yaml.Marshal, yaml.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
-	"bson": SaveFormat{"bson", false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
+	"yaml":       SaveFormat{"yaml", false, yaml.Marshal, yaml.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
+	"yamlstream": SaveFormat{"yaml", true, emptyMarshaler, emptyUnMarshaler, yamlMarshaler, yamlUnMarshaler},
+	"bson":       SaveFormat{"bson", false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
 	// "json": SaveFormat{".json", false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
 	// "binary": SaveFormat{"bin", false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
-	"gob": SaveFormat{"gob", false, emptyMarshaler, emptyUnMarshaler, gobMarsheler, gobUnMarsheler},
+	"gob": SaveFormat{"gob", false, emptyMarshaler, emptyUnMarshaler, gobMarshaler, gobUnMarshaler},
 }
 
-var FormatNames = []string{"yaml", "bson", "gob"}
+var FormatNames = []string{"yaml", "yamlstream", "bson", "gob"}
 
 //
 //
