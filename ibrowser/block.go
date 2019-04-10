@@ -28,10 +28,12 @@ type IBBlock struct {
 	MaxPosition    uint64
 	NumSNPS        uint64
 	NumSamples     uint64
-	Matrix         *interfaces.DistanceMatrix
+	matrix         *interfaces.DistanceMatrix
 }
 
 func NewIBBlock(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, numSamples uint64) *IBBlock {
+	fmt.Println("NewIBBlock :: chromosomeName: ", chromosomeName, " blockSize: ", blockSize, "blockPosition: ", blockPosition, "blockNumber: ", blockNumber, " numSamples: ", numSamples)
+
 	ibb := IBBlock{
 		ChromosomeName: chromosomeName,
 		BlockSize:      blockSize,
@@ -41,7 +43,7 @@ func NewIBBlock(chromosomeName string, blockSize uint64, blockPosition uint64, b
 		MaxPosition:    0,
 		NumSNPS:        0,
 		NumSamples:     numSamples,
-		Matrix:         interfaces.NewDistanceMatrix(numSamples),
+		matrix:         interfaces.NewDistanceMatrix(chromosomeName, blockSize, blockPosition, blockNumber, numSamples),
 	}
 
 	return &ibb
@@ -63,9 +65,9 @@ func (ibb *IBBlock) add(position uint64, distance *interfaces.DistanceMatrix, is
 	}
 
 	if isAtomic {
-		ibb.Matrix.AddAtomic(distance)
+		ibb.matrix.AddAtomic(distance)
 	} else {
-		ibb.Matrix.Add(distance)
+		ibb.matrix.Add(distance)
 	}
 }
 
@@ -77,13 +79,14 @@ func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatr
 	ibb.add(position, distance, true)
 }
 
-func (ibb *IBBlock) GenFilename(outPrefix string, format string) (fileName string) {
-	baseName := outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
+func (ibb *IBBlock) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
 	fileName = save.GenFilename(baseName, format)
-	return fileName
+	return baseName, fileName
 }
 
 func (ibb *IBBlock) Save(outPrefix string, format string) {
-	fileName := ibb.GenFilename(outPrefix, format)
-	save.Save(fileName, format, ibb)
+	baseName, _ := ibb.GenFilename(outPrefix, format)
+	save.Save(baseName, format, ibb)
+	ibb.matrix.Save(baseName, format)
 }

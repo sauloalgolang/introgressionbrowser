@@ -4,40 +4,74 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/yaml.v2"
+	// "encoding/json"
 	"io/ioutil"
 	"os"
 )
 
+// import "github.com/kelindar/binary"
+
 //
 //
-// General
+// Available formats
+//
+//
+
+var Formats = map[string]SaveFormat{
+	"yaml": SaveFormat{"yaml", true, yaml.Marshal, yaml.Unmarshal},
+	"bson": SaveFormat{"bson", true, bson.Marshal, bson.Unmarshal},
+	// "json": SaveFormat{".json", true, json.Marshal, json.Unmarshal}, // no numerical key
+	// "binary": SaveFormat{"bin", true, binary.Marshal, binary.Unmarshal}, // fail to export reader
+}
+
+var FormatNames = []string{"yaml", "bson", "binary"}
+
+//
+//
+// Types
 //
 //
 
 type Marshaler func(val interface{}) ([]byte, error)
 type UnMarshaler func(data []byte, v interface{}) error
 
-func EmptyMarshaler(val interface{}) ([]byte, error) {
-	return []byte{}, *new(error)
+type SaveFormat struct {
+	Extension   string
+	AsByte      bool // returns bytes or write directly to stream
+	Marshaler   Marshaler
+	UnMarshaler UnMarshaler
 }
-func EmptyUnMarshaler(data []byte, v interface{}) error {
-	return *new(error)
-}
+
+// func emptyMarshaler(val interface{}) ([]byte, error) {
+// 	return []byte{}, *new(error)
+// }
+
+// func emptyUnMarshaler(data []byte, v interface{}) error {
+// 	return *new(error)
+// }
+
+//
+//
+// General Functions
+//
+//
 
 func GenFilename(outPrefix string, extension string) string {
 	return outPrefix + "." + extension
 }
 
 func GetExtensionAndMarshaler(format string) (string, Marshaler, UnMarshaler) {
-	if format == "yaml" {
-		return ".yaml", yaml.Marshal, yaml.Unmarshal
-	} else if format == "bson" {
-		return ".bson", bson.Marshal, bson.Unmarshal
-	} else {
-		fmt.Println("Ivalid save format", format, ". valid values are: yaml, bson")
+	sf, ok := Formats[format]
+
+	if !ok {
+		fmt.Println("Unknown format: ", format, ". valid formats are:")
+		for k, _ := range Formats {
+			fmt.Println(" ", k)
+		}
 		os.Exit(1)
 	}
-	return "", EmptyMarshaler, EmptyUnMarshaler
+
+	return sf.Extension, sf.Marshaler, sf.UnMarshaler
 }
 
 func GetExtension(format string) (extension string) {

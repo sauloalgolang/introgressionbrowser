@@ -38,10 +38,10 @@ type IBrowser struct {
 	lastChrom    string
 	lastPosition uint64
 	//
-	chromosomes      map[string]*IBChromosome
 	ChromosomesNames []string
+	chromosomes      map[string]*IBChromosome
 	//
-	Block *IBBlock
+	block *IBBlock
 	//
 	// Parameters string
 	// Header string
@@ -80,7 +80,7 @@ func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.Block = NewIBBlock("", ib.BlockSize, 0, 0, ib.NumSamples)
+	ib.block = NewIBBlock("_whole_genome", ib.BlockSize, 0, 0, ib.NumSamples)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -150,7 +150,7 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	// ib.Block.AddAtomic(0, reg.Distance) // did not work
 
 	// mutex.Lock() // did not work
-	ib.Block.Add(0, reg.Distance)
+	ib.block.Add(0, reg.Distance)
 	// mutex.Unlock()
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
@@ -162,18 +162,30 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	}
 }
 
+func (ib *IBrowser) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+	baseName = outPrefix
+	fileName = save.GenFilename(baseName, format)
+	return baseName, fileName
+}
+
 func (ib *IBrowser) Save(outPrefix string, format string) {
-	save.Save(outPrefix, format, ib)
-	ib.saveChromosomes(outPrefix, format)
+	baseName, _ := ib.GenFilename(outPrefix, format)
+	save.Save(baseName, format, ib)
+	ib.saveBlock(baseName, format)
+	ib.saveChromosomes(baseName, format)
+}
+
+func (ib *IBrowser) saveBlock(outPrefix string, format string) {
+	ib.block.Save(outPrefix+"_block", format)
 }
 
 func (ib *IBrowser) saveChromosomes(outPrefix string, format string) {
 	for chromosomeName, chromosome := range ib.chromosomes {
-		fmt.Print("saving chromosome: ", chromosomeName)
+		_, fileName := chromosome.GenFilename(outPrefix, format)
 
-		outfile := chromosome.GenFilename(outPrefix, format)
+		fmt.Print("saving chromosome: ", chromosomeName, " to: ", fileName)
 
-		if _, err := os.Stat(outfile); err == nil {
+		if _, err := os.Stat(fileName); err == nil {
 			// path/to/whatever exists
 			fmt.Println(" exists")
 			continue

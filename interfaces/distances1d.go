@@ -6,21 +6,32 @@ import (
 	"sync/atomic"
 )
 
+import "github.com/sauloalgolang/introgressionbrowser/save"
+
 //
 //
 // Matrix 1D
 //
 //
 
-func NewDistanceMatrix1D(dimension uint64) *DistanceMatrix1D {
+func NewDistanceMatrix1D(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64) *DistanceMatrix1D {
 	size := dimension * (dimension - 1) / 2
 
-	fmt.Println("NewDistanceMatrix1D :: dimension:", dimension, "size:", size)
+	fmt.Println("   NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
+		" Dimension:", dimension,
+		" Block Size: ", blockSize,
+		" Block Position: ", blockPosition,
+		" Block Number: ", blockNumber,
+		" Size:", size)
 
 	r := DistanceMatrix1D{
-		Data:      make(DistanceRow, size, size),
-		Size:      size,
-		Dimension: dimension,
+		ChromosomeName: chromosomeName,
+		BlockSize:      blockSize,
+		BlockPosition:  blockPosition,
+		BlockNumber:    blockNumber,
+		Dimension:      dimension,
+		Size:           size,
+		Data:           make(DistanceRow, size, size),
 	}
 
 	r.Clean()
@@ -82,4 +93,15 @@ func (d *DistanceMatrix1D) Set(p1 uint64, p2 uint64, val uint64) {
 
 func (d *DistanceMatrix1D) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
 	return (*d).Data[d.ijToK(p1, p2)]
+}
+
+func (d *DistanceMatrix1D) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+	baseName = outPrefix + "_matrix"
+	fileName = save.GenFilename(baseName, format)
+	return baseName, fileName
+}
+
+func (d *DistanceMatrix1D) Save(outPrefix string, format string) {
+	baseName, _ := d.GenFilename(outPrefix, format)
+	save.Save(baseName, format, d)
 }

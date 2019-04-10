@@ -1,8 +1,5 @@
 GOROOT=$(shell go env GOROOT)
-
 $(info GOROOT  $(GOROOT))
-
-
 
 ifndef FORMAT
 FORMAT=yaml
@@ -17,7 +14,19 @@ endif
 
 $(info OUTFILE $(OUTFILE))
 
+GIT_COMMIT=$(shell git log --pretty=format:'Commit hash %H - Author %an (%aE) %ai - Commiter %cn (%cE) %ci - Notes "%N" - Title "%s"' -n 1 | sed "s/\"/'/g")
+GIT_STATUS=$(shell bash -c 'git diff-index --quiet HEAD; if [ "$$?" == "1" ]; then echo "dirty"; else echo "clean"; fi')
+GIT_DIFF=$(shell bash -c 'git diff | md5sum --text | cut -f1 -d" "')
+TIMESTAMP=$(shell date +"%Y-%m-%d_%H-%M-%S")
 
+VERSION=$(GIT_COMMIT) - Status $(GIT_STATUS) - Diff $(GIT_DIFF)
+#Timestamp $(TIMESTAMP)
+
+$(info GIT_COMMIT $(GIT_COMMIT))
+$(info GIT_STATUS $(GIT_STATUS))
+$(info TIMESTAMP  $(TIMESTAMP))
+$(info VERSION    $(VERSION))
+$(info )
 
 .PHONY: help
 
@@ -39,7 +48,7 @@ help:
 	@echo ""
 	@echo " prof"
 
-.PHONY: ibrowser ibrowser.wasm httpserver bin
+.PHONY: ibrowser ibrowser.wasm httpserver bin version
 
 bin: ibrowser ibrowser.wasm httpserver
 
@@ -49,18 +58,23 @@ ibrowser.wasm: bin/ibrowser.wasm
 
 httpserver: bin/httpserver
 
+version:
+	@echo 'package main\n\nconst IBROWSER_COMMIT = "$(VERSION)"\n' > main/commit.go
+	cat main/commit.go
 
-bin/ibrowser: */*.go
-	cd main/ && go build -v -o ../$@ .
+bin/ibrowser: version */*.go
+	cd main/ && go build -v -race -msan -p 4 -o ../$@ .
+	bin/ibrowser --version
 
-bin/ibrowser.exe: */*.go
-	cd main/ && GOOS=windows GOARCH=amd64 go build -v -o ../$@ .
+bin/ibrowser.exe: version */*.go
+	cd main/ && GOOS=windows GOARCH=amd64 go build -v -p 4 -o ../$@ .
+	bin/ibrowser.exe --version
 
-bin/ibrowser.wasm: */*.go
-	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -o ../$@ .
+bin/ibrowser.wasm: ibrowser */*.go
+	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -p 4 -o ../$@ .
 
 bin/httpserver: opt/httpserver/httpserver.go
-	cd opt/httpserver/ && go build -v -o ../../$@ .
+	cd opt/httpserver/ && go build -v -p 4 -o ../../$@ .
 
 
 
@@ -68,6 +82,7 @@ bin/httpserver: opt/httpserver/httpserver.go
 
 serve: bin/httpserver wasm_exec.js
 	bin/httpserver
+
 
 
 .PHONY: requirements get
@@ -100,6 +115,7 @@ examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
 clean:
 	rm -v $(OUTFILE)*.yaml | true
 	rm -v $(OUTFILE)*.bson | true
+	rm -v $(OUTFILE)*.bin  | true
 
 run150: clean ibrowser 150_VCFs_2.50.tar.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 150_VCFs_2.50.tar.gz

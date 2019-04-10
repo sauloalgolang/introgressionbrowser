@@ -71,8 +71,8 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
-					register.TempDistance = interfaces.NewDistanceMatrix(numSampleNames)
-					// fmt.Println("SampleNames", SampleNames)
+					register.TempDistance = interfaces.NewDistanceMatrix("_tmp_"+strings.Join(chromosomeNames, "_"), 0, 0, 0, numSampleNames)
+					// fmt.Println("SampleNames", SampleNames, "chromosomeNames", chromosomeNames)
 				}
 			}
 			continue
@@ -89,9 +89,9 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 		if chrom != lastChrom {
 			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
-			lastChrom = chrom
 			fmt.Println("new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
+		lastChrom = chrom
 
 		if sendOnlyChromosomeNames { // return only chromosome names
 			if chrom != lastChromosomeName { // first time to see it
