@@ -42,8 +42,13 @@ func main() {
 	fmt.Println("version         :", *version)
 
 	if *version {
-		fmt.Println("IBROWSER_VERSION:", IBROWSER_VERSION)
-		fmt.Println("IBROWSER_COMMIT :", IBROWSER_COMMIT)
+		fmt.Println("IBROWSER_GIT_COMMIT_HASH    :", IBROWSER_GIT_COMMIT_HASH)
+		fmt.Println("IBROWSER_GIT_COMMIT_AUTHOR  :", IBROWSER_GIT_COMMIT_AUTHOR)
+		fmt.Println("IBROWSER_GIT_COMMIT_COMMITER:", IBROWSER_GIT_COMMIT_COMMITER)
+		fmt.Println("IBROWSER_GIT_COMMIT_NOTES   :", IBROWSER_GIT_COMMIT_NOTES)
+		fmt.Println("IBROWSER_GIT_COMMIT_TITLE   :", IBROWSER_GIT_COMMIT_TITLE)
+		fmt.Println("IBROWSER_GIT_STATUS         :", IBROWSER_GIT_STATUS)
+		fmt.Println("IBROWSER_GIT_DIFF           :", GIT_DIFF)
 		os.Exit(0)
 	}
 
