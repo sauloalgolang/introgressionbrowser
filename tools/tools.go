@@ -18,23 +18,6 @@ type GT struct {
 	IsDiploid bool
 }
 
-// var TempDistanceMatrix DistanceMatrix
-
-var DistanceTableValues = interfaces.DistanceTable{
-	3, 1, 1, 0, //  0  1  2  3
-	1, 2, 2, 1, //  4  5  6  7
-	1, 2, 2, 1, //  8  9 10 11
-	0, 1, 1, 3, // 12 13 14 15
-	//      | AA AB BA BB
-	//      |  0  1  2  3
-	// -----|------------
-	// AA 0 |  3  1  1  0
-	// AB 1 |  1  2  2  1
-	// BA 2 |  1  2  2  1
-	// BB 3 |  0  1  1  3
-	//-------------------
-}
-
 func Min64(a uint64, b uint64) uint64 {
 	if a < b {
 		return a
@@ -55,21 +38,32 @@ func Max64(a uint64, b uint64) uint64 {
 	}
 }
 
-func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
-	// fmt.Println("DistanceTableValues", DistanceTableValues)
+var DistanceTableValues = interfaces.DistanceTable{
+	3, 1, 1, 0, //  0  1  2  3
+	1, 2, 2, 1, //  4  5  6  7
+	1, 2, 2, 1, //  8  9 10 11
+	0, 1, 1, 3, // 12 13 14 15
+	//      | AA AB BA BB
+	//      |  0  1  2  3
+	// -----|------------
+	// AA 0 |  3  1  1  0
+	// AB 1 |  1  2  2  1
+	// BA 2 |  1  2  2  1
+	// BB 3 |  0  1  1  3
+	//-------------------
+}
 
+func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
 	a0 := (*a)[0]
 	a1 := (*a)[1]
 	b0 := (*b)[0]
 	b1 := (*b)[1]
 
-	i := a0*8 + a1*4 + b0*2 + b1*0
-
-	// fmt.Print(a0, a1, b0, b1, x, y)
+	i := a0*8 + a1*4 + b0*2 + b1*1
 
 	d := DistanceTableValues[i]
 
-	// fmt.Println(d, DistanceTableValues)
+	// fmt.Println(a0, a1, a0*2+a1*1, b0, b1, b0*2+b1*1, i, d)
 
 	return d
 

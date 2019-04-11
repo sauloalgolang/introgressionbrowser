@@ -1,16 +1,16 @@
-- Double check distance matrix is working
-- Test YAML Encoder/Decoder using streams
-    - https://godoc.org/gopkg.in/yaml.v2#Encoder
-- Test using int32 in matrix
-- Replace as many callbacks as possible
-- Rewrite check.py
-- Implement limits in main function
-    - minSnpPerBlock
-    - maxSnpPerBlock
-- Ibrowser per sample stats (?)
-- Try to write to parquet
+- [x] Double check distance matrix is working
+- [ ] Test YAML Encoder/Decoder using streams
+    - [ ] https://godoc.org/gopkg.in/yaml.v2#Encoder
+- [ ] Test using int32 in matrix
+- [ ] Replace as many callbacks as possible
+- [ ] Rewrite check.py
+- [ ] Implement limits in main function
+    - [ ] minSnpPerBlock
+    - [ ] maxSnpPerBlock
+- [ ] Ibrowser per sample stats (?)
+- [ ] Try to write to parquet
     - https://github.com/xitongsys/parquet-go
-- Consider TABIX
+- [ ] Consider TABIX
     - https://github.com/brentp/bix
     - https://github.com/biogo/hts
     - https://github.com/brentp/cgotabix
