@@ -21,7 +21,11 @@ import (
 
 const DEBUG = false
 
-const BREAKAT = int64(100)
+const BREAKAT = 0
+const ONLYFIRST = false
+
+// const BREAKAT = int64(1000000)
+// const ONLYFIRST = true
 
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
@@ -156,6 +160,7 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 		p.Println()
 
 		cummChromSize := int64(0)
+
 		for _, chromosomeInfo := range chromosomeNames.Infos {
 			idx := cummChromSize / fraq / int64(numThreads+(numThreads/3))
 
@@ -183,6 +188,7 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 			p.Printf("  Group         : %v\n", chromosomeGroups[idx])
 			p.Println()
 		}
+
 		p.Println()
 
 		// wg := sync.WaitGroup
@@ -198,6 +204,11 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 			wg.Add()
 
 			go openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallback)
+
+			if ONLYFIRST {
+				fmt.Println("Only sending first")
+				break
+			}
 		}
 
 		fmt.Println("Waiting for all chromosomes to complete")

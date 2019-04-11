@@ -18,15 +18,14 @@ import (
 //
 
 var Formats = map[string]SaveFormat{
-	"yaml":       SaveFormat{"yaml", false, yaml.Marshal, yaml.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
-	"yamlstream": SaveFormat{"yaml", true, emptyMarshaler, emptyUnMarshaler, yamlMarshaler, yamlUnMarshaler},
-	"bson":       SaveFormat{"bson", false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
-	// "json": SaveFormat{".json", false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
-	// "binary": SaveFormat{"bin", false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
-	"gob": SaveFormat{"gob", false, emptyMarshaler, emptyUnMarshaler, gobMarshaler, gobUnMarshaler},
+	"yaml": SaveFormat{"yaml", true, true, yaml.Marshal, yaml.Unmarshal, yamlMarshaler, yamlUnMarshaler},
+	"bson": SaveFormat{"bson", true, false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
+	// "json": SaveFormat{".json", true, false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
+	// "binary": SaveFormat{"bin", true, false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
+	"gob": SaveFormat{"gob", false, true, emptyMarshaler, emptyUnMarshaler, gobMarshaler, gobUnMarshaler},
 }
 
-var FormatNames = []string{"yaml", "yamlstream", "bson", "gob"}
+var FormatNames = []string{"yaml", "bson", "gob"}
 
 //
 //
@@ -41,7 +40,8 @@ type UnMarshalerStreamer func(string, interface{}) error
 
 type SaveFormat struct {
 	Extension           string
-	Streamer            bool // returns bytes or write directly to stream
+	HasMarshal          bool // returns bytes
+	HasStreamer         bool // write directly to stream
 	Marshaler           Marshaler
 	UnMarshaler         UnMarshaler
 	MarshalerStreamer   MarshalerStreamer
@@ -74,7 +74,7 @@ func GenFilename(outPrefix string, extension string) string {
 	return outPrefix + "." + extension
 }
 
-func GetExtensionAndMarshaler(format string) (string, Marshaler, UnMarshaler) {
+func GetFormatInformation(format string) SaveFormat {
 	sf, ok := Formats[format]
 
 	if !ok {
@@ -85,22 +85,42 @@ func GetExtensionAndMarshaler(format string) (string, Marshaler, UnMarshaler) {
 		os.Exit(1)
 	}
 
-	return sf.Extension, sf.Marshaler, sf.UnMarshaler
+	return sf
 }
 
-func GetExtension(format string) (extension string) {
-	extension, _, _ = GetExtensionAndMarshaler(format)
-	return extension
+func GetExtension(format string) string {
+	sf := GetFormatInformation(format)
+	return sf.Extension
 }
 
-func GetMarshaler(format string) (marshaler Marshaler) {
-	_, marshaler, _ = GetExtensionAndMarshaler(format)
-	return marshaler
+func GetMarshaler(format string) Marshaler {
+	sf := GetFormatInformation(format)
+	return sf.Marshaler
 }
 
-func GetUnMarshaler(format string) (unmarshaler UnMarshaler) {
-	_, _, unmarshaler = GetExtensionAndMarshaler(format)
-	return unmarshaler
+func GetMarshalerStreamer(format string) MarshalerStreamer {
+	sf := GetFormatInformation(format)
+	return sf.MarshalerStreamer
+}
+
+func GetUnMarshaler(format string) UnMarshaler {
+	sf := GetFormatInformation(format)
+	return sf.UnMarshaler
+}
+
+func GetUnMarshalerStreamer(format string) UnMarshalerStreamer {
+	sf := GetFormatInformation(format)
+	return sf.UnMarshalerStreamer
+}
+
+func GetHasMarshal(format string) bool {
+	sf := GetFormatInformation(format)
+	return sf.HasMarshal
+}
+
+func GetHasStreamer(format string) bool {
+	sf := GetFormatInformation(format)
+	return sf.HasStreamer
 }
 
 //
@@ -109,15 +129,30 @@ func GetUnMarshaler(format string) (unmarshaler UnMarshaler) {
 //
 //
 
+//
+// Save
+//
+
 func Save(outPrefix string, format string, val interface{}) {
-	SaveWithExtension(outPrefix, format, GetExtension(format), val)
+	extension := GetExtension(format)
+	SaveWithExtension(outPrefix, format, extension, val)
 }
 
 func SaveWithExtension(outPrefix string, format string, extension string, val interface{}) {
-	saveFormat(outPrefix, extension, GetMarshaler(format), val)
+	hasStreamer := GetHasStreamer(format)
+	hasMarshal := GetHasMarshal(format)
+
+	if hasStreamer {
+		marshaler := GetMarshalerStreamer(format)
+		saveDataStream(outPrefix, format, extension, marshaler, val)
+
+	} else if hasMarshal {
+		marshaler := GetMarshaler(format)
+		saveData(outPrefix, format, extension, marshaler, val)
+	}
 }
 
-func saveFormat(outPrefix string, extension string, marshaler Marshaler, val interface{}) {
+func saveData(outPrefix string, format string, extension string, marshaler Marshaler, val interface{}) {
 	d, err := marshaler(val)
 
 	if err != nil {
@@ -126,10 +161,16 @@ func saveFormat(outPrefix string, extension string, marshaler Marshaler, val int
 	}
 
 	outfile := GenFilename(outPrefix, extension)
-	fmt.Println("saving to ", outfile)
+	fmt.Println("saving data to ", outfile)
 
 	err = ioutil.WriteFile(outfile, d, 0644)
 	fmt.Println("  done")
+}
+
+func saveDataStream(outPrefix string, format string, extension string, marshaler MarshalerStreamer, val interface{}) {
+	outfile := GenFilename(outPrefix, extension)
+	fmt.Println("saving stream to ", outfile)
+	marshaler(outfile, val)
 }
 
 //
@@ -138,15 +179,30 @@ func saveFormat(outPrefix string, extension string, marshaler Marshaler, val int
 //
 //
 
+//
+// Load Marshal
+//
+
 func Load(outPrefix string, format string, val interface{}) {
-	LoadWithExtension(outPrefix, format, GetExtension(format), val)
+	extension := GetExtension(format)
+	LoadWithExtension(outPrefix, format, extension, val)
 }
 
 func LoadWithExtension(outPrefix string, format string, extension string, val interface{}) {
-	loadFormat(outPrefix, extension, GetUnMarshaler(format), val)
+	hasStreamer := GetHasStreamer(format)
+	hasMarshal := GetHasMarshal(format)
+
+	if hasStreamer {
+		unmarshaler := GetUnMarshalerStreamer(format)
+		loadDataStream(outPrefix, format, extension, unmarshaler, val)
+
+	} else if hasMarshal {
+		unmarshaler := GetUnMarshaler(format)
+		loadData(outPrefix, format, extension, unmarshaler, val)
+	}
 }
 
-func loadFormat(outPrefix string, extension string, unmarshaler UnMarshaler, val interface{}) {
+func loadData(outPrefix string, format string, extension string, unmarshaler UnMarshaler, val interface{}) {
 	outfile := GenFilename(outPrefix, extension)
 
 	data, err := ioutil.ReadFile(outfile)
@@ -160,4 +216,10 @@ func loadFormat(outPrefix string, extension string, unmarshaler UnMarshaler, val
 	if err != nil {
 		fmt.Printf("cannot unmarshal data: %v", err)
 	}
+}
+
+func loadDataStream(outPrefix string, format string, extension string, unmarshaler UnMarshalerStreamer, val interface{}) {
+	outfile := GenFilename(outPrefix, extension)
+	fmt.Println("loading from ", outfile)
+	unmarshaler(outfile, val)
 }

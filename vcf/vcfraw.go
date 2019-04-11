@@ -91,6 +91,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
 			fmt.Println("new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
+
 		lastChrom = chrom
 
 		if sendOnlyChromosomeNames { // return only chromosome names
@@ -111,22 +112,23 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		} else {
 			if chromIndex == -1 {
 				if foundChromosome { // already found, therefore finished
-					fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom)
+					fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumber, " registers ")
 					return
 				} else { // not found yet, therefore continue
 					continue
 				}
-			} else {
-				if !foundChromosome { // first time found. let system know
-					fmt.Println("Found chromosome", chrom)
-					foundChromosome = true
-				}
+				// } else {
+				// 	if !foundChromosome { // first time found. let system know
+				// 		foundChromosome = true
+				// 	}
+				// 	fmt.Println("Found chromosome", chrom, " register ", registerNumber)
 			}
 		}
 
 		registerNumber++
 
 		if BREAKAT > 0 && registerNumber >= BREAKAT {
+			fmt.Println(" BREAKING ", chromosomeNames, " at register ", registerNumber)
 			return
 		}
 

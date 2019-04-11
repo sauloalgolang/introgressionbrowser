@@ -4,6 +4,7 @@ import (
 	// "encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -35,13 +36,13 @@ type IBrowser struct {
 	NumSNPs      uint64
 	NumBlocks    uint64
 	//
-	lastChrom    string
-	lastPosition uint64
-	//
 	ChromosomesNames []string
 	chromosomes      map[string]*IBChromosome
 	//
 	block *IBBlock
+	//
+	lastChrom    string
+	lastPosition uint64
 	//
 	// Parameters string
 	// Header string
@@ -50,6 +51,11 @@ type IBrowser struct {
 }
 
 func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlock bool) *IBrowser {
+	if blockSize > uint64((math.MaxUint32/3)-1) {
+		fmt.Println("block size too large")
+		os.Exit(1)
+	}
+
 	ib := IBrowser{
 		reader: reader,
 		//
@@ -66,8 +72,8 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		lastChrom:    "",
 		lastPosition: 0,
 		//
-		chromosomes:      make(map[string]*IBChromosome, 100),
 		ChromosomesNames: make([]string, 0, 100),
+		chromosomes:      make(map[string]*IBChromosome, 100),
 		//
 		// Block: NewIBBlock(0, 0),
 	}

@@ -84,7 +84,8 @@ version:
 	cat main/commit.go
 
 bin/ibrowser: version */*.go
-	cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
+	cd main/ && go build -v -p 4 -o ../$@ .
+	# cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
 	bin/ibrowser --version
 
 bin/ibrowser.exe: version */*.go
@@ -140,10 +141,10 @@ clean:
 	rm -v $(OUTFILE)*.gob  | true
 
 run150: clean ibrowser 150_VCFs_2.50.tar.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 150_VCFs_2.50.tar.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz 150_VCFs_2.50.tar.gz
 
 run360: clean ibrowser 360_merged_2.50.vcf.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE) 360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz 360_merged_2.50.vcf.gz
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof

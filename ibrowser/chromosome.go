@@ -163,9 +163,6 @@ func (ibc *IBChromosome) saveBlock(outPrefix string, format string) {
 }
 
 func (ibc *IBChromosome) saveBlocks(outPrefix string, format string) {
-	// BlockNames:     make(map[uint64]uint64, 100),
-	// blocks:         make([]*IBBlock, 0, 100),
-
 	outPrefix = outPrefix + "_blocks"
 
 	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
