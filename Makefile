@@ -92,7 +92,7 @@ bin/ibrowser: version */*.go
 
 bin/ibrowser.exe: version */*.go
 	cd main/ && GOOS=windows GOARCH=amd64 go build -v -p 4 -o ../$@ .
-	bin/ibrowser.exe --version
+	#bin/ibrowser.exe --version
 
 bin/ibrowser.wasm: ibrowser */*.go
 	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -p 4 -o ../$@ .
