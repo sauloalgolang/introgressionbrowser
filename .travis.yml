@@ -12,3 +12,6 @@ before_install:
 
 install:
 - make ibrowser
+
+test:
+- make run360
