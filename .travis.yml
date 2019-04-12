@@ -17,6 +17,7 @@ install:
 
 script:
 - make test
+- make check
 
 cache:
   timeout: 10000

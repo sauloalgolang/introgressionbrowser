@@ -57,6 +57,11 @@ func NewIBChromosome(chromosomeName string, blockSize uint64, numSamples uint64,
 func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	// fmt.Println("IBChromosome :: AppendBlock :: blockNum: ", blockNum)
 
+	if ibc.HasBlock(blockNum) {
+		fmt.Println("tried to append existing blockNum:", blockNum)
+		os.Exit(1)
+	}
+
 	blockPos := uint64(len(ibc.blocks))
 
 	block = NewIBBlock(
@@ -69,9 +74,22 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	ibc.blocks = append(ibc.blocks, block)
 
 	ibc.BlockNames[blockNum] = blockPos
-	ibc.NumBlocks++
+
+	ibc.NumBlocks = uint64(len(ibc.BlockNames))
 
 	return block
+}
+
+func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
+	if _, ok := ibc.BlockNames[blockNum]; ok {
+		if ok {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
 }
 
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
@@ -90,11 +108,12 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	}
 }
 
-func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool) {
+func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint64) {
 	// fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum)
 
 	block, hasBlock := ibc.GetBlock(blockNum)
 	isNew := false
+	numBlocksAdded := uint64(0)
 
 	if !hasBlock {
 		fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW")
@@ -108,33 +127,35 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool) {
 			if NumBlocks == 0 {
 				lastBlockPos = 0
 			} else {
-				lastBlockPos = NumBlocks - 1
+				lastBlockPos = NumBlocks
 			}
 
 			for currBlockPos := lastBlockPos; currBlockPos < blockNum; currBlockPos++ {
-				fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW. adding intermediate")
+				fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW. adding intermediate: ", currBlockPos)
 				ibc.AppendBlock(currBlockPos)
+				numBlocksAdded++
 			}
 		}
 
 		block := ibc.AppendBlock(blockNum)
+		numBlocksAdded++
 
-		return block, isNew
+		return block, isNew, numBlocksAdded
 
 	} else {
 		isNew = false
-		return block, isNew
+		return block, isNew, numBlocksAdded
 	}
 
-	return &IBBlock{}, false
+	return &IBBlock{}, false, numBlocksAdded
 }
 
-func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (uint64, bool) {
+func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (uint64, bool, uint64) {
 	position := reg.Position
 	distance := reg.Distance
 	blockNum := position / ibc.BlockSize
 
-	block, isNew := ibc.normalizeBlocks(blockNum)
+	block, isNew, numBlocksAdded := ibc.normalizeBlocks(blockNum)
 
 	block.Add(position, distance)
 	ibc.block.Add(position, distance)
@@ -142,7 +163,7 @@ func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (uint64, bool) {
 	ibc.MinPosition = tools.Min64(ibc.MinPosition, block.MinPosition)
 	ibc.MaxPosition = tools.Max64(ibc.MaxPosition, block.MaxPosition)
 
-	return blockNum, isNew
+	return blockNum, isNew, numBlocksAdded
 }
 
 func (ibc *IBChromosome) GenFilename(outPrefix string, format string) (baseName string, fileName string) {

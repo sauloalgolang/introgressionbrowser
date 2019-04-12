@@ -75,7 +75,7 @@ func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlo
 		ChromosomesNames: make([]string, 0, 100),
 		chromosomes:      make(map[string]*IBChromosome, 100),
 		//
-		// Block: NewIBBlock(0, 0),
+		block: NewIBBlock("_whole_genome", blockSize, 0, 0, 0),
 	}
 
 	return &ib
@@ -161,10 +161,10 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
-	_, isNew := chromosome.Add(reg)
+	_, isNew, numBlocksAdded := chromosome.Add(reg)
 
-	if !isNew {
-		atomic.AddUint64(&ib.NumBlocks, 1)
+	if isNew {
+		atomic.AddUint64(&ib.NumBlocks, numBlocksAdded)
 	}
 }
 

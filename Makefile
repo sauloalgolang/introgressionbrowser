@@ -91,23 +91,9 @@ httpserver: bin/httpserver
 
 version:
 	@echo "LDFLAGS $(LDFLAGS)"
-	@# @echo 'package main\n' > main/commit.go
-	@# @echo 'const IBROWSER_GIT_COMMIT_HASH     = "$(GIT_COMMIT_HASH)"' >> main/commit.go
-	@# @echo 'const IBROWSER_GIT_COMMIT_AUTHOR   = "$(GIT_COMMIT_AUTHOR)"' >> main/commit.go
-	@# @echo 'const IBROWSER_GIT_COMMIT_COMMITER = "$(GIT_COMMIT_COMMITER)"' >> main/commit.go
-	@# @echo 'const IBROWSER_GIT_COMMIT_NOTES    = "$(GIT_COMMIT_NOTES)"' >> main/commit.go
-	@# @echo 'const IBROWSER_GIT_COMMIT_TITLE    = "$(GIT_COMMIT_TITLE)"' >> main/commit.go
-	@# @echo 'var   IBROWSER_GIT_STATUS          = ""' >> main/commit.go
-	@# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit.go
-	@# @echo '\n' >> main/commit.go
-	@# cat main/commit.go
-	@# @#@echo 'package main\n' > main/commit_diff.go
-	@# @# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
-	@# @# cat main/commit_diff.go
 
 bin/ibrowser: version */*.go
 	cd main/ && go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
-	@# cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
 	md5sum $@
 	bin/ibrowser --version
 
@@ -184,6 +170,6 @@ ibrowser.cpu.prof: clean
 
 prof_run: clean ibrowser data/360_merged_2.50.vcf.gz
 
-check: output.yaml
-	grep -v " -" output.yaml
-	./check.py output
+check: $(OUTFILE)_360_merged_2.50.vcf.gz.yaml
+	grep -v " -" $<
+	./check.py $(OUTFILE)_360_merged_2.50.vcf.gz

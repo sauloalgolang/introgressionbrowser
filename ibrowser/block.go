@@ -72,6 +72,7 @@ func (ibb *IBBlock) add(position uint64, distance *interfaces.DistanceMatrix, is
 }
 
 func (ibb *IBBlock) Add(position uint64, distance *interfaces.DistanceMatrix) {
+	// fmt.Println("Add", position)
 	ibb.add(position, distance, false)
 }
 

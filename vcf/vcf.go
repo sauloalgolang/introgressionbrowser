@@ -23,9 +23,6 @@ var DEBUG bool = false
 var ONLYFIRST bool = false
 var BREAKAT int64 = 0
 
-// const BREAKAT = int64(1000000)
-// const ONLYFIRST = true
-
 // https://github.com/brentp/vcfgo/blob/master/examples/main.go
 
 //
