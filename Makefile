@@ -67,6 +67,8 @@ bin: ibrowser ibrowser.wasm httpserver
 
 ibrowser: bin/ibrowser
 
+ibrowser.exe: bin/ibrowser.exe
+
 ibrowser.wasm: bin/ibrowser.wasm
 
 httpserver: bin/httpserver
