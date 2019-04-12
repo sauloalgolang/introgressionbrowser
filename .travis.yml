@@ -19,6 +19,7 @@ script:
 - make run360
 
 cache:
+  timeout: 6000
   directories:
     ./data
 
