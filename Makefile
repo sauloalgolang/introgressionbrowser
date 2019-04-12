@@ -73,6 +73,8 @@ ibrowser.wasm: bin/ibrowser.wasm
 
 httpserver: bin/httpserver
 
+LDFLAGS=-X main.IBROWSER_GIT_STATUS=$(GIT_STATUS) -X main.IBROWSER_GIT_DIFF=$(GIT_DIFF)
+
 version:
 	@echo 'package main\n' > main/commit.go
 	@echo 'const IBROWSER_GIT_COMMIT_HASH     = "$(GIT_COMMIT_HASH)"' >> main/commit.go
@@ -80,25 +82,28 @@ version:
 	@echo 'const IBROWSER_GIT_COMMIT_COMMITER = "$(GIT_COMMIT_COMMITER)"' >> main/commit.go
 	@echo 'const IBROWSER_GIT_COMMIT_NOTES    = "$(GIT_COMMIT_NOTES)"' >> main/commit.go
 	@echo 'const IBROWSER_GIT_COMMIT_TITLE    = "$(GIT_COMMIT_TITLE)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_STATUS          = "$(GIT_STATUS)"' >> main/commit.go
+	@echo 'var   IBROWSER_GIT_STATUS          = ""' >> main/commit.go
 	@echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit.go
 	@echo '\n' >> main/commit.go
 	cat main/commit.go
-	#@echo 'package main\n' > main/commit_diff.go
-	# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
-	# cat main/commit_diff.go
+	@#@echo 'package main\n' > main/commit_diff.go
+	@# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
+	@# cat main/commit_diff.go
 
 bin/ibrowser: version */*.go
-	cd main/ && go build -v -p 4 -o ../$@ .
-	# cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
+	cd main/ && go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
+	@# cd main/ && go build -v -race -ldflags "-X main.BREAKAT=$(BREAKAT)" -p 4 -o ../$@ .
+	md5sum $@
 	bin/ibrowser --version
 
 bin/ibrowser.exe: version */*.go
-	cd main/ && GOOS=windows GOARCH=amd64 go build -v -p 4 -o ../$@ .
-	#bin/ibrowser.exe --version
+	cd main/ && GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
+	@#bin/ibrowser.exe --version
+	md5sum $@
 
 bin/ibrowser.wasm: ibrowser */*.go
-	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -p 4 -o ../$@ .
+	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="$(LDFLAGS) -s -w" -v -p 4 -o ../$@ .
+	md5sum $@
 
 bin/httpserver: opt/httpserver/httpserver.go
 	cd opt/httpserver/ && go build -v -p 4 -o ../../$@ .
@@ -140,16 +145,19 @@ data/360_merged_2.50.vcf.gz:
 .PHONY: clean run150 run360 prof prof_run
 
 clean:
-	rm -v $(OUTFILE)*.yaml | true
-	rm -v $(OUTFILE)*.bson | true
-	rm -v $(OUTFILE)*.bin  | true
-	rm -v $(OUTFILE)*.gob  | true
+	rm -v $(OUTFILE)*.yaml || true
+	rm -v $(OUTFILE)*.bson || true
+	rm -v $(OUTFILE)*.bin  || true
+	rm -v $(OUTFILE)*.gob  || true
 
 run150: clean ibrowser data/150_VCFs_2.50.tar.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
 
 run360: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+
+test: clean ibrowser data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debug_first_only -debug_maxregister 10000 data/360_merged_2.50.vcf.gz
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof

@@ -19,10 +19,9 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/openfile"
 )
 
-const DEBUG = false
-
-const BREAKAT = 0
-const ONLYFIRST = false
+var DEBUG bool = false
+var ONLYFIRST bool = false
+var BREAKAT int64 = 0
 
 // const BREAKAT = int64(1000000)
 // const ONLYFIRST = true

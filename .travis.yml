@@ -14,10 +14,9 @@ before_install:
 
 install:
 - make ibrowser ibrowser.exe ibrowser.wasm
-#- make ibrowser_test ibrowser_test.exe ibrowser_test.wasm
 
 script:
-- make run360
+- make test
 
 cache:
   timeout: 10000

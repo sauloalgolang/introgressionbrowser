@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sauloalgolang/introgressionbrowser.svg?branch=master)](https://travis-ci.org/sauloalgolang/introgressionbrowser)
+
 # ibrowser
 
 attempt of ibrowser
