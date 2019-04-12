@@ -170,6 +170,5 @@ ibrowser.cpu.prof: clean
 
 prof_run: clean ibrowser data/360_merged_2.50.vcf.gz
 
-check: $(OUTFILE)_360_merged_2.50.vcf.gz.yaml
-	grep -v " -" $<
+check:
 	./check.py $(OUTFILE)_360_merged_2.50.vcf.gz
