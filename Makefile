@@ -67,6 +67,8 @@ bin: ibrowser ibrowser.wasm httpserver
 
 ibrowser: bin/ibrowser
 
+ibrowser.exe: bin/ibrowser.exe
+
 ibrowser.wasm: bin/ibrowser.wasm
 
 httpserver: bin/httpserver
@@ -93,7 +95,7 @@ bin/ibrowser: version */*.go
 
 bin/ibrowser.exe: version */*.go
 	cd main/ && GOOS=windows GOARCH=amd64 go build -v -p 4 -o ../$@ .
-	bin/ibrowser.exe --version
+	#bin/ibrowser.exe --version
 
 bin/ibrowser.wasm: ibrowser */*.go
 	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -v -p 4 -o ../$@ .
@@ -125,13 +127,13 @@ wasm_exec.js:
 
 .PHONY: examples
 
-examples: 150_VCFs_2.50.tar.gz 360_merged_2.50.vcf.gz
+examples: data/150_VCFs_2.50.tar.gz data/360_merged_2.50.vcf.gz
 
-150_VCFs_2.50.tar.gz:
-	wget ftp://ftp.solgenomics.net/genomes/tomato_150/150_VCFs_2.50.tar.gz
+data/150_VCFs_2.50.tar.gz:
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/360_merged_2.50.vcf.gz -O data/360_merged_2.50.vcf.gz.tmp && mv data/360_merged_2.50.vcf.gz.tmp data/360_merged_2.50.vcf.gz
 
-360_merged_2.50.vcf.gz:
-	wget ftp://ftp.solgenomics.net/genomes/tomato_360/360_merged_2.50.vcf.gz
+data/360_merged_2.50.vcf.gz:
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/150_VCFs_2.50.tar.gz   -O data/150_VCFs_2.50.tar.gz.tmp   && mv data/150_VCFs_2.50.tar.gz.tmp   data/150_VCFs_2.50.tar.gz
 
 
 
@@ -143,11 +145,11 @@ clean:
 	rm -v $(OUTFILE)*.bin  | true
 	rm -v $(OUTFILE)*.gob  | true
 
-run150: clean ibrowser 150_VCFs_2.50.tar.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz 150_VCFs_2.50.tar.gz
+run150: clean ibrowser data/150_VCFs_2.50.tar.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
 
-run360: clean ibrowser 360_merged_2.50.vcf.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz 360_merged_2.50.vcf.gz
+run360: clean ibrowser data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof
@@ -155,9 +157,9 @@ prof: prof_run ibrowser.cpu.prof
 
 ibrowser.cpu.prof: clean
 	rm -v ibrowser.cpu.prof ibrowser.mem.prof || true
-	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof -format $(FORMAT) 360_merged_2.50.vcf.gz
+	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof -format $(FORMAT) data/360_merged_2.50.vcf.gz
 
-prof_run: clean ibrowser 360_merged_2.50.vcf.gz
+prof_run: clean ibrowser data/360_merged_2.50.vcf.gz
 
 check: output.yaml
 	grep -v " -" output.yaml
