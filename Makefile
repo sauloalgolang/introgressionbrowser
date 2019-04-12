@@ -79,9 +79,12 @@ version:
 	@echo 'const IBROWSER_GIT_COMMIT_NOTES    = "$(GIT_COMMIT_NOTES)"' >> main/commit.go
 	@echo 'const IBROWSER_GIT_COMMIT_TITLE    = "$(GIT_COMMIT_TITLE)"' >> main/commit.go
 	@echo 'const IBROWSER_GIT_STATUS          = "$(GIT_STATUS)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_DIFF            = "$(GIT_DIFF)"' >> main/commit.go
+	@echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit.go
 	@echo '\n' >> main/commit.go
 	cat main/commit.go
+	#@echo 'package main\n' > main/commit_diff.go
+	# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
+	# cat main/commit_diff.go
 
 bin/ibrowser: version */*.go
 	cd main/ && go build -v -p 4 -o ../$@ .
