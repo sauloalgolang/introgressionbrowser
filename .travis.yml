@@ -1,48 +1,30 @@
 language: go
-
 go:
 - 1.12
-#- 1.12.x
-
 env:
-  - GO111MODULE=on
-  
+- GO111MODULE=on
 before_install:
 - make -n data/360_merged_2.50.vcf.gz
-#- wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/360_merged_2.50.vcf.gz -O data/360_merged_2.50.vcf.gz
-#- wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/150_VCFs_2.50.tar.gz   -O data/150_VCFs_2.50.tar.gz
 - make get
-
 install:
 - make ibrowser ibrowser.exe ibrowser.wasm
-
 script:
-- make test
-- make check
-
+- make test check
 cache:
   timeout: 10000
-  directories:
-    ./data
-
+  directories: "./data"
 before_deploy:
-    # Set up git user name and tag this commit
-    - git config --local user.name "Saulo Alves @ Travis"
-    - git config --local user.email "sauloal@gmail.com"
-    - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
-    - git tag $TRAVIS_TAG
-
+- git config --local user.name "Saulo Alves @ Travis"
+- git config --local user.email "sauloal@gmail.com"
+- export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+- git tag $TRAVIS_TAG
 deploy:
   provider: releases
   api_key:
-    secure: YOUR_API_KEY_ENCRYPTED
+    secure: nO/NVot0INeziA550BTYjTOG1K8mlUbB0kWFg0WzEHRW/ZzGu17VfK2cMGw4cD9R1TfEDyH9iBc5gLBM9XkmFPYI7Gyy2qx78eZDQ6ZyJfqIoF7dO11AzOmLrJCsp06ctXj8CRwXV7pTy2dZRbRT65LzVF6YsJCujzqPEY1k1Om8QlVImpUJ+htYgSAJ1pb6jSvz9nA5vMM+VvxpOxv3RlHDmLh+gWHb+rA4fUXat9jw6AGC3Un5hU+wqHCg0pfZsT24GSn5L13GUsrjB310kNx5Z28BP3hhXHeLJbTT7tXbbas0j3T1oCk9ZCnLpxa5jSz/LHzPMYKUgYuAFNUjGWY1kTokYUlu/0Uu7KfEql8VO4ayMTn9DPVoqqJ0qphqrJgncQpqJe+RV8DXdhvxxtaCp5V5QH6anKaMrwsP32UK9VZz9VEd2ajthXQEb27iY6T7TNlltCGeFD61Pn0RF3ttAEaCB6Ctii522JjZBV530cuy9eSu8v2D//L5956NC3I+5ztnz2nbMh3RnzLNvY5N2kR8/Z3/fUD1AATAu/QF74EKQJBcp/y1tWanGz3B8MZ6nQiayAVJUR0ZGiJR51gqNameW/45a7Gd4k8sZ/kbxH2+CF3YtRmVL0XQpgGCWs3qS843blzDwVs3l4fkpd7B7vbqVzOlpZunAXODqoQ=
   file:
-  - "bin/ibrowser"
-  - "bin/ibrowser.exe"
-  - "bin/ibrowser.wasm"
-  skip_cleanup: true
+  - bin/ibrowser
+  - bin/ibrowser.exe
+  - bin/ibrowser.wasm
   on:
-    tags: true
-  draft: true
-  overwrite: true
-  
+    repo: sauloalgolang/introgressionbrowser
