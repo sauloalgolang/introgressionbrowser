@@ -15,17 +15,22 @@ endif
 
 $(info OUTFILE $(OUTFILE))
 
-BREAKAT=100
-$(info BREAKAT $(BREAKAT))
 
-GIT_COMMIT_HASH=$(shell git log --pretty=format:'%H' -n 1 | sed "s/\"/'/g"))
+CGO_CFLAGS="-g -O3"
+CGO_CPPFLAGS=""
+CGO_CXXFLAGS="-g -O3"
+CGO_FFLAGS="-g -O3"
+CGO_LDFLAGS="-g -O3"
+
+
+GIT_COMMIT_HASH=$(shell git log --pretty=format:'%H' -n 1 | sed "s/\"/'/g")
 GIT_COMMIT_AUTHOR=$(shell git log --pretty=format:'%an (%aE) %ai' -n 1 | sed "s/\"/'/g")
 GIT_COMMIT_COMMITER=$(shell git log --pretty=format:'%cn (%cE) %ci' -n 1 | sed "s/\"/'/g")
 GIT_COMMIT_NOTES=$(shell git log --pretty=format:'%N' -n 1 | sed "s/\"/'/g")
 GIT_COMMIT_TITLE=$(shell git log --pretty=format:'%s' -n 1 | sed "s/\"/'/g")
 GIT_STATUS=$(shell bash -c 'git diff-index --quiet HEAD; if [ "$$?" == "1" ]; then echo "dirty"; else echo "clean"; fi')
 GIT_DIFF=$(shell bash -c 'git diff | md5sum --text | cut -f1 -d" "')
-TIMESTAMP=$(shell date +"%Y-%m-%d_%H-%M-%S")
+# TIMESTAMP=$(shell date +"%Y-%m-%d_%H-%M-%S")
 
 # VERSION=$(GIT_COMMIT) - Status $(GIT_STATUS) - Diff $(GIT_DIFF)
 #Timestamp $(TIMESTAMP)
@@ -37,9 +42,20 @@ $(info GIT_COMMIT_NOTES    $(GIT_COMMIT_NOTES))
 $(info GIT_COMMIT_TITLE    $(GIT_COMMIT_TITLE))
 $(info GIT_STATUS          $(GIT_STATUS))
 $(info GIT_DIFF            $(GIT_DIFF))
-$(info TIMESTAMP           $(TIMESTAMP))
+# $(info TIMESTAMP           $(TIMESTAMP))
 # $(info VERSION             $(VERSION))
 $(info )
+
+LDFLAGS=-X 'main.IBROWSER_GIT_STATUS=$(GIT_STATUS)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_DIFF=$(GIT_DIFF)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_HASH=$(GIT_COMMIT_HASH)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_COMMITER=$(GIT_COMMIT_COMMITER)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_NOTES=$(GIT_COMMIT_NOTES)'
+LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_TITLE=$(GIT_COMMIT_TITLE)'
+
+# $(info $(LDFLAGS))
+# $(info )
 
 .PHONY: help
 
@@ -73,22 +89,21 @@ ibrowser.wasm: bin/ibrowser.wasm
 
 httpserver: bin/httpserver
 
-LDFLAGS=-X main.IBROWSER_GIT_STATUS=$(GIT_STATUS) -X main.IBROWSER_GIT_DIFF=$(GIT_DIFF)
-
 version:
-	@echo 'package main\n' > main/commit.go
-	@echo 'const IBROWSER_GIT_COMMIT_HASH     = "$(GIT_COMMIT_HASH)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_COMMIT_AUTHOR   = "$(GIT_COMMIT_AUTHOR)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_COMMIT_COMMITER = "$(GIT_COMMIT_COMMITER)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_COMMIT_NOTES    = "$(GIT_COMMIT_NOTES)"' >> main/commit.go
-	@echo 'const IBROWSER_GIT_COMMIT_TITLE    = "$(GIT_COMMIT_TITLE)"' >> main/commit.go
-	@echo 'var   IBROWSER_GIT_STATUS          = ""' >> main/commit.go
-	@echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit.go
-	@echo '\n' >> main/commit.go
-	cat main/commit.go
-	@#@echo 'package main\n' > main/commit_diff.go
-	@# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
-	@# cat main/commit_diff.go
+	@echo "LDFLAGS $(LDFLAGS)"
+	@# @echo 'package main\n' > main/commit.go
+	@# @echo 'const IBROWSER_GIT_COMMIT_HASH     = "$(GIT_COMMIT_HASH)"' >> main/commit.go
+	@# @echo 'const IBROWSER_GIT_COMMIT_AUTHOR   = "$(GIT_COMMIT_AUTHOR)"' >> main/commit.go
+	@# @echo 'const IBROWSER_GIT_COMMIT_COMMITER = "$(GIT_COMMIT_COMMITER)"' >> main/commit.go
+	@# @echo 'const IBROWSER_GIT_COMMIT_NOTES    = "$(GIT_COMMIT_NOTES)"' >> main/commit.go
+	@# @echo 'const IBROWSER_GIT_COMMIT_TITLE    = "$(GIT_COMMIT_TITLE)"' >> main/commit.go
+	@# @echo 'var   IBROWSER_GIT_STATUS          = ""' >> main/commit.go
+	@# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit.go
+	@# @echo '\n' >> main/commit.go
+	@# cat main/commit.go
+	@# @#@echo 'package main\n' > main/commit_diff.go
+	@# @# @echo 'var   IBROWSER_GIT_DIFF            = ""' >> main/commit_diff.go
+	@# @# cat main/commit_diff.go
 
 bin/ibrowser: version */*.go
 	cd main/ && go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
