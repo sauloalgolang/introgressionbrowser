@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"fmt"
-	"math"
 	"sync/atomic"
 )
 
@@ -74,26 +73,12 @@ func (d *DistanceMatrix1D64) Clean() {
 	}
 }
 
-// # https://stackoverflow.com/questions/27086195/linear-index-upper-triangular-matrix
-
 func (d *DistanceMatrix1D64) ijToK(i uint64, j uint64) uint64 {
-	dim := float64(d.Dimension)
-	fi := float64(i)
-	fj := float64(j)
-
-	fk := (dim * (dim - 1) / 2) - (dim-fi)*((dim-fi)-1)/2 + fj - fi - 1
-
-	return uint64(fk)
+	return ijToK(d.Dimension, i, j)
 }
 
 func (d *DistanceMatrix1D64) kToIJ(k uint64) (uint64, uint64) {
-	dim := float64(d.Dimension)
-	idx := float64(k)
-
-	fi := dim - 2 - math.Floor(math.Sqrt(-8*idx+4*dim*(dim-1)-7)/2.0-0.5)
-	fj := idx + fi + 1 - dim*(dim-1)/2 + (dim-fi)*((dim-fi)-1)/2
-
-	return uint64(fi), uint64(fj)
+	return kToIJ(d.Dimension, k)
 }
 
 func (d *DistanceMatrix1D64) Set(p1 uint64, p2 uint64, val uint64) {
@@ -106,11 +91,25 @@ func (d *DistanceMatrix1D64) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
 
 func (d *DistanceMatrix1D64) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
 	baseName = outPrefix + "_matrix"
-	fileName = save.GenFilename(baseName, format)
+
+	saver := save.NewSaver(baseName, format)
+
+	fileName = saver.GenFilename()
+
 	return baseName, fileName
 }
 
 func (d *DistanceMatrix1D64) Save(outPrefix string, format string) {
 	baseName, _ := d.GenFilename(outPrefix, format)
-	save.Save(baseName, format, d)
+
+	saver := save.NewSaver(baseName, format)
+
+	saver.Save(d)
+}
+
+func (d *DistanceMatrix1D64) Load(outPrefix string, format string) {
+	baseName, _ := d.GenFilename(outPrefix, format)
+
+	saver := save.NewSaver(baseName, format)
+	saver.Load(d)
 }

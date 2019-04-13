@@ -32,16 +32,13 @@ var BREAKAT int64 = 0
 //
 
 func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnError bool) (chromosomeNames interfaces.ChromosomeNamesType) {
-	indexfile := chromosomeNames.IndexFileName(sourceFile)
+	exists, _ := chromosomeNames.Exists(sourceFile)
 
-	if _, err := os.Stat(indexfile); err == nil {
-		// path/to/whatever exists
+	if exists {
 		fmt.Println(" exists")
 		chromosomeNames.Load(sourceFile)
-		// fmt.Println(chromosomeNames)
 
-	} else if os.IsNotExist(err) {
-		// path/to/whatever does *not* exist
+	} else {
 		fmt.Println(" creating")
 
 		addToNames := func(SampleNames *interfaces.VCFSamples, register *interfaces.VCFRegister) {

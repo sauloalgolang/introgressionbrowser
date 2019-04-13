@@ -168,15 +168,28 @@ func (ibc *IBChromosome) Add(reg *interfaces.VCFRegister) (uint64, bool, uint64)
 
 func (ibc *IBChromosome) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + ibc.ChromosomeName
-	fileName = save.GenFilename(baseName, format)
+
+	saver := save.NewSaver(baseName, format)
+
+	fileName = saver.GenFilename()
+
 	return baseName, fileName
 }
 
 func (ibc *IBChromosome) Save(outPrefix string, format string) {
 	baseName, _ := ibc.GenFilename(outPrefix, format)
-	save.Save(baseName, format, ibc)
+	saver := save.NewSaver(baseName, format)
+	saver.Save(ibc)
 	ibc.saveBlock(baseName, format)
 	ibc.saveBlocks(baseName, format)
+}
+
+func (ibc *IBChromosome) Load(outPrefix string, format string) {
+	baseName, _ := ibc.GenFilename(outPrefix, format)
+	saver := save.NewSaver(baseName, format)
+	saver.Load(ibc)
+	ibc.loadBlock(baseName, format)
+	ibc.loadBlocks(baseName, format)
 }
 
 func (ibc *IBChromosome) saveBlock(outPrefix string, format string) {
@@ -190,25 +203,25 @@ func (ibc *IBChromosome) saveBlocks(outPrefix string, format string) {
 		block := ibc.blocks[blockPos]
 		blockNum := block.BlockNumber
 
-		_, fileName := block.GenFilename(outPrefix, format)
-
-		fmt.Print("saving block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos, " to: ", fileName)
-
-		if _, err := os.Stat(fileName); err == nil {
-			// path/to/whatever exists
-			fmt.Println(" exists")
-			continue
-
-		} else if os.IsNotExist(err) {
-			fmt.Println(" creating")
-			// path/to/whatever does *not* exist
-
-		} else {
-			// Schrodinger: file may or may not exist. See err for details.
-
-			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
-		}
+		fmt.Print("saving block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
 
 		block.Save(outPrefix, format)
+	}
+}
+
+func (ibc *IBChromosome) loadBlock(outPrefix string, format string) {
+	ibc.block.Load(outPrefix+"_block", format)
+}
+
+func (ibc *IBChromosome) loadBlocks(outPrefix string, format string) {
+	outPrefix = outPrefix + "_blocks"
+
+	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
+		block := ibc.blocks[blockPos]
+		blockNum := block.BlockNumber
+
+		fmt.Print("loading block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+
+		block.Load(outPrefix, format)
 	}
 }

@@ -2,8 +2,6 @@ package interfaces
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/save"
@@ -31,29 +29,22 @@ func NewChromosomeNames(size int, cap int) (cn *ChromosomeNamesType) {
 	return cn
 }
 
-func (cn *ChromosomeNamesType) IndexFileName(outPrefix string) (indexFile string) {
-	indexFile = save.GenFilename(outPrefix, IndexExtension)
-	return indexFile
-}
-
 func (cn *ChromosomeNamesType) Save(outPrefix string) {
-	save.SaveWithExtension(outPrefix, "yaml", IndexExtension, cn)
+	saver := save.NewSaver(outPrefix, "yaml")
+	saver.SetFormatExtension(IndexExtension)
+	saver.Save(cn)
 }
 
 func (cn *ChromosomeNamesType) Load(outPrefix string) {
-	outfile := cn.IndexFileName(outPrefix)
+	saver := save.NewSaver(outPrefix, "yaml")
+	saver.SetFormatExtension(IndexExtension)
+	saver.Load(cn)
+}
 
-	data, err := ioutil.ReadFile(outfile)
-
-	if err != nil {
-		fmt.Printf("yamlFile. Get err   #%v ", err)
-	}
-
-	err = yaml.Unmarshal(data, &cn)
-
-	if err != nil {
-		fmt.Printf("cannot unmarshal data: %v", err)
-	}
+func (cn *ChromosomeNamesType) Exists(outPrefix string) (bool, error) {
+	saver := save.NewSaver(outPrefix, "yaml")
+	saver.SetFormatExtension(IndexExtension)
+	return saver.Exists()
 }
 
 func (cn *ChromosomeNamesType) Add(chromosomeName string, startPosition int64) {

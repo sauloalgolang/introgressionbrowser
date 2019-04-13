@@ -82,12 +82,24 @@ func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatr
 
 func (ibb *IBBlock) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
-	fileName = save.GenFilename(baseName, format)
+
+	saver := save.NewSaver(baseName, format)
+
+	fileName = saver.GenFilename()
+
 	return baseName, fileName
 }
 
 func (ibb *IBBlock) Save(outPrefix string, format string) {
 	baseName, _ := ibb.GenFilename(outPrefix, format)
-	save.Save(baseName, format, ibb)
+	saver := save.NewSaver(baseName, format)
+	saver.Save(ibb)
 	ibb.matrix.Save(baseName, format)
+}
+
+func (ibb *IBBlock) Load(outPrefix string, format string) {
+	baseName, _ := ibb.GenFilename(outPrefix, format)
+	saver := save.NewSaver(baseName, format)
+	saver.Load(ibb)
+	ibb.matrix.Load(baseName, format)
 }

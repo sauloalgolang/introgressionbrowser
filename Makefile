@@ -93,7 +93,7 @@ version:
 	@echo "LDFLAGS $(LDFLAGS)"
 
 bin/ibrowser: version */*.go
-	cd main/ && go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
+	cd main/ && GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
 	md5sum $@
 	bin/ibrowser --version
 

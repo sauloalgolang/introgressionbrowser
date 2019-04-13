@@ -2,157 +2,124 @@ package save
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/yaml.v2"
-	// "encoding/json"
 	"io/ioutil"
 	"os"
 )
 
-// import "github.com/kelindar/binary"
-
-//
-//
-// Available formats
-//
-//
-
-var Formats = map[string]SaveFormat{
-	"yaml": SaveFormat{"yaml", true, true, yaml.Marshal, yaml.Unmarshal, yamlMarshaler, yamlUnMarshaler},
-	"bson": SaveFormat{"bson", true, false, bson.Marshal, bson.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer},
-	// "json": SaveFormat{".json", true, false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
-	// "binary": SaveFormat{"bin", true, false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
-	"gob": SaveFormat{"gob", false, true, emptyMarshaler, emptyUnMarshaler, gobMarshaler, gobUnMarshaler},
+type Saver struct {
+	Prefix              string
+	Format              string
+	Compressor          string
+	FormatExtension     string
+	CompressorExtension string
 }
 
-var FormatNames = []string{"yaml", "bson", "gob"}
-
-//
-//
-// Types
-//
-//
-
-type Marshaler func(interface{}) ([]byte, error)
-type UnMarshaler func([]byte, interface{}) error
-type MarshalerStreamer func(string, interface{}) ([]byte, error)
-type UnMarshalerStreamer func(string, interface{}) error
-
-type SaveFormat struct {
-	Extension           string
-	HasMarshal          bool // returns bytes
-	HasStreamer         bool // write directly to stream
-	Marshaler           Marshaler
-	UnMarshaler         UnMarshaler
-	MarshalerStreamer   MarshalerStreamer
-	UnMarshalerStreamer UnMarshalerStreamer
+func NewSaver(prefix string, format string) *Saver {
+	return newSaver(prefix, format, "none", GetFormatExtension(format), GetCompressExtension("none"))
 }
 
-func emptyMarshaler(val interface{}) ([]byte, error) {
-	return []byte{}, *new(error)
+func NewSaverCompressed(prefix string, format string, compressor string) *Saver {
+	return newSaver(prefix, format, compressor, GetFormatExtension(format), GetCompressExtension(compressor))
 }
 
-func emptyUnMarshaler(data []byte, val interface{}) error {
-	return *new(error)
-}
-
-func emptyMarshalerStreamer(filename string, val interface{}) ([]byte, error) {
-	return []byte{}, *new(error)
-}
-
-func emptyUnMarshalerStreamer(filename string, val interface{}) error {
-	return *new(error)
-}
-
-//
-//
-// General Functions
-//
-//
-
-func GenFilename(outPrefix string, extension string) string {
-	return outPrefix + "." + extension
-}
-
-func GetFormatInformation(format string) SaveFormat {
-	sf, ok := Formats[format]
-
-	if !ok {
-		fmt.Println("Unknown format: ", format, ". valid formats are:")
-		for k, _ := range Formats {
-			fmt.Println(" ", k)
-		}
-		os.Exit(1)
+func newSaver(prefix string, format string, compressor string, formatExtension string, compressorExtension string) *Saver {
+	s := Saver{
+		Prefix:              prefix,
+		Format:              format,
+		Compressor:          compressor,
+		FormatExtension:     formatExtension,
+		CompressorExtension: compressorExtension,
 	}
 
-	return sf
-}
-
-func GetExtension(format string) string {
-	sf := GetFormatInformation(format)
-	return sf.Extension
-}
-
-func GetMarshaler(format string) Marshaler {
-	sf := GetFormatInformation(format)
-	return sf.Marshaler
-}
-
-func GetMarshalerStreamer(format string) MarshalerStreamer {
-	sf := GetFormatInformation(format)
-	return sf.MarshalerStreamer
-}
-
-func GetUnMarshaler(format string) UnMarshaler {
-	sf := GetFormatInformation(format)
-	return sf.UnMarshaler
-}
-
-func GetUnMarshalerStreamer(format string) UnMarshalerStreamer {
-	sf := GetFormatInformation(format)
-	return sf.UnMarshalerStreamer
-}
-
-func GetHasMarshal(format string) bool {
-	sf := GetFormatInformation(format)
-	return sf.HasMarshal
-}
-
-func GetHasStreamer(format string) bool {
-	sf := GetFormatInformation(format)
-	return sf.HasStreamer
+	return &s
 }
 
 //
+// Setters
+//
+
+func (s *Saver) SetFormat(format string) {
+	s.Format = format
+	s.FormatExtension = GetFormatExtension(format)
+}
+
+func (s *Saver) SetCompressor(compressor string) {
+	s.Compressor = compressor
+	s.CompressorExtension = GetFormatExtension(compressor)
+}
+
+func (s *Saver) SetFormatExtension(extension string) {
+	s.FormatExtension = extension
+}
+
+func (s *Saver) SetCompressorExtension(extension string) {
+	s.CompressorExtension = extension
+}
+
+//
+// Getters
+//
+
+func (s *Saver) GenFilename() string {
+	outname := s.Prefix
+
+	if s.FormatExtension != "" {
+		outname += "." + s.FormatExtension
+	}
+
+	if s.CompressorExtension != "" {
+		outname += "." + s.CompressorExtension
+	}
+
+	return outname
+}
+
+func (s *Saver) Exists() (bool, error) {
+	fileName := s.GenFilename()
+
+	_, err := os.Stat(fileName)
+
+	if err == nil {
+		// path/to/whatever exists
+		return true, err
+
+	} else if os.IsNotExist(err) {
+		// path/to/whatever does *not* exist
+		return false, err
+
+	} else {
+		return false, err
+		// Schrodinger: file may or may not exist. See err for details.
+
+		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
+	}
+
+	return false, err
+}
+
 //
 // Save
 //
-//
 
-//
-// Save
-//
+func (s *Saver) Save(val interface{}) {
+	format := s.Format
 
-func Save(outPrefix string, format string, val interface{}) {
-	extension := GetExtension(format)
-	SaveWithExtension(outPrefix, format, extension, val)
-}
+	hasStreamer := GetFormatHasStreamer(format)
+	hasMarshal := GetFormatHasMarshal(format)
 
-func SaveWithExtension(outPrefix string, format string, extension string, val interface{}) {
-	hasStreamer := GetHasStreamer(format)
-	hasMarshal := GetHasMarshal(format)
+	outfile := s.GenFilename()
 
 	if hasStreamer {
-		marshaler := GetMarshalerStreamer(format)
-		saveDataStream(outPrefix, format, extension, marshaler, val)
+		marshaler := GetFormatMarshalerStreamer(format)
+		saveDataStream(outfile, marshaler, val)
 
 	} else if hasMarshal {
-		marshaler := GetMarshaler(format)
-		saveData(outPrefix, format, extension, marshaler, val)
+		marshaler := GetFormatMarshaler(format)
+		saveData(outfile, marshaler, val)
 	}
 }
 
-func saveData(outPrefix string, format string, extension string, marshaler Marshaler, val interface{}) {
+func saveData(outfile string, marshaler Marshaler, val interface{}) {
 	d, err := marshaler(val)
 
 	if err != nil {
@@ -160,15 +127,13 @@ func saveData(outPrefix string, format string, extension string, marshaler Marsh
 		os.Exit(1)
 	}
 
-	outfile := GenFilename(outPrefix, extension)
 	fmt.Println("saving data to ", outfile)
 
 	err = ioutil.WriteFile(outfile, d, 0644)
 	fmt.Println("  done")
 }
 
-func saveDataStream(outPrefix string, format string, extension string, marshaler MarshalerStreamer, val interface{}) {
-	outfile := GenFilename(outPrefix, extension)
+func saveDataStream(outfile string, marshaler MarshalerStreamer, val interface{}) {
 	fmt.Println("saving stream to ", outfile)
 	marshaler(outfile, val)
 }
@@ -179,32 +144,25 @@ func saveDataStream(outPrefix string, format string, extension string, marshaler
 //
 //
 
-//
-// Load Marshal
-//
+func (s *Saver) Load(val interface{}) {
+	format := s.Format
 
-func Load(outPrefix string, format string, val interface{}) {
-	extension := GetExtension(format)
-	LoadWithExtension(outPrefix, format, extension, val)
-}
+	outfile := s.GenFilename()
 
-func LoadWithExtension(outPrefix string, format string, extension string, val interface{}) {
-	hasStreamer := GetHasStreamer(format)
-	hasMarshal := GetHasMarshal(format)
+	hasStreamer := GetFormatHasStreamer(format)
+	hasMarshal := GetFormatHasMarshal(format)
 
 	if hasStreamer {
-		unmarshaler := GetUnMarshalerStreamer(format)
-		loadDataStream(outPrefix, format, extension, unmarshaler, val)
+		unmarshaler := GetFormatUnMarshalerStreamer(format)
+		loadDataStream(outfile, unmarshaler, val)
 
 	} else if hasMarshal {
-		unmarshaler := GetUnMarshaler(format)
-		loadData(outPrefix, format, extension, unmarshaler, val)
+		unmarshaler := GetFormatUnMarshaler(format)
+		loadData(outfile, unmarshaler, val)
 	}
 }
 
-func loadData(outPrefix string, format string, extension string, unmarshaler UnMarshaler, val interface{}) {
-	outfile := GenFilename(outPrefix, extension)
-
+func loadData(outfile string, unmarshaler UnMarshaler, val interface{}) {
 	data, err := ioutil.ReadFile(outfile)
 
 	if err != nil {
@@ -218,8 +176,7 @@ func loadData(outPrefix string, format string, extension string, unmarshaler UnM
 	}
 }
 
-func loadDataStream(outPrefix string, format string, extension string, unmarshaler UnMarshalerStreamer, val interface{}) {
-	outfile := GenFilename(outPrefix, extension)
+func loadDataStream(outfile string, unmarshaler UnMarshalerStreamer, val interface{}) {
 	fmt.Println("loading from ", outfile)
 	unmarshaler(outfile, val)
 }

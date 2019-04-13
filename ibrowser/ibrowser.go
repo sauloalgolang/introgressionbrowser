@@ -170,13 +170,20 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 
 func (ib *IBrowser) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
 	baseName = outPrefix
-	fileName = save.GenFilename(baseName, format)
+
+	saver := save.NewSaver(baseName, format)
+
+	fileName = saver.GenFilename()
+
 	return baseName, fileName
 }
 
 func (ib *IBrowser) Save(outPrefix string, format string) {
 	baseName, _ := ib.GenFilename(outPrefix, format)
-	save.Save(baseName, format, ib)
+
+	saver := save.NewSaver(baseName, format)
+	saver.Save(ib)
+
 	ib.saveBlock(baseName, format)
 	ib.saveChromosomes(baseName, format)
 }
@@ -190,24 +197,7 @@ func (ib *IBrowser) saveChromosomes(outPrefix string, format string) {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.chromosomes[chromosomeName]
 
-		_, fileName := chromosome.GenFilename(outPrefix, format)
-
-		fmt.Print("saving chromosome: ", chromosomeName, " to: ", fileName)
-
-		if _, err := os.Stat(fileName); err == nil {
-			// path/to/whatever exists
-			fmt.Println(" exists")
-			continue
-
-		} else if os.IsNotExist(err) {
-			fmt.Println(" creating")
-			// path/to/whatever does *not* exist
-
-		} else {
-			// Schrodinger: file may or may not exist. See err for details.
-
-			// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
-		}
+		fmt.Print("saving chromosome: ", chromosomeName)
 
 		chromosome.Save(outPrefix, format)
 	}

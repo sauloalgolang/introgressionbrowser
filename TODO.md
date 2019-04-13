@@ -1,6 +1,5 @@
 TODO:
 - [ ] Replace as many callbacks as possible
-- [ ] Rewrite check.py
 - [ ] Use snappy for compression
     - https://github.com/golang/snappy
 - [ ] Implement limits in main function
@@ -15,6 +14,7 @@ TODO:
     - https://github.com/brentp/cgotabix
 
 DONE:
+- [x] Rewrite check.py
 - [x] Double check distance matrix is working
 - [x] Test YAML Encoder/Decoder using streams
     - https://godoc.org/gopkg.in/yaml.v2#Encoder
