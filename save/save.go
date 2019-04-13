@@ -12,6 +12,7 @@ type Saver struct {
 	Compressor          string
 	FormatExtension     string
 	CompressorExtension string
+	Extension           string
 }
 
 func NewSaver(prefix string, format string) *Saver {
@@ -29,6 +30,7 @@ func newSaver(prefix string, format string, compressor string, formatExtension s
 		Compressor:          compressor,
 		FormatExtension:     formatExtension,
 		CompressorExtension: compressorExtension,
+		Extension:           "",
 	}
 
 	return &s
@@ -56,6 +58,10 @@ func (s *Saver) SetCompressorExtension(extension string) {
 	s.CompressorExtension = extension
 }
 
+func (s *Saver) SetExtension(extension string) {
+	s.Extension = extension
+}
+
 //
 // Getters
 //
@@ -63,12 +69,17 @@ func (s *Saver) SetCompressorExtension(extension string) {
 func (s *Saver) GenFilename() string {
 	outname := s.Prefix
 
-	if s.FormatExtension != "" {
-		outname += "." + s.FormatExtension
-	}
+	if s.Extension != "" {
+		outname += "." + s.Extension
 
-	if s.CompressorExtension != "" {
-		outname += "." + s.CompressorExtension
+	} else {
+		if s.FormatExtension != "" {
+			outname += "." + s.FormatExtension
+		}
+
+		if s.CompressorExtension != "" {
+			outname += "." + s.CompressorExtension
+		}
 	}
 
 	return outname

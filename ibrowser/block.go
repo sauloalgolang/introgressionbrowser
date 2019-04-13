@@ -80,26 +80,26 @@ func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatr
 	ibb.add(position, distance, true)
 }
 
-func (ibb *IBBlock) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
 	return baseName, fileName
 }
 
-func (ibb *IBBlock) Save(outPrefix string, format string) {
-	baseName, _ := ibb.GenFilename(outPrefix, format)
-	saver := save.NewSaver(baseName, format)
+func (ibb *IBBlock) Save(outPrefix string, format string, compression string) {
+	baseName, _ := ibb.GenFilename(outPrefix, format, compression)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Save(ibb)
-	ibb.matrix.Save(baseName, format)
+	ibb.matrix.Save(baseName, format, compression)
 }
 
-func (ibb *IBBlock) Load(outPrefix string, format string) {
-	baseName, _ := ibb.GenFilename(outPrefix, format)
-	saver := save.NewSaver(baseName, format)
+func (ibb *IBBlock) Load(outPrefix string, format string, compression string) {
+	baseName, _ := ibb.GenFilename(outPrefix, format, compression)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Load(ibb)
-	ibb.matrix.Load(baseName, format)
+	ibb.matrix.Load(baseName, format, compression)
 }

@@ -102,26 +102,26 @@ func (d *DistanceMatrix1D32) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
 	return uint64((*d).Data[d.ijToK(p1, p2)])
 }
 
-func (d *DistanceMatrix1D32) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+func (d *DistanceMatrix1D32) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "_matrix"
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
 	return baseName, fileName
 }
 
-func (d *DistanceMatrix1D32) Save(outPrefix string, format string) {
-	baseName, _ := d.GenFilename(outPrefix, format)
+func (d *DistanceMatrix1D32) Save(outPrefix string, format string, compression string) {
+	baseName, _ := d.GenFilename(outPrefix, format, compression)
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Save(d)
 }
 
-func (d *DistanceMatrix1D32) Load(outPrefix string, format string) {
-	baseName, _ := d.GenFilename(outPrefix, format)
+func (d *DistanceMatrix1D32) Load(outPrefix string, format string, compression string) {
+	baseName, _ := d.GenFilename(outPrefix, format, compression)
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Load(d)
 }

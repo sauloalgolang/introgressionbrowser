@@ -31,19 +31,19 @@ func NewChromosomeNames(size int, cap int) (cn *ChromosomeNamesType) {
 
 func (cn *ChromosomeNamesType) Save(outPrefix string) {
 	saver := save.NewSaver(outPrefix, "yaml")
-	saver.SetFormatExtension(IndexExtension)
+	saver.SetExtension(IndexExtension)
 	saver.Save(cn)
 }
 
 func (cn *ChromosomeNamesType) Load(outPrefix string) {
 	saver := save.NewSaver(outPrefix, "yaml")
-	saver.SetFormatExtension(IndexExtension)
+	saver.SetExtension(IndexExtension)
 	saver.Load(cn)
 }
 
 func (cn *ChromosomeNamesType) Exists(outPrefix string) (bool, error) {
 	saver := save.NewSaver(outPrefix, "yaml")
-	saver.SetFormatExtension(IndexExtension)
+	saver.SetExtension(IndexExtension)
 	return saver.Exists()
 }
 

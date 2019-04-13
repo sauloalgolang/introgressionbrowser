@@ -168,37 +168,37 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 	}
 }
 
-func (ib *IBrowser) GenFilename(outPrefix string, format string) (baseName string, fileName string) {
+func (ib *IBrowser) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
 	return baseName, fileName
 }
 
-func (ib *IBrowser) Save(outPrefix string, format string) {
-	baseName, _ := ib.GenFilename(outPrefix, format)
+func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
+	baseName, _ := ib.GenFilename(outPrefix, format, compression)
 
-	saver := save.NewSaver(baseName, format)
+	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Save(ib)
 
-	ib.saveBlock(baseName, format)
-	ib.saveChromosomes(baseName, format)
+	ib.saveBlock(baseName, format, compression)
+	ib.saveChromosomes(baseName, format, compression)
 }
 
-func (ib *IBrowser) saveBlock(outPrefix string, format string) {
-	ib.block.Save(outPrefix+"_block", format)
+func (ib *IBrowser) saveBlock(outPrefix string, format string, compression string) {
+	ib.block.Save(outPrefix+"_block", format, compression)
 }
 
-func (ib *IBrowser) saveChromosomes(outPrefix string, format string) {
+func (ib *IBrowser) saveChromosomes(outPrefix string, format string, compression string) {
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.chromosomes[chromosomeName]
 
 		fmt.Print("saving chromosome: ", chromosomeName)
 
-		chromosome.Save(outPrefix, format)
+		chromosome.Save(outPrefix, format, compression)
 	}
 }
