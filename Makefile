@@ -174,4 +174,5 @@ prof_run: clean ibrowser data/360_merged_2.50.vcf.gz
 check:
 	ls -la
 	ls -la res/
+	ls -la bin/
 	python3 ./check.py $(OUTFILE)_360_merged_2.50.vcf.gz
