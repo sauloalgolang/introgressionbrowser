@@ -27,5 +27,6 @@ deploy:
   - bin/ibrowser
   - bin/ibrowser.exe
   - bin/ibrowser.wasm
+  skip_cleanup: true
   on:
     repo: sauloalgolang/introgressionbrowser
