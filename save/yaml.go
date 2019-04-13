@@ -2,6 +2,7 @@ package save
 
 import (
 	"gopkg.in/yaml.v2"
+	"io"
 	"os"
 )
 
@@ -15,12 +16,16 @@ func yamlMarshaler(filePath string, object interface{}) ([]byte, error) {
 	defer file.Close()
 
 	if err == nil {
-		encoder := yaml.NewEncoder(file)
-		encoder.Encode(object)
-		encoder.Close()
+		yamlMarshalerWriter(file, object)
 	}
 
 	return []byte{}, err
+}
+
+func yamlMarshalerWriter(file io.Writer, object interface{}) {
+	encoder := yaml.NewEncoder(file)
+	encoder.Encode(object)
+	encoder.Close()
 }
 
 func yamlUnMarshaler(filePath string, object interface{}) error {
@@ -28,9 +33,14 @@ func yamlUnMarshaler(filePath string, object interface{}) error {
 	defer file.Close()
 
 	if err == nil {
-		decoder := yaml.NewDecoder(file)
-		err = decoder.Decode(object)
+		err = yamlUnMarshalerReader(file, object)
 	}
 
+	return err
+}
+
+func yamlUnMarshalerReader(file io.Reader, object interface{}) (err error) {
+	decoder := yaml.NewDecoder(file)
+	err = decoder.Decode(object)
 	return err
 }

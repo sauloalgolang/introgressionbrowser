@@ -2,6 +2,7 @@ package save
 
 import (
 	"encoding/gob"
+	"io"
 	"os"
 )
 
@@ -15,11 +16,15 @@ func gobMarshaler(filePath string, object interface{}) ([]byte, error) {
 	defer file.Close()
 
 	if err == nil {
-		encoder := gob.NewEncoder(file)
-		encoder.Encode(object)
+		gobMarshalerWriter(file, object)
 	}
 
 	return []byte{}, err
+}
+
+func gobMarshalerWriter(file io.Writer, object interface{}) {
+	encoder := gob.NewEncoder(file)
+	encoder.Encode(object)
 }
 
 func gobUnMarshaler(filePath string, object interface{}) error {
@@ -27,9 +32,14 @@ func gobUnMarshaler(filePath string, object interface{}) error {
 	defer file.Close()
 
 	if err == nil {
-		decoder := gob.NewDecoder(file)
-		err = decoder.Decode(object)
+		err = gobMarshalerReader(file, object)
 	}
 
+	return err
+}
+
+func gobMarshalerReader(file io.Reader, object interface{}) (err error) {
+	decoder := gob.NewDecoder(file)
+	err = decoder.Decode(object)
 	return err
 }

@@ -6,7 +6,7 @@ import (
 )
 
 import (
-	"gopkg.in/mgo.v2/bson"
+	// "gopkg.in/mgo.v2/bson"
 	"gopkg.in/yaml.v2"
 )
 
@@ -28,15 +28,6 @@ var Formats = map[string]SaveFormat{
 		MarshalerStreamer:   yamlMarshaler,
 		UnMarshalerStreamer: yamlUnMarshaler,
 	},
-	"bson": SaveFormat{
-		Extension:           "bson",
-		HasMarshal:          true,
-		HasStreamer:         false,
-		Marshaler:           bson.Marshal,
-		UnMarshaler:         bson.Unmarshal,
-		MarshalerStreamer:   emptyMarshalerStreamer,
-		UnMarshalerStreamer: emptyUnMarshalerStreamer,
-	},
 	"gob": SaveFormat{
 		Extension:           "gob",
 		HasMarshal:          false,
@@ -46,11 +37,20 @@ var Formats = map[string]SaveFormat{
 		MarshalerStreamer:   gobMarshaler,
 		UnMarshalerStreamer: gobUnMarshaler,
 	},
+	// "bson": SaveFormat{
+	// 	Extension:           "bson",
+	// 	HasMarshal:          true,
+	// 	HasStreamer:         false,
+	// 	Marshaler:           bson.Marshal,
+	// 	UnMarshaler:         bson.Unmarshal,
+	// 	MarshalerStreamer:   emptyMarshalerStreamer,
+	// 	UnMarshalerStreamer: emptyUnMarshalerStreamer,
+	// },
 	// "json": SaveFormat{".json", true, false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
 	// "binary": SaveFormat{"bin", true, false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
 }
 
-var FormatNames = []string{"yaml", "bson", "gob"}
+var FormatNames = []string{"yaml", "gob"} // "bson",
 var DefaultFormat = "yaml"
 
 //
