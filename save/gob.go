@@ -32,13 +32,13 @@ func gobUnMarshaler(filePath string, object interface{}) error {
 	defer file.Close()
 
 	if err == nil {
-		err = gobMarshalerReader(file, object)
+		err = gobUnMarshalerReader(file, object)
 	}
 
 	return err
 }
 
-func gobMarshalerReader(file io.Reader, object interface{}) (err error) {
+func gobUnMarshalerReader(file io.Reader, object interface{}) (err error) {
 	decoder := gob.NewDecoder(file)
 	err = decoder.Decode(object)
 	return err

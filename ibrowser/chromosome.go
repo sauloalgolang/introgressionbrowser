@@ -203,7 +203,7 @@ func (ibc *IBChromosome) saveBlocks(outPrefix string, format string, compression
 		block := ibc.blocks[blockPos]
 		blockNum := block.BlockNumber
 
-		fmt.Print("saving block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+		fmt.Println("saving block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
 
 		block.Save(outPrefix, format, compression)
 	}
@@ -220,7 +220,7 @@ func (ibc *IBChromosome) loadBlocks(outPrefix string, format string, compression
 		block := ibc.blocks[blockPos]
 		blockNum := block.BlockNumber
 
-		fmt.Print("loading block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+		fmt.Println("loading block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
 
 		block.Load(outPrefix, format, compression)
 	}

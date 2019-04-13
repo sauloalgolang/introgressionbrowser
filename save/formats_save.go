@@ -2,6 +2,7 @@ package save
 
 import (
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -67,7 +68,7 @@ type Marshaler func(interface{}) ([]byte, error)
 type UnMarshaler func([]byte, interface{}) error
 type MarshalerStreamer func(string, interface{}) ([]byte, error)
 type UnMarshalerStreamer func(string, interface{}) error
-type MarshalerStreamerWriter func(io.Writer, interface{}) ([]byte, error)
+type MarshalerStreamerWriter func(io.Writer, interface{})
 type UnMarshalerStreamerReader func(io.Reader, interface{}) error
 
 type SaveFormat struct {
@@ -123,6 +124,11 @@ func GetFormatHasMarshal(format string) bool {
 	return sf.HasMarshal
 }
 
+func GetFormatHasStreamer(format string) bool {
+	sf := GetFormatInformation(format)
+	return sf.HasStreamer
+}
+
 func GetFormatExtension(format string) string {
 	sf := GetFormatInformation(format)
 	return sf.Extension
@@ -138,6 +144,11 @@ func GetFormatMarshalerStreamer(format string) MarshalerStreamer {
 	return sf.MarshalerStreamer
 }
 
+func GetFormatMarshalerStreamerWriter(format string) MarshalerStreamerWriter {
+	sf := GetFormatInformation(format)
+	return sf.MarshalerStreamerWriter
+}
+
 func GetFormatUnMarshaler(format string) UnMarshaler {
 	sf := GetFormatInformation(format)
 	return sf.UnMarshaler
@@ -148,7 +159,7 @@ func GetFormatUnMarshalerStreamer(format string) UnMarshalerStreamer {
 	return sf.UnMarshalerStreamer
 }
 
-func GetFormatHasStreamer(format string) bool {
+func GetFormatUnMarshalerStreamerReader(format string) UnMarshalerStreamerReader {
 	sf := GetFormatInformation(format)
-	return sf.HasStreamer
+	return sf.UnMarshalerStreamerReader
 }

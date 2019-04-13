@@ -114,15 +114,34 @@ func (s *Saver) Exists() (bool, error) {
 
 func (s *Saver) Save(val interface{}) {
 	format := s.Format
+	compress := s.Compressor
+
+	// fmt.Println("format       ", format)
+	// fmt.Println("compress     ", compress)
 
 	hasStreamer := GetFormatHasStreamer(format)
 	hasMarshal := GetFormatHasMarshal(format)
+	isCompressed := GetCompressIsCompressed(compress)
+
+	// fmt.Println("hasStreamer  ", hasStreamer)
+	// fmt.Println("hasMarshal   ", hasMarshal)
+	// fmt.Println("isCompressed ", isCompressed)
 
 	outfile := s.GenFilename()
 
+	// fmt.Println("outfile      ", outfile)
+
 	if hasStreamer {
-		marshaler := GetFormatMarshalerStreamer(format)
-		saveDataStream(outfile, marshaler, val)
+		if isCompressed {
+			marshaler := GetFormatMarshalerStreamerWriter(format)
+			compressor := GetCompressInterfaceWriter(compress)
+			fmt.Println("marshaler ", marshaler)
+			fmt.Println("compressor", compressor)
+			saveDataStreamCompressed(outfile, marshaler, compressor, val)
+		} else {
+			marshaler := GetFormatMarshalerStreamer(format)
+			saveDataStream(outfile, marshaler, val)
+		}
 
 	} else if hasMarshal {
 		marshaler := GetFormatMarshaler(format)
@@ -146,7 +165,32 @@ func saveData(outfile string, marshaler Marshaler, val interface{}) {
 
 func saveDataStream(outfile string, marshaler MarshalerStreamer, val interface{}) {
 	fmt.Println("saving stream to ", outfile)
+
 	marshaler(outfile, val)
+}
+
+func saveDataStreamCompressed(outfile string, marshaler MarshalerStreamerWriter, compressor GenericNewWriter, val interface{}) error {
+	// fmt.Println("saveDataStreamCompressed :: outfile    ", outfile)
+	// fmt.Println("saveDataStreamCompressed :: marshaler  ", marshaler)
+	// fmt.Println("saveDataStreamCompressed :: compressor ", compressor)
+
+	file, err := os.OpenFile(outfile, os.O_CREATE|os.O_WRONLY, 0660) //|os.O_APPEND
+	defer file.Close()
+
+	if err == nil {
+		comp := compressor(file)
+
+		marshaler(comp, val)
+
+		comp.Flush()
+		comp.Close()
+
+	} else {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	return err
 }
 
 //

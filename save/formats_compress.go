@@ -68,12 +68,17 @@ func GetCompressInterface(compressor string) CompressorInterface {
 	return sc.Interface
 }
 
-func GetCompressInterfaceReader(compressor string) interface{} {
+func GetCompressInterfaceReader(compressor string) GenericNewReader {
 	sc := GetCompressInterface(compressor)
 	return sc.NewReader
 }
 
-func GetCompressInterfaceWriter(compressor string) interface{} {
+func GetCompressInterfaceWriter(compressor string) GenericNewWriter {
 	sc := GetCompressInterface(compressor)
 	return sc.NewWriter
+}
+
+func GetCompressIsCompressed(compressor string) bool {
+	sf := GetCompressInformation(compressor)
+	return sf.Compressor != "none"
 }

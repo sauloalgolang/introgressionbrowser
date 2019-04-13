@@ -1,7 +1,5 @@
 TODO:
 - [ ] Replace as many callbacks as possible
-- [ ] Use snappy for compression
-    - https://github.com/golang/snappy
 - [ ] Implement limits in main function
     - [ ] minSnpPerBlock
     - [ ] maxSnpPerBlock
@@ -14,6 +12,8 @@ TODO:
     - https://github.com/brentp/cgotabix
 
 DONE:
+- [X] Use snappy for compression
+    - https://github.com/golang/snappy
 - [x] Rewrite check.py
 - [x] Double check distance matrix is working
 - [x] Test YAML Encoder/Decoder using streams
