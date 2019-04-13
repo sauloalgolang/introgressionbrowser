@@ -20,22 +20,26 @@ import (
 
 var Formats = map[string]SaveFormat{
 	"yaml": SaveFormat{
-		Extension:           "yaml",
-		HasMarshal:          true,
-		HasStreamer:         true,
-		Marshaler:           yaml.Marshal,
-		UnMarshaler:         yaml.Unmarshal,
-		MarshalerStreamer:   yamlMarshaler,
-		UnMarshalerStreamer: yamlUnMarshaler,
+		Extension:                 "yaml",
+		HasMarshal:                true,
+		HasStreamer:               true,
+		Marshaler:                 yaml.Marshal,
+		UnMarshaler:               yaml.Unmarshal,
+		MarshalerStreamer:         yamlMarshaler,
+		UnMarshalerStreamer:       yamlUnMarshaler,
+		MarshalerStreamerWriter:   yamlMarshalerWriter,
+		UnMarshalerStreamerReader: yamlUnMarshalerReader,
 	},
 	"gob": SaveFormat{
-		Extension:           "gob",
-		HasMarshal:          false,
-		HasStreamer:         true,
-		Marshaler:           emptyMarshaler,
-		UnMarshaler:         emptyUnMarshaler,
-		MarshalerStreamer:   gobMarshaler,
-		UnMarshalerStreamer: gobUnMarshaler,
+		Extension:                 "gob",
+		HasMarshal:                false,
+		HasStreamer:               true,
+		Marshaler:                 emptyMarshaler,
+		UnMarshaler:               emptyUnMarshaler,
+		MarshalerStreamer:         gobMarshaler,
+		UnMarshalerStreamer:       gobUnMarshaler,
+		MarshalerStreamerWriter:   gobMarshalerWriter,
+		UnMarshalerStreamerReader: gobUnMarshalerReader,
 	},
 	// "bson": SaveFormat{
 	// 	Extension:           "bson",
@@ -63,15 +67,19 @@ type Marshaler func(interface{}) ([]byte, error)
 type UnMarshaler func([]byte, interface{}) error
 type MarshalerStreamer func(string, interface{}) ([]byte, error)
 type UnMarshalerStreamer func(string, interface{}) error
+type MarshalerStreamerWriter func(io.Writer, interface{}) ([]byte, error)
+type UnMarshalerStreamerReader func(io.Reader, interface{}) error
 
 type SaveFormat struct {
-	Extension           string
-	HasMarshal          bool // returns bytes
-	HasStreamer         bool // write directly to stream
-	Marshaler           Marshaler
-	UnMarshaler         UnMarshaler
-	MarshalerStreamer   MarshalerStreamer
-	UnMarshalerStreamer UnMarshalerStreamer
+	Extension                 string
+	HasMarshal                bool // returns bytes
+	HasStreamer               bool // write directly to stream
+	Marshaler                 Marshaler
+	UnMarshaler               UnMarshaler
+	MarshalerStreamer         MarshalerStreamer
+	UnMarshalerStreamer       UnMarshalerStreamer
+	MarshalerStreamerWriter   MarshalerStreamerWriter
+	UnMarshalerStreamerReader UnMarshalerStreamerReader
 }
 
 func emptyMarshaler(val interface{}) ([]byte, error) {
