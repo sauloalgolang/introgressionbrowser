@@ -123,6 +123,7 @@ serve: bin/httpserver wasm_exec.js
 requirements: get httpserver wasm_exec.js
 
 get:
+	pip install -r requirements.txt
 	go mod tidy -v
 	cat go.mod
 
