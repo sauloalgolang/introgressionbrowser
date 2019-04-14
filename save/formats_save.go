@@ -7,11 +7,8 @@ import (
 )
 
 import (
-	// "gopkg.in/mgo.v2/bson"
 	"gopkg.in/yaml.v2"
 )
-
-// import "github.com/kelindar/binary"
 
 //
 //
@@ -42,20 +39,9 @@ var Formats = map[string]SaveFormat{
 		MarshalerStreamerWriter:   gobMarshalerWriter,
 		UnMarshalerStreamerReader: gobUnMarshalerReader,
 	},
-	// "bson": SaveFormat{
-	// 	Extension:           "bson",
-	// 	HasMarshal:          true,
-	// 	HasStreamer:         false,
-	// 	Marshaler:           bson.Marshal,
-	// 	UnMarshaler:         bson.Unmarshal,
-	// 	MarshalerStreamer:   emptyMarshalerStreamer,
-	// 	UnMarshalerStreamer: emptyUnMarshalerStreamer,
-	// },
-	// "json": SaveFormat{".json", true, false, json.Marshal, json.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // no numerical key
-	// "binary": SaveFormat{"bin", true, false, binary.Marshal, binary.Unmarshal, emptyMarshalerStreamer, emptyUnMarshalerStreamer}, // fail to export reader
 }
 
-var FormatNames = []string{"yaml", "gob"} // "bson",
+var FormatNames = []string{"yaml", "gob"}
 var DefaultFormat = "yaml"
 
 //

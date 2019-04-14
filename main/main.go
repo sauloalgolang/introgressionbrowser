@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strings"
-	// "strconv"
 )
 
 import (
@@ -69,6 +68,7 @@ func main() {
 		fmt.Println("IBROWSER_GIT_STATUS         :", IBROWSER_GIT_STATUS)
 		fmt.Println("IBROWSER_GIT_DIFF           :", IBROWSER_GIT_DIFF)
 		fmt.Println("IBROWSER_GO_VERSION         :", IBROWSER_GO_VERSION)
+		fmt.Println("IBROWSER_VERSION            :", IBROWSER_VERSION)
 		os.Exit(0)
 	}
 
@@ -109,10 +109,11 @@ func main() {
 		fmt.Println("Openning", sourceFile)
 	}
 
-	// ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, *blockSize, *keepEmptyBlock)
 	ibrowser := ibrowser.NewIBrowser(*blockSize, *keepEmptyBlock)
 
 	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.RegisterCallBack)
+
+	runtime.GC() // get up-to-date statistics
 
 	ibrowser.Save(*outfile, *format, *compression)
 

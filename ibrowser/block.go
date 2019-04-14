@@ -3,7 +3,6 @@ package ibrowser
 import (
 	"fmt"
 	"math"
-	// "os"
 	"sync/atomic"
 )
 

@@ -5,8 +5,8 @@ package openfile
 
 import (
 	"archive/tar"
-	// "compress/gzip"
 	"fmt"
+	// "compress/gzip"
 	gzip "github.com/klauspost/pgzip"
 	"io"
 	"os"

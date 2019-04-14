@@ -8,9 +8,6 @@ import (
 
 // https://medium.com/@kpbird/golang-serialize-struct-using-gob-part-1-e927a6547c00
 
-// type Marshaler func(val interface{}) ([]byte, error)
-// type UnMarshaler func(data []byte, v interface{}) error
-
 func gobMarshaler(filePath string, object interface{}) ([]byte, error) {
 	file, err := os.Create(filePath)
 	defer file.Close()

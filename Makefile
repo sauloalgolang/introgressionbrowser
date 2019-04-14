@@ -126,7 +126,7 @@ serve: bin/httpserver wasm_exec.js
 requirements: get httpserver wasm_exec.js
 
 get:
-	pyenv global 3.6 && pip3 install -r requirements.txt
+	pip3 install -r requirements.txt
 	go mod tidy -v
 	cat go.mod
 

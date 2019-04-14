@@ -37,7 +37,6 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		LineNumber: 0,
 		Chromosome: "",
 		Position:   0,
-		// TempDistance: interfaces.NewDistanceMatrix(0),
 	}
 
 	sendOnlyChromosomeNames := len(chromosomeNames) == 1 && chromosomeNames[0] == ""
@@ -116,11 +115,6 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 				} else { // not found yet, therefore continue
 					continue
 				}
-				// } else {
-				// 	if !foundChromosome { // first time found. let system know
-				// 		foundChromosome = true
-				// 	}
-				// 	fmt.Println("Found chromosome", chrom, " register ", registerNumber)
 			}
 		}
 
@@ -226,10 +220,10 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		if lineNumber%100000 == 0 && lineNumber != 0 {
 			fmt.Println(lineNumber,
 				registerNumber,
-				// row,
-				// cols,
 				chrom,
 				pos,
+				// row,
+				// cols,
 				// info,
 				// samples,
 				// samplesGT,

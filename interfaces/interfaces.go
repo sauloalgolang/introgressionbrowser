@@ -23,23 +23,23 @@ type VCFGT struct {
 type VCFSamplesGT = []VCFGT
 
 type VCFRegisterRaw struct {
+	LineNumber   int64
+	Chromosome   string
+	Position     uint64
+	Alt          []string
+	Samples      VCFSamplesGT
+	Distance     *DistanceMatrix
+	TempDistance *DistanceMatrix
 	// SampleNames []string
 	// IsHomozygous bool
 	// IsIndel      bool
 	// IsMNP        bool
-	LineNumber int64
-	Chromosome string
-	Position   uint64
 	// Quality      float32
 	// Info         map[string]interface{}
 	// Filter       string
 	// NumAlt       uint64
 	// Phased       bool
-	Alt     []string
-	Samples VCFSamplesGT
 	// Fields       map[string]string
-	Distance     *DistanceMatrix
-	TempDistance *DistanceMatrix
 }
 
 type VCFRegister = VCFRegisterRaw

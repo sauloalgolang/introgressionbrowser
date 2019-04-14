@@ -1,9 +1,7 @@
 package ibrowser
 
 import (
-	// "encoding/json"
 	"fmt"
-	// "io"
 	"math"
 	"os"
 	"sync"
@@ -50,7 +48,6 @@ type IBrowser struct {
 	// TODO: per sample stats
 }
 
-// func NewIBrowser(reader interfaces.VCFReaderType, blockSize uint64, keepEmptyBlock bool) *IBrowser {
 func NewIBrowser(blockSize uint64, keepEmptyBlock bool) *IBrowser {
 	if blockSize > uint64((math.MaxUint32/3)-1) {
 		fmt.Println("block size too large")
@@ -58,8 +55,6 @@ func NewIBrowser(blockSize uint64, keepEmptyBlock bool) *IBrowser {
 	}
 
 	ib := IBrowser{
-		// reader: reader,
-		//
 		Samples:    make(interfaces.VCFSamples, 0, 100),
 		NumSamples: 0,
 		//
@@ -130,10 +125,6 @@ func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
 		return ib.AddChromosome(chromosomeName)
 	}
 }
-
-// func (ib *IBrowser) ReaderCallBack(r io.Reader, continueOnError bool, chromosomeNames []string) {
-// 	ib.reader(r, ib.RegisterCallBack, continueOnError, chromosomeNames)
-// }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
 	if atomic.LoadUint64(&ib.NumSamples) == 0 {

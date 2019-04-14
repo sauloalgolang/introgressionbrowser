@@ -101,12 +101,6 @@ func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
 }
 
 func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *interfaces.DistanceMatrix {
-	// if uint64(len(TempDistanceMatrix)) != numSamples {
-	// 	fmt.Println("CalculateDistance NewDistanceMatrix")
-	// 	TempDistanceMatrix = *NewDistanceMatrix(numSamples)
-	// } else {
-	// 	TempDistanceMatrix.Clean()
-	// }
 	reg.TempDistance.Clean()
 
 	valids, numValids := GetValids(reg.Samples)
@@ -131,7 +125,6 @@ func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *interfac
 				// fmt.Print("    BOTH DIPLOYD ")
 				dist := CalculateDistanceDiploid(gt1, gt2)
 				reg.TempDistance.Set(samplePos1, samplePos2, dist)
-				// TempDistanceMatrix[samplePos2][samplePos1] += dist
 				// fmt.Println(gt1, " ", gt2, " ", dist)
 			}
 		}
