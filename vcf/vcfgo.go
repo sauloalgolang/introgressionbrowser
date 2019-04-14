@@ -13,6 +13,8 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 )
 
+// https://github.com/brentp/vcfgo/blob/master/examples/main.go
+
 func ProcessVcfVcfGo(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeName string) {
 	vr, err := vcfgo.NewReader(r, false)
 

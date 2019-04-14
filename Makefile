@@ -147,10 +147,12 @@ data/360_merged_2.50.vcf.gz:
 .PHONY: clean run150 run360 prof prof_run
 
 clean:
-	rm -v $(OUTFILE)*.yaml || true
-	rm -v $(OUTFILE)*.bson || true
-	rm -v $(OUTFILE)*.bin  || true
-	rm -v $(OUTFILE)*.gob  || true
+	rm -v $(OUTFILE)*.yaml   || true
+	rm -v $(OUTFILE)*.bson   || true
+	rm -v $(OUTFILE)*.bin    || true
+	rm -v $(OUTFILE)*.gob    || true
+	rm -v $(OUTFILE)*.gz     || true
+	rm -v $(OUTFILE)*.snappy || true
 
 run150: clean ibrowser data/150_VCFs_2.50.tar.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
