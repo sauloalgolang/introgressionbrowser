@@ -51,17 +51,9 @@ func NewDistanceMatrix1D32(chromosomeName string, blockSize uint64, blockPositio
 	return &r
 }
 
-func (d *DistanceMatrix1D32) add(e *DistanceMatrix1D32, isAtomic bool) {
-	if isAtomic {
-		for i := range (*d).Data {
-			atomic.AddUint32(&(*d).Data[i], atomic.LoadUint32(&(*e).Data[i]))
-		}
-	} else {
-		for i := range (*d).Data {
-			(*d).Data[i] += (*e).Data[i]
-		}
-	}
-}
+//
+// Exported Methods
+//
 
 func (d *DistanceMatrix1D32) Add(e *DistanceMatrix1D32) {
 	d.add(e, false)
@@ -77,20 +69,12 @@ func (d *DistanceMatrix1D32) Clean() {
 	}
 }
 
-func (d *DistanceMatrix1D32) ijToK(i uint64, j uint64) uint64 {
-	return ijToK(d.Dimension, i, j)
-}
-
-func (d *DistanceMatrix1D32) kToIJ(k uint64) (uint64, uint64) {
-	return kToIJ(d.Dimension, k)
-}
-
 func (d *DistanceMatrix1D32) Set(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 	v := (*d).Data[p]
 	r := v + uint32(val)
 
-	if uint64(v)+val >= uint64(math.MaxUint32) {
+	if val >= uint64(math.MaxUint32) {
 		fmt.Println("count overflow")
 		os.Exit(1)
 	}
@@ -113,22 +97,40 @@ func (d *DistanceMatrix1D32) GenFilename(outPrefix string, format string, compre
 }
 
 //
-// Save
+// Unexported Methods
+//
+
+func (d *DistanceMatrix1D32) ijToK(i uint64, j uint64) uint64 {
+	return ijToK(d.Dimension, i, j)
+}
+
+func (d *DistanceMatrix1D32) kToIJ(k uint64) (uint64, uint64) {
+	return kToIJ(d.Dimension, k)
+}
+
+func (d *DistanceMatrix1D32) add(e *DistanceMatrix1D32, isAtomic bool) {
+	if isAtomic {
+		for i := range (*d).Data {
+			atomic.AddUint32(&(*d).Data[i], atomic.LoadUint32(&(*e).Data[i]))
+		}
+	} else {
+		for i := range (*d).Data {
+			(*d).Data[i] += (*e).Data[i]
+		}
+	}
+}
+
+//
+// Save and Load
 //
 func (d *DistanceMatrix1D32) Save(outPrefix string, format string, compression string) {
 	d.saveLoad(true, outPrefix, format, compression)
 }
 
-//
-// Load
-//
 func (d *DistanceMatrix1D32) Load(outPrefix string, format string, compression string) {
 	d.saveLoad(false, outPrefix, format, compression)
 }
 
-//
-// SaveLoad
-//
 func (d *DistanceMatrix1D32) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := d.GenFilename(outPrefix, format, compression)
 	saver := save.NewSaverCompressed(baseName, format, compression)

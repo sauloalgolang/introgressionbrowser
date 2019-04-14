@@ -12,6 +12,9 @@ import "github.com/sauloalgolang/introgressionbrowser/save"
 // Matrix 1D
 //
 //
+
+type DistanceRow64 []uint64
+
 type DistanceMatrix1D64 struct {
 	ChromosomeName string
 	BlockSize      uint64
@@ -19,7 +22,7 @@ type DistanceMatrix1D64 struct {
 	BlockNumber    uint64
 	Dimension      uint64
 	Size           uint64
-	Data           DistanceRow
+	Data           DistanceRow64
 }
 
 func NewDistanceMatrix1D64(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64) *DistanceMatrix1D64 {
@@ -39,7 +42,7 @@ func NewDistanceMatrix1D64(chromosomeName string, blockSize uint64, blockPositio
 		BlockNumber:    blockNumber,
 		Dimension:      dimension,
 		Size:           size,
-		Data:           make(DistanceRow, size, size),
+		Data:           make(DistanceRow64, size, size),
 	}
 
 	r.Clean()

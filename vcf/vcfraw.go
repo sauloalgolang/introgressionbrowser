@@ -115,6 +115,8 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 				} else { // not found yet, therefore continue
 					continue
 				}
+			} else if !foundChromosome {
+				foundChromosome = true
 			}
 		}
 
