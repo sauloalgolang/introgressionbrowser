@@ -68,6 +68,7 @@ func main() {
 		fmt.Println("IBROWSER_GIT_COMMIT_TITLE   :", IBROWSER_GIT_COMMIT_TITLE)
 		fmt.Println("IBROWSER_GIT_STATUS         :", IBROWSER_GIT_STATUS)
 		fmt.Println("IBROWSER_GIT_DIFF           :", IBROWSER_GIT_DIFF)
+		fmt.Println("IBROWSER_GO_VERSION         :", IBROWSER_GO_VERSION)
 		os.Exit(0)
 	}
 

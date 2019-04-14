@@ -30,6 +30,7 @@ GIT_COMMIT_NOTES=$(shell git log --pretty=format:'%N' -n 1 | sed "s/\"/'/g")
 GIT_COMMIT_TITLE=$(shell git log --pretty=format:'%s' -n 1 | sed "s/\"/'/g")
 GIT_STATUS=$(shell bash -c 'git diff-index --quiet HEAD; if [ "$$?" == "1" ]; then echo "dirty"; else echo "clean"; fi')
 GIT_DIFF=$(shell bash -c 'git diff | md5sum --text | cut -f1 -d" "')
+GO_VERSION=$(shell go version)
 # TIMESTAMP=$(shell date +"%Y-%m-%d_%H-%M-%S")
 
 # VERSION=$(GIT_COMMIT) - Status $(GIT_STATUS) - Diff $(GIT_DIFF)
@@ -42,6 +43,7 @@ $(info GIT_COMMIT_NOTES    $(GIT_COMMIT_NOTES))
 $(info GIT_COMMIT_TITLE    $(GIT_COMMIT_TITLE))
 $(info GIT_STATUS          $(GIT_STATUS))
 $(info GIT_DIFF            $(GIT_DIFF))
+$(info GO_VERSION          $(GO_VERSION))
 # $(info TIMESTAMP           $(TIMESTAMP))
 # $(info VERSION             $(VERSION))
 $(info )
@@ -53,6 +55,7 @@ LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR)'
 LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_COMMITER=$(GIT_COMMIT_COMMITER)'
 LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_NOTES=$(GIT_COMMIT_NOTES)'
 LDFLAGS+=-X 'main.IBROWSER_GIT_COMMIT_TITLE=$(GIT_COMMIT_TITLE)'
+LDFLAGS+=-X 'main.IBROWSER_GO_VERSION=$(GO_VERSION)'
 
 # $(info $(LDFLAGS))
 # $(info )
