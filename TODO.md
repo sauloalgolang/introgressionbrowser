@@ -1,5 +1,5 @@
 TODO:
-- [ ] Replace as many callbacks as possible
+- [X] Replace as many callbacks as possible
 - [ ] Implement limits in main function
     - [ ] minSnpPerBlock
     - [ ] maxSnpPerBlock

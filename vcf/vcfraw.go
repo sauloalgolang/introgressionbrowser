@@ -11,7 +11,6 @@ import (
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
 func SliceIndex(limit int, predicate func(i int) bool) int {
@@ -242,7 +241,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		register.Position = pos
 		register.Alt = altCols
 		register.Samples = samplesGT
-		register.Distance = tools.CalculateDistance(numSampleNames, &register)
+		register.Distance = CalculateDistance(numSampleNames, &register)
 
 		callback(&SampleNames, &register)
 	}
