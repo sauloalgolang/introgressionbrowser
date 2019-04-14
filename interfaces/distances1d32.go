@@ -112,18 +112,32 @@ func (d *DistanceMatrix1D32) GenFilename(outPrefix string, format string, compre
 	return baseName, fileName
 }
 
+//
+// Save
+//
 func (d *DistanceMatrix1D32) Save(outPrefix string, format string, compression string) {
-	baseName, _ := d.GenFilename(outPrefix, format, compression)
-
-	fmt.Println("saving block matrix    : ", outPrefix, " block num: ", d.BlockNumber)
-
-	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Save(d)
+	d.saveLoad(true, outPrefix, format, compression)
 }
 
+//
+// Load
+//
 func (d *DistanceMatrix1D32) Load(outPrefix string, format string, compression string) {
-	baseName, _ := d.GenFilename(outPrefix, format, compression)
+	d.saveLoad(false, outPrefix, format, compression)
+}
 
+//
+// SaveLoad
+//
+func (d *DistanceMatrix1D32) saveLoad(isSave bool, outPrefix string, format string, compression string) {
+	baseName, _ := d.GenFilename(outPrefix, format, compression)
 	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Load(d)
+
+	if isSave {
+		fmt.Println("saving block matrix    : ", outPrefix, " block num: ", d.BlockNumber)
+		saver.Save(d)
+	} else {
+		fmt.Println("loading block matrix   : ", outPrefix, " block num: ", d.BlockNumber)
+		saver.Load(d)
+	}
 }

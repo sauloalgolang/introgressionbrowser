@@ -176,53 +176,65 @@ func (ibc *IBChromosome) GenFilename(outPrefix string, format string, compressio
 	return baseName, fileName
 }
 
+//
+// Save
+//
+
 func (ibc *IBChromosome) Save(outPrefix string, format string, compression string) {
-	baseName, _ := ibc.GenFilename(outPrefix, format, compression)
-	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Save(ibc)
-	ibc.saveBlock(baseName, format, compression)
-	ibc.saveBlocks(baseName, format, compression)
+	ibc.saveLoad(true, outPrefix, format, compression)
 }
 
+//
+// Load
+//
 func (ibc *IBChromosome) Load(outPrefix string, format string, compression string) {
+	ibc.saveLoad(false, outPrefix, format, compression)
+}
+
+//
+// SaveLoad
+//
+
+func (ibc *IBChromosome) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ibc.GenFilename(outPrefix, format, compression)
 	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Load(ibc)
-	ibc.loadBlock(baseName, format, compression)
-	ibc.loadBlocks(baseName, format, compression)
+
+	if isSave {
+		saver.Save(ibc)
+	} else {
+		saver.Load(ibc)
+	}
+
+	ibc.saveLoadBlock(isSave, baseName, format, compression)
+	ibc.saveLoadBlocks(isSave, baseName, format, compression)
+
 }
 
-func (ibc *IBChromosome) saveBlock(outPrefix string, format string, compression string) {
-	fmt.Println("saving chromosome block: ", outPrefix)
-	ibc.block.Save(outPrefix+"_block", format, compression)
-}
+func (ibc *IBChromosome) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
+	newPrefix := outPrefix + "_block"
 
-func (ibc *IBChromosome) saveBlocks(outPrefix string, format string, compression string) {
-	outPrefix = outPrefix + "_blocks"
-
-	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
-		block := ibc.blocks[blockPos]
-		blockNum := block.BlockNumber
-
-		fmt.Println("saving block           : ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
-
-		block.Save(outPrefix, format, compression)
+	if isSave {
+		fmt.Println("saving  chromosome block: ", newPrefix)
+		ibc.block.Save(newPrefix, format, compression)
+	} else {
+		fmt.Println("loading chromosome block: ", newPrefix)
+		ibc.block.Load(newPrefix, format, compression)
 	}
 }
 
-func (ibc *IBChromosome) loadBlock(outPrefix string, format string, compression string) {
-	ibc.block.Load(outPrefix+"_block", format, compression)
-}
-
-func (ibc *IBChromosome) loadBlocks(outPrefix string, format string, compression string) {
-	outPrefix = outPrefix + "_blocks"
+func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format string, compression string) {
+	newPrefix := outPrefix + "_blocks"
 
 	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
 		block := ibc.blocks[blockPos]
 		blockNum := block.BlockNumber
 
-		fmt.Println("loading block: ", outPrefix, " block num: ", blockNum, " block pos: ", blockPos)
-
-		block.Load(outPrefix, format, compression)
+		if isSave {
+			fmt.Println("saving block           : ", newPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+			block.Save(newPrefix, format, compression)
+		} else {
+			fmt.Println("loading block          : ", newPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+			block.Load(newPrefix, format, compression)
+		}
 	}
 }

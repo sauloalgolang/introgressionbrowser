@@ -104,6 +104,16 @@ func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
 	}
 }
 
+func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
+	if chromosome, ok := ib.GetChromosome(chromosomeName); ok {
+		// fmt.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
+		return chromosome
+	} else {
+		// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
+		return ib.AddChromosome(chromosomeName)
+	}
+}
+
 func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 	if chromosome, hasChromosome := ib.GetChromosome(chromosomeName); hasChromosome {
 		fmt.Println("Failed to add chromosome", chromosomeName, ". Already exists", &chromosome)
@@ -114,16 +124,6 @@ func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 	ib.ChromosomesNames = append(ib.ChromosomesNames, chromosomeName)
 
 	return ib.chromosomes[chromosomeName]
-}
-
-func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string) *IBChromosome {
-	if chromosome, ok := ib.GetChromosome(chromosomeName); ok {
-		// fmt.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
-		return chromosome
-	} else {
-		// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
-		return ib.AddChromosome(chromosomeName)
-	}
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interfaces.VCFRegister) {
@@ -170,29 +170,64 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 	return baseName, fileName
 }
 
+//
+// Save
+//
 func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
+	ib.saveLoad(true, outPrefix, format, compression)
+}
+
+//
+// Load
+//
+
+func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
+	ib.saveLoad(false, outPrefix, format, compression)
+}
+
+//
+// SaveLoad
+//
+
+func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
-
-	fmt.Println("saving global ibrowser status")
 	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Save(ib)
 
-	ib.saveBlock(baseName, format, compression)
-	ib.saveChromosomes(baseName, format, compression)
+	if isSave {
+		fmt.Println("saving global ibrowser status")
+		saver.Save(ib)
+	} else {
+		fmt.Println("loading global ibrowser status")
+		saver.Load(ib)
+	}
+
+	ib.saveLoadBlock(isSave, baseName, format, compression)
+	ib.saveLoadChromosomes(isSave, baseName, format, compression)
 }
 
-func (ib *IBrowser) saveBlock(outPrefix string, format string, compression string) {
-	fmt.Println("saving global ibrowser block")
-	ib.block.Save(outPrefix+"_block", format, compression)
+func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
+	newPrefix := outPrefix + "_block"
+
+	if isSave {
+		fmt.Println("saving global ibrowser block")
+		ib.block.Save(newPrefix, format, compression)
+	} else {
+		fmt.Println("loading global ibrowser block")
+		ib.block.Load(newPrefix, format, compression)
+	}
 }
 
-func (ib *IBrowser) saveChromosomes(outPrefix string, format string, compression string) {
+func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.chromosomes[chromosomeName]
 
-		fmt.Println("saving chromosome      : ", chromosomeName)
-
-		chromosome.Save(outPrefix, format, compression)
+		if isSave {
+			fmt.Println("saving chromosome      : ", chromosomeName)
+			chromosome.Save(outPrefix, format, compression)
+		} else {
+			fmt.Println("loading chromosome     : ", chromosomeName)
+			chromosome.Load(outPrefix, format, compression)
+		}
 	}
 }

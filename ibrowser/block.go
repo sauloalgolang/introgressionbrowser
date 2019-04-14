@@ -89,16 +89,35 @@ func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression str
 	return baseName, fileName
 }
 
+//
+// Save
+//
+
 func (ibb *IBBlock) Save(outPrefix string, format string, compression string) {
-	baseName, _ := ibb.GenFilename(outPrefix, format, compression)
-	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Save(ibb)
-	ibb.matrix.Save(baseName, format, compression)
+	ibb.saveLoad(true, outPrefix, format, compression)
 }
 
+//
+// Load
+//
+
 func (ibb *IBBlock) Load(outPrefix string, format string, compression string) {
+	ibb.saveLoad(false, outPrefix, format, compression)
+}
+
+//
+// SaveLoad
+//
+
+func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ibb.GenFilename(outPrefix, format, compression)
 	saver := save.NewSaverCompressed(baseName, format, compression)
-	saver.Load(ibb)
-	ibb.matrix.Load(baseName, format, compression)
+
+	if isSave {
+		saver.Save(ibb)
+		ibb.matrix.Save(baseName, format, compression)
+	} else {
+		saver.Load(ibb)
+		ibb.matrix.Load(baseName, format, compression)
+	}
 }

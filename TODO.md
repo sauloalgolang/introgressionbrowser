@@ -1,5 +1,4 @@
 TODO:
-- [X] Replace as many callbacks as possible
 - [ ] Implement limits in main function
     - [ ] minSnpPerBlock
     - [ ] maxSnpPerBlock
@@ -12,6 +11,7 @@ TODO:
     - https://github.com/brentp/cgotabix
 
 DONE:
+- [X] Replace as many callbacks as possible
 - [X] Use snappy for compression
     - https://github.com/golang/snappy
 - [x] Rewrite check.py
