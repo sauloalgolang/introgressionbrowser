@@ -65,24 +65,28 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnE
 //
 
 type ChromosomeCallbackRegister struct {
-	callBack        interfaces.VCFMaskedReaderChromosomeType
-	chromosomeNames []string
-	wg              *sizedwaitgroup.SizedWaitGroup
+	registerCallBack interfaces.VCFCallBack
+	chromosomeNames  []string
+	wg               *sizedwaitgroup.SizedWaitGroup
 	// wg             *sync.WaitGroup
 }
 
 func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, continueOnError bool) {
 	defer cc.wg.Done()
 
-	cc.callBack(r, continueOnError, cc.chromosomeNames)
+	cc.ChromosomeCallbackSingleThreaded(r, continueOnError)
+}
+
+func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, continueOnError bool) {
+	ProcessVcf(r, cc.registerCallBack, continueOnError, cc.chromosomeNames)
 
 	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
 }
 
-func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, continueOnError bool) {
-	cc.callBack(r, continueOnError, cc.chromosomeNames)
-
-	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
+func ProcessVcf(r io.Reader, registerCallBack interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {
+	bufreader := bufio.NewReader(r)
+	ProcessVcfRaw(bufreader, registerCallBack, continueOnError, chromosomeNames)
+	// ProcessVcfVcfGo(bufreader, callback, continueOnError, chromosomeNames)
 }
 
 //
@@ -91,7 +95,8 @@ func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Read
 //
 //
 
-func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBack interfaces.VCFMaskedReaderChromosomeType) {
+// func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, registerCallBack interfaces.VCFMaskedReaderChromosomeType) {
+func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, registerCallBack interfaces.VCFCallBack) {
 	fmt.Println("OpenVcfFile :: ",
 		"sourceFile", sourceFile,
 		"continueOnError", continueOnError,
@@ -136,8 +141,8 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 		}
 
 		ccr := ChromosomeCallbackRegister{
-			callBack:        callBack,
-			chromosomeNames: chromosomeGroup,
+			registerCallBack: registerCallBack,
+			chromosomeNames:  chromosomeGroup,
 		}
 
 		openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, ccr.ChromosomeCallbackSingleThreaded)
@@ -188,9 +193,9 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 		wg := sizedwaitgroup.New(numThreads)
 		for _, chromosomeGroup := range chromosomeGroups {
 			ccr := ChromosomeCallbackRegister{
-				callBack:        callBack,
-				chromosomeNames: chromosomeGroup,
-				wg:              &wg,
+				registerCallBack: registerCallBack,
+				chromosomeNames:  chromosomeGroup,
+				wg:               &wg,
 			}
 
 			// wg.Add(1)
@@ -208,10 +213,4 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, callBa
 		wg.Wait()
 		fmt.Println("All chromosomes completed")
 	}
-}
-
-func ProcessVcf(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {
-	bufreader := bufio.NewReader(r)
-	ProcessVcfRaw(bufreader, callback, continueOnError, chromosomeNames)
-	// ProcessVcfVcfGo(bufreader, callback, continueOnError, chromosomeNames)
 }

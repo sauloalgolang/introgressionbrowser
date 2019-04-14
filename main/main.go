@@ -108,9 +108,10 @@ func main() {
 		fmt.Println("Openning", sourceFile)
 	}
 
-	ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, *blockSize, *keepEmptyBlock)
+	// ibrowser := ibrowser.NewIBrowser(vcf.ProcessVcf, *blockSize, *keepEmptyBlock)
+	ibrowser := ibrowser.NewIBrowser(*blockSize, *keepEmptyBlock)
 
-	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.ReaderCallBack)
+	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.RegisterCallBack)
 
 	ibrowser.Save(*outfile, *format, *compression)
 
