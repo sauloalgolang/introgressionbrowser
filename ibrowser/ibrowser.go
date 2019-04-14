@@ -181,6 +181,7 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
 
+	fmt.Println("saving global ibrowser status")
 	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Save(ib)
 
@@ -189,6 +190,7 @@ func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 }
 
 func (ib *IBrowser) saveBlock(outPrefix string, format string, compression string) {
+	fmt.Println("saving global ibrowser block")
 	ib.block.Save(outPrefix+"_block", format, compression)
 }
 
@@ -197,7 +199,7 @@ func (ib *IBrowser) saveChromosomes(outPrefix string, format string, compression
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.chromosomes[chromosomeName]
 
-		fmt.Print("saving chromosome: ", chromosomeName)
+		fmt.Println("saving chromosome      : ", chromosomeName)
 
 		chromosome.Save(outPrefix, format, compression)
 	}

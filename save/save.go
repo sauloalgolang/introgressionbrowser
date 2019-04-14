@@ -164,7 +164,7 @@ func saveData(outfile string, marshaler Marshaler, val interface{}) {
 }
 
 func saveDataStream(outfile string, marshaler MarshalerStreamer, val interface{}) {
-	fmt.Println("saving stream to ", outfile)
+	// fmt.Println("saving stream to ", outfile)
 
 	marshaler(outfile, val)
 }

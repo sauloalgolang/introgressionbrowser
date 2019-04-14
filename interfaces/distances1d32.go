@@ -115,6 +115,8 @@ func (d *DistanceMatrix1D32) GenFilename(outPrefix string, format string, compre
 func (d *DistanceMatrix1D32) Save(outPrefix string, format string, compression string) {
 	baseName, _ := d.GenFilename(outPrefix, format, compression)
 
+	fmt.Println("saving block matrix    : ", outPrefix, " block num: ", d.BlockNumber)
+
 	saver := save.NewSaverCompressed(baseName, format, compression)
 	saver.Save(d)
 }
