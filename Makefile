@@ -164,7 +164,7 @@ run360: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 test: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debug_first_only -debug_maxregister 10000 data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debug_maxregister_chrom 10000 data/360_merged_2.50.vcf.gz
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof

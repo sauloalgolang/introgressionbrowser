@@ -51,22 +51,16 @@ func NewIBBlock(chromosomeName string, blockSize uint64, blockPosition uint64, b
 func (ibb *IBBlock) add(position uint64, distance *interfaces.DistanceMatrix, isAtomic bool) {
 	if isAtomic {
 		atomic.AddUint64(&ibb.NumSNPS, 1)
-	} else {
-		ibb.NumSNPS++
-	}
-
-	if isAtomic {
 		atomic.StoreUint64(&ibb.MinPosition, tools.Min64(atomic.LoadUint64(&ibb.MinPosition), position))
 		atomic.StoreUint64(&ibb.MaxPosition, tools.Max64(atomic.LoadUint64(&ibb.MaxPosition), position))
+		ibb.matrix.AddAtomic(distance)
+
 	} else {
+		ibb.NumSNPS++
 		ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
 		ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
-	}
-
-	if isAtomic {
-		ibb.matrix.AddAtomic(distance)
-	} else {
 		ibb.matrix.Add(distance)
+
 	}
 }
 

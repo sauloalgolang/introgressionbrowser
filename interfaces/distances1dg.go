@@ -26,9 +26,9 @@ type DistanceMatrix1Dg struct {
 	Dimension      uint64
 	Size           uint64
 	Bits           int
-	Data           []interface{}
-	// Data32         DistanceRow32
-	// Data64         DistanceRow64
+	Data32         DistanceRow32
+	Data64         DistanceRow64
+	// Data           []interface{}
 }
 
 func NewDistanceMatrix1Dg32(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64) *DistanceMatrix1Dg {
@@ -62,13 +62,13 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, blockPosition
 	}
 
 	if r.Bits == 32 {
-		r.Data = make(DistanceRow32, size, size)
-		// r.Data32 = make(DistanceRow32, size, size)
-		// r.Data64 = make(DistanceRow64, 0, 0)
+		// r.Data = make(DistanceRow32, size, size)
+		r.Data32 = make(DistanceRow32, size, size)
+		r.Data64 = make(DistanceRow64, 0, 0)
 	} else if r.Bits == 64 {
-		r.Data = make(DistanceRow64, size, size)
-		// r.Data32 = make(DistanceRow32, 0, 0)
-		// r.Data64 = make(DistanceRow64, size, size)
+		// r.Data = make(DistanceRow64, size, size)
+		r.Data32 = make(DistanceRow32, 0, 0)
+		r.Data64 = make(DistanceRow64, size, size)
 	}
 
 	r.Clean()

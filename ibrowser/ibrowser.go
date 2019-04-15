@@ -42,6 +42,7 @@ type IBrowser struct {
 	lastChrom    string
 	lastPosition uint64
 	//
+	//
 	// Parameters string
 	// Header string
 	//
@@ -137,27 +138,23 @@ func (ib *IBrowser) RegisterCallBack(samples *interfaces.VCFSamples, reg *interf
 		}
 	}
 
-	atomic.AddUint64(&ib.NumRegisters, 1)
-
-	//
-	// Adding distance
-	//
-
-	atomic.AddUint64(&ib.NumSNPs, 1)
-
-	// ib.Block.AddAtomic(0, reg.Distance) // did not work
-
-	// mutex.Lock() // did not work
-	ib.block.Add(0, reg.Distance)
-	// mutex.Unlock()
-
 	chromosome := ib.GetOrCreateChromosome(reg.Chromosome)
 
 	_, isNew, numBlocksAdded := chromosome.Add(reg)
 
-	if isNew {
-		atomic.AddUint64(&ib.NumBlocks, numBlocksAdded)
+	mutex.Lock()
+	{
+		if isNew {
+			ib.NumBlocks += numBlocksAdded
+		}
+
+		ib.NumRegisters++
+
+		ib.NumSNPs++
+
+		ib.block.Add(0, reg.Distance)
 	}
+	mutex.Unlock()
 }
 
 func (ib *IBrowser) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {

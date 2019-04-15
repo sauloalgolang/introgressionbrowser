@@ -46,7 +46,8 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 	chromIndex := -1
 	lastChromosomeName := ""
 	lineNumber := int64(0)
-	registerNumber := int64(0)
+	registerNumberThread := int64(0)
+	registerNumberChrom := int64(0)
 	foundChromosome := false
 
 	for contents.Scan() {
@@ -86,6 +87,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		chrom := cols[0]
 
 		if chrom != lastChrom {
+			registerNumberChrom = 0
 			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
 			fmt.Println("new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
@@ -107,23 +109,33 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 				callback(&SampleNames, &register)
 			}
 			continue
+		}
+
+		if chromIndex == -1 {
+			if foundChromosome { // already found, therefore finished
+				fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
+				return
+			} else { // not found yet, therefore continue
+				continue
+			}
 		} else {
-			if chromIndex == -1 {
-				if foundChromosome { // already found, therefore finished
-					fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumber, " registers ")
-					return
-				} else { // not found yet, therefore continue
-					continue
-				}
-			} else if !foundChromosome {
+			if !foundChromosome {
+				fmt.Println("Found first chromosome from list:", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
 				foundChromosome = true
 			}
 		}
 
-		registerNumber++
+		registerNumberChrom++
 
-		if BREAKAT > 0 && registerNumber >= BREAKAT {
-			fmt.Println(" BREAKING ", chromosomeNames, " at register ", registerNumber)
+		if BREAKAT_CHROM > 0 && registerNumberChrom >= BREAKAT_CHROM {
+			// fmt.Println(" BREAKING ", chrom, " at register ", registerNumberChrom)
+			continue
+		}
+
+		registerNumberThread++
+
+		if BREAKAT_THREAD > 0 && registerNumberThread >= BREAKAT_THREAD {
+			fmt.Println(" BREAKING ", chromosomeNames, " at register ", registerNumberThread)
 			return
 		}
 
@@ -221,7 +233,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 		if lineNumber%100000 == 0 && lineNumber != 0 {
 			fmt.Println(lineNumber,
-				registerNumber,
+				registerNumberThread,
 				chrom,
 				pos,
 				// row,

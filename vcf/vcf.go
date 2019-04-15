@@ -21,7 +21,8 @@ import (
 
 var DEBUG bool = false
 var ONLYFIRST bool = false
-var BREAKAT int64 = 0
+var BREAKAT_THREAD int64 = 0
+var BREAKAT_CHROM int64 = 0
 
 //
 //
