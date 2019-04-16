@@ -225,6 +225,7 @@ func (ibc *IBChromosome) saveLoadBlock(isSave bool, outPrefix string, format str
 		ibc.block.Save(newPrefix, format, compression)
 	} else {
 		fmt.Println("loading chromosome block : ", newPrefix)
+		ibc.block = NewIBBlock("_"+ibc.ChromosomeName+"_block", ibc.BlockSize, ibc.NumBits, ibc.NumSamples, 0, 0)
 		ibc.block.Load(newPrefix, format, compression)
 	}
 }

@@ -4,6 +4,7 @@ TODO LIST
 TODO
 ----
 
+- [ ] Self check
 - [ ] Implement limits in main function
   - [ ] minSnpPerBlock
   - [ ] maxSnpPerBlock

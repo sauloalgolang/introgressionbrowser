@@ -266,10 +266,10 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
-		fmt.Printf("saving block             :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
+		fmt.Printf("saving matrix            :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Save(d)
 	} else {
-		fmt.Printf("loading block            :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
+		fmt.Printf("loading matrix           :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Load(d)
 	}
 }

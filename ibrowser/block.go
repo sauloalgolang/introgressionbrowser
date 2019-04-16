@@ -110,6 +110,16 @@ func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compr
 	} else {
 		fmt.Printf("loading block            :  %-70s block num: %d block pos: %d\n", baseName, ibb.BlockNumber, ibb.BlockPosition)
 		saver.Load(ibb)
+
+		ibb.matrix = interfaces.NewDistanceMatrix(
+			ibb.ChromosomeName,
+			ibb.BlockSize,
+			ibb.NumBits,
+			ibb.NumSamples,
+			ibb.BlockPosition,
+			ibb.BlockNumber,
+		)
+
 		ibb.matrix.Load(baseName, format, compression)
 	}
 }

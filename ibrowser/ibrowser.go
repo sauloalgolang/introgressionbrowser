@@ -212,6 +212,7 @@ func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, 
 		ib.block.Save(newPrefix, format, compression)
 	} else {
 		fmt.Println("loading global ibrowser block")
+		ib.block = NewIBBlock("_whole_genome", ib.BlockSize, ib.NumBits, ib.NumSamples, 0, 0)
 		ib.block.Load(newPrefix, format, compression)
 	}
 }
