@@ -3,7 +3,6 @@ package ibrowser
 import (
 	"fmt"
 	"math"
-	"sync/atomic"
 )
 
 import (
@@ -48,29 +47,12 @@ func NewIBBlock(chromosomeName string, blockSize uint64, blockPosition uint64, b
 	return &ibb
 }
 
-func (ibb *IBBlock) add(position uint64, distance *interfaces.DistanceMatrix, isAtomic bool) {
-	if isAtomic {
-		atomic.AddUint64(&ibb.NumSNPS, 1)
-		atomic.StoreUint64(&ibb.MinPosition, tools.Min64(atomic.LoadUint64(&ibb.MinPosition), position))
-		atomic.StoreUint64(&ibb.MaxPosition, tools.Max64(atomic.LoadUint64(&ibb.MaxPosition), position))
-		ibb.matrix.AddAtomic(distance)
-
-	} else {
-		ibb.NumSNPS++
-		ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
-		ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
-		ibb.matrix.Add(distance)
-
-	}
-}
-
 func (ibb *IBBlock) Add(position uint64, distance *interfaces.DistanceMatrix) {
 	// fmt.Println("Add", position)
-	ibb.add(position, distance, false)
-}
-
-func (ibb *IBBlock) AddAtomic(position uint64, distance *interfaces.DistanceMatrix) {
-	ibb.add(position, distance, true)
+	ibb.NumSNPS++
+	ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
+	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
+	ibb.matrix.Add(distance)
 }
 
 func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {

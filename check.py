@@ -63,121 +63,129 @@ chromosomes:
 """
 
 def checkBlockOfBlocks(prefix, chromosomeName, blocknames, block, blockMatrix, dataKey, checkPos=True):
-  minposition = block["minposition"]
-  maxposition = block["maxposition"]
-  numsnps = block["numsnps"]
+    minposition = block["minposition"]
+    maxposition = block["maxposition"]
+    numsnps = block["numsnps"]
 
-  blocks = blocksKeys(prefix, chromosomeName, blocknames, ["minposition", "maxposition", "numsnps"])
+    blocks = blocksKeys(prefix, chromosomeName, blocknames, ["minposition", "maxposition", "numsnps"])
 
-  if checkPos:
-    minpositionCalc = min(blocks["minposition"])
-    assert minposition == minpositionCalc, "minposition mismatch: {} != {}".format(minposition, minpositionCalc)
-    print(" min position OK", minposition)
+    if checkPos:
+        minpositionCalc = min(blocks["minposition"])
+        assert minposition == minpositionCalc, "minposition mismatch: {} != {}".format(minposition, minpositionCalc)
+        print(" min position OK", minposition)
 
-    maxpositionCalc = max(blocks["maxposition"])
-    assert maxposition == maxpositionCalc, "maxposition mismatch: {} != {}".format(maxposition, maxpositionCalc)
-    print(" max position OK", maxposition)
+        maxpositionCalc = max(blocks["maxposition"])
+        assert maxposition == maxpositionCalc, "maxposition mismatch: {} != {}".format(maxposition, maxpositionCalc)
+        print(" max position OK", maxposition)
 
-  numsnpsCalc = sum(blocks["numsnps"])
-  assert numsnps == numsnpsCalc, "numsnps mismatch: {} != {}".format(numsnps, numsnpsCalc)
-  print(" num snps OK", numsnps)
+    numsnpsCalc = sum(blocks["numsnps"])
+    assert numsnps == numsnpsCalc, "numsnps mismatch: {} != {}".format(numsnps, numsnpsCalc)
+    print(" num snps OK", numsnps)
 
-  print(" checking matrix")
-  blockMatrixC = sumMatrices(prefix, chromosomeName, blocknames)
-  matrixDiff = subtractMatrices(blockMatrix[dataKey], blockMatrixC)
-  assert sum(matrixDiff) == 0
-  print("  matrix OK")
+    print(" checking matrix")
+    blockMatrixC = sumMatrices(prefix, chromosomeName, blocknames)
+    matrixDiff = subtractMatrices(blockMatrix[dataKey], blockMatrixC)
+    assert sum(matrixDiff) == 0
+    print("  matrix OK")
 
-  return True
+    return True
 
 def readChromosomes(prefix, chromosomesnames):
-  return {c: readChromosome(prefix, c) for c in chromosomesnames}
+    return {c: readChromosome(prefix, c) for c in chromosomesnames}
 
 def readChromosome(prefix, chromosomeName):
-  basefile = prefix + "." + chromosomeName + ".yaml"
-  fhd = open(basefile, 'rt')
-  data = load(fhd, Loader=Loader)
-  fhd.close()
-  return data
+    basefile = prefix + "." + chromosomeName + ".yaml"
+    fhd = open(basefile, 'rt')
+    data = load(fhd, Loader=Loader)
+    fhd.close()
+    return data
 
 def readBlockIB(prefix):
-  return readBlock(prefix, 0, False)
+    return readBlock(prefix, 0, False)
 
 def readBlockMatrixIB(prefix):
-  return readBlockMatrix(prefix, 0, False)
+    return readBlockMatrix(prefix, 0, False)
 
 def readBlockChrom(prefix, chromosomeName):
-  return readBlock(prefix + "." + chromosomeName, 0, False)
+    return readBlock(prefix + "." + chromosomeName, 0, False)
 
 def readBlockMatrixChrom(prefix, chromosomeName):
-  return readBlockMatrix(prefix + "." + chromosomeName, 0, False)
+    return readBlockMatrix(prefix + "." + chromosomeName, 0, False)
 
 def readBlocksChrom(prefix, chromosomeName, pos):
-  return readBlock(prefix + "." + chromosomeName, pos, True)
+    return readBlock(prefix + "." + chromosomeName, pos, True)
 
 def readBlocksMatrixChrom(prefix, chromosomeName, pos):
-  return readBlockMatrix(prefix + "." + chromosomeName, pos, True)
+    return readBlockMatrix(prefix + "." + chromosomeName, pos, True)
 
 def readBlock(prefix, pos, isblocks=False):
-  basefile = prefix + "_block{}.{:012d}.yaml".format("s" if isblocks else "", pos)
-  fhd = open(basefile, 'rt')
-  data = load(fhd, Loader=Loader)
-  fhd.close()
-  return data
+    basefile = prefix + "_block{}.{:012d}.yaml".format("s" if isblocks else "", pos)
+    fhd = open(basefile, 'rt')
+    data = load(fhd, Loader=Loader)
+    fhd.close()
+    return data
 
 def readBlockMatrix(prefix, pos, isblocks=False):
-  basefile = prefix + "_block{}.{:012d}_matrix.yaml".format("s" if isblocks else "",pos)
-  fhd = open(basefile, 'rt')
-  data = load(fhd, Loader=Loader)
-  bits = data["bits"]
-  dataKey = "data32" if bits == 32 else "data64"
-  fhd.close()
-  return data, dataKey
+    basefile = prefix + "_block{}.{:012d}_matrix.yaml".format("s" if isblocks else "",pos)
+    fhd = open(basefile, 'rt')
+    data = load(fhd, Loader=Loader)
+    bits = data["bits"]
+    dataKey = "data32" if bits == 32 else "data64"
+    fhd.close()
+    return data, dataKey
 
 def blocksKey(prefix, chromosomeName, blocknames, key):
-  return [ readBlocksChrom(prefix, chromosomeName, pos)[key] for pos in blocknames.keys() ]
+    return [ readBlocksChrom(prefix, chromosomeName, pos)[key] for pos in blocknames.keys() ]
 
 def blocksKeys(prefix, chromosomeName, blocknames, keys):
-  res = {}
-  for pos in blocknames.keys():
-    block = readBlocksChrom(prefix, chromosomeName, pos)
+    res = {}
     
-    for key in keys:
-      l = res.get(key, [])
-      l.append(block[key])
-      res[key] = l
-  return res
+    for pos in blocknames.keys():
+        block = readBlocksChrom(prefix, chromosomeName, pos)
+        
+        for key in keys:
+            l = res.get(key, [])
+            l.append(block[key])
+            res[key] = l
+        
+    return res
 
 def subtractMatrices(blockMatrix, blockMatrixC):
-  assert isinstance(blockMatrix, list), "matrix is not an list: {} {}".format(isinstance(blockMatrix, list), blockMatrix) 
-  assert isinstance(blockMatrixC, list), "matrix is not an list: {} {}".format(isinstance(blockMatrixC, list), blockMatrixC)
-  assert len(blockMatrix) == len(blockMatrixC), "matrices have different lenghts: {} {}".format(len(blockMatrix), len(blockMatrixC))
-  for i in range(len(blockMatrix)):
-    blockMatrix[i] -= blockMatrixC[i]
-  return blockMatrix
+    assert isinstance(blockMatrix, list), "matrix is not an list: {} {}".format(isinstance(blockMatrix, list), blockMatrix) 
+    assert isinstance(blockMatrixC, list), "matrix is not an list: {} {}".format(isinstance(blockMatrixC, list), blockMatrixC)
+    assert len(blockMatrix) == len(blockMatrixC), "matrices have different lenghts: {} {}".format(len(blockMatrix), len(blockMatrixC))
+    
+    for i in range(len(blockMatrix)):
+        blockMatrix[i] -= blockMatrixC[i]
+  
+    return blockMatrix
 
 def sumMatrices(prefix, chromosomeName, blocknames):
-  res = None
-  reg = 0
+    res = None
+    reg = 0
 
-  for pos in blocknames.keys():
-    matrix, dataKey = readBlocksMatrixChrom(prefix, chromosomeName, pos)
+    for pos in blocknames.keys():
+        matrix, dataKey = readBlocksMatrixChrom(prefix, chromosomeName, pos)
 
-    reg += 1
-    print(".", end="")
-    if reg % 100 == 0:
-      print("{:8d}".format(reg))
-    sys.stdout.flush()
+        reg += 1
+        print(".", end="")
+        
+        if reg % 100 == 0:
+            print("{:8d}".format(reg))
+            sys.stdout.flush()
 
-    if res is None:
-      res = matrix[dataKey]
-      # print(res)
-    else:
-      for i in range(len(res)):
-        res[i] += matrix[dataKey][i]
-  print("{:8d}".format(reg))
-  print()
-  return res
+        if res is None:
+            res = matrix[dataKey]
+            # print(res)
+        
+        else:
+            for i in range(len(res)):
+                res[i] += matrix[dataKey][i]
+
+    print("{:8d}".format(reg))
+    print()
+    
+    return res
 
 
 def main(prefix):
@@ -198,9 +206,9 @@ def main(prefix):
 
         samples = data["samples"]
         numsamples = data["numsamples"]
-        blocksize = data["blocksize"]
-        keepemptyblock = data["keepemptyblock"]
-        numregisters = data["numregisters"]
+        #blocksize = data["blocksize"]
+        #keepemptyblock = data["keepemptyblock"]
+        #numregisters = data["numregisters"]
         numsnps = data["numsnps"]
         numblocks = data["numblocks"]
 
@@ -304,8 +312,6 @@ def main(prefix):
     print("matrix OK")
     
     print("ALL OK")
-
-
 
 if __name__ == "__main__":
     main(sys.argv[1])

@@ -1,8 +1,8 @@
+package httpserver
+
 // A basic HTTP server.
 // By default, it serves the current working directory on port 8080.
 // https://play.golang.org/p/pZ1f5pICVbV
-
-package ibrowser
 
 import (
 	"flag"
