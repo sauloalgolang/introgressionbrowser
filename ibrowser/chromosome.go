@@ -28,14 +28,15 @@ type IBChromosome struct {
 	NumBlocks      uint64
 	NumSNPS        uint64
 	NumSamples     uint64
+	NumBits        int
 	KeepEmptyBlock bool
 	BlockNames     map[uint64]uint64
 	block          *IBBlock
 	blocks         []*IBBlock
 }
 
-func NewIBChromosome(chromosomeName string, blockSize uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
-	fmt.Println("NewIBChromosome :: chromosomeName: ", chromosomeName, " blockSize: ", blockSize, " numSamples: ", numSamples)
+func NewIBChromosome(chromosomeName string, blockSize uint64, numBits int, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
+	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName, " blockSize: ", blockSize, " numBits: ", numBits, " numSamples: ", numSamples)
 
 	ibc := IBChromosome{
 		ChromosomeName: chromosomeName,
@@ -45,9 +46,10 @@ func NewIBChromosome(chromosomeName string, blockSize uint64, numSamples uint64,
 		MaxPosition:    0,
 		NumBlocks:      0,
 		NumSNPS:        0,
+		NumBits:        numBits,
 		KeepEmptyBlock: keepEmptyBlock,
 		BlockNames:     make(map[uint64]uint64, 100),
-		block:          NewIBBlock("_"+chromosomeName+"_block", blockSize, 0, 0, numSamples),
+		block:          NewIBBlock("_"+chromosomeName+"_block", blockSize, numBits, numSamples, 0, 0),
 		blocks:         make([]*IBBlock, 0, 100),
 	}
 
@@ -67,9 +69,11 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	block = NewIBBlock(
 		ibc.ChromosomeName,
 		ibc.BlockSize,
-		blockNum,
+		ibc.NumBits,
+		ibc.NumSamples,
 		blockPos,
-		ibc.NumSamples)
+		blockNum,
+	)
 
 	ibc.blocks = append(ibc.blocks, block)
 
@@ -116,7 +120,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 	numBlocksAdded := uint64(0)
 
 	if !hasBlock {
-		fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW")
+		fmt.Println("  IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW")
 
 		isNew = true
 
@@ -138,6 +142,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 		}
 
 		block := ibc.AppendBlock(blockNum)
+
 		numBlocksAdded++
 
 		return block, isNew, numBlocksAdded
@@ -200,8 +205,10 @@ func (ibc *IBChromosome) saveLoad(isSave bool, outPrefix string, format string, 
 	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
+		fmt.Println("saving chromosome        : ", baseName)
 		saver.Save(ibc)
 	} else {
+		fmt.Println("loading chromosome       : ", baseName)
 		saver.Load(ibc)
 	}
 
@@ -214,26 +221,38 @@ func (ibc *IBChromosome) saveLoadBlock(isSave bool, outPrefix string, format str
 	newPrefix := outPrefix + "_block"
 
 	if isSave {
-		fmt.Println("saving  chromosome block: ", newPrefix)
+		fmt.Println("saving chromosome block  : ", newPrefix)
 		ibc.block.Save(newPrefix, format, compression)
 	} else {
-		fmt.Println("loading chromosome block: ", newPrefix)
+		fmt.Println("loading chromosome block : ", newPrefix)
 		ibc.block.Load(newPrefix, format, compression)
 	}
 }
 
 func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format string, compression string) {
 	newPrefix := outPrefix + "_blocks"
+	// fmt.Println("saving blocks", ibc.BlockNames)
 
-	for blockPos := 0; blockPos < len(ibc.blocks); blockPos++ {
-		block := ibc.blocks[blockPos]
-		blockNum := block.BlockNumber
-
+	for blockNum, blockPos := range ibc.BlockNames {
 		if isSave {
-			fmt.Println("saving block           : ", newPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+			block := ibc.blocks[blockPos]
+			fmt.Printf("saving chromosome blocks :  %-70s block num: %d block pos: %d\n", newPrefix, blockNum, blockPos)
 			block.Save(newPrefix, format, compression)
+
 		} else {
-			fmt.Println("loading block          : ", newPrefix, " block num: ", blockNum, " block pos: ", blockPos)
+			fmt.Printf("loading chromosome blocks:  %-70s block num: %d block pos: %d\n", newPrefix, blockNum, blockPos)
+
+			block := NewIBBlock(
+				ibc.ChromosomeName,
+				ibc.BlockSize,
+				ibc.NumBits,
+				ibc.NumSamples,
+				blockPos,
+				blockNum,
+			)
+
+			ibc.blocks = append(ibc.blocks, block)
+
 			block.Load(newPrefix, format, compression)
 		}
 	}

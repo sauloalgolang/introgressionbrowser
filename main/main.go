@@ -13,25 +13,32 @@ import (
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/ibrowser"
+	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 	"github.com/sauloalgolang/introgressionbrowser/save"
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
-var blockSize = flag.Uint64("blocksize", 100000, "Block size")
+var DEFAULT_BLOCK_SIZE = uint64(100000)
+var DEFAULT_OUTFILE = "output"
+var DEFAULT_COUTNER_BITS = 32
+
+var blockSize = flag.Uint64("blockSize", DEFAULT_BLOCK_SIZE, "Block size")
 var chromosomes = flag.String("chromosomes", "", "Comma separated list of chromomomes to read")
 var compression = flag.String("compression", save.DefaultCompressor, "Compression format: "+strings.Join(save.CompressorNames, ", "))
-var continueOnError = flag.Bool("continueonerror", true, "Continue reading the file on parsing error")
-var cpuprofile = flag.String("cpuprofile", "", "Write cpu profile to `file`")
+var continueOnError = flag.Bool("continueOnError", true, "Continue reading the file on parsing error")
+var counterBits = flag.Int("counterbits", DEFAULT_COUTNER_BITS, "Number of bits")
+var cpuProfile = flag.String("cpuProfile", "", "Write cpu profile to `file`")
 var debug = flag.Bool("debug", false, "Print debug information")
-var debug_first_only = flag.Bool("debug_first_only", false, "Read only fist chromosome from each thread")
-var debug_maxregister_thread = flag.Int64("debug_maxregister_thread", 0, "Maximum number of registers to read per thread")
-var debug_maxregister_chrom = flag.Int64("debug_maxregister_chrom", 0, "Maximum number of registers to read per chromosome")
+var debugFirstOnly = flag.Bool("debugFirstOnly", false, "Read only fist chromosome from each thread")
+var debugMaxRegisterThread = flag.Int64("debugMaxRegisterThread", 0, "Maximum number of registers to read per thread")
+var debugMaxRegisterChrom = flag.Int64("debugMaxRegisterChrom", 0, "Maximum number of registers to read per chromosome")
 var format = flag.String("format", save.DefaultFormat, "File format: "+strings.Join(save.FormatNames, ", "))
 var keepEmptyBlock = flag.Bool("keepemptyblocks", true, "Keep empty blocks")
 var maxSnpPerBlock = flag.Uint64("maxsnpperblock", math.MaxUint64, "Maximum number of SNPs per block")
 var minSnpPerBlock = flag.Uint64("minsnpperblock", 10, "Minimum number of SNPs per block")
-var memprofile = flag.String("memprofile", "", "Write memory profile to `file`")
-var numThreads = flag.Int("numberthreads", 4, "Number of threads")
+var memProfile = flag.String("memProfile", "", "Write memory profile to `file`")
+var numThreads = flag.Int("threads", 4, "Number of threads")
+var load = flag.Bool("load", false, "Load project")
 var outfile = flag.String("outfile", "output", "Output file prefix")
 var version = flag.Bool("version", false, "Print version and exit")
 
@@ -39,28 +46,30 @@ func main() {
 	// get the arguments from the command line
 	flag.Parse()
 
-	fmt.Println("blocksize               :", *blockSize)
+	fmt.Println("blockSize               :", *blockSize)
 	fmt.Println("chromosomes             :", *chromosomes) // TODO: implement
-	fmt.Println("compression             :", *compression) // TODO: implement
-	fmt.Println("continueonerror         :", *continueOnError)
-	fmt.Println("cpuprofile              :", *cpuprofile)
+	fmt.Println("compression             :", *compression)
+	fmt.Println("continueOnError         :", *continueOnError)
+	fmt.Println("counterbits             :", *counterBits)
+	fmt.Println("cpuProfile              :", *cpuProfile)
 	fmt.Println("debug                   :", *debug)
-	fmt.Println("debug_first_only        :", *debug_first_only)
-	fmt.Println("debug_maxregister_thread:", *debug_maxregister_thread)
-	fmt.Println("debug_maxregister_chrom :", *debug_maxregister_chrom)
+	fmt.Println("debugFirstOnly          :", *debugFirstOnly)
+	fmt.Println("debugMaxRegisterThread  :", *debugMaxRegisterThread)
+	fmt.Println("debugMaxRegisterChrom   :", *debugMaxRegisterChrom)
 	fmt.Println("format                  :", *format)
 	fmt.Println("keepemptyblock          :", *keepEmptyBlock)
 	fmt.Println("maxsnpperblock          :", *maxSnpPerBlock) // TODO: implement
 	fmt.Println("minsnpperblock          :", *minSnpPerBlock) // TODO: implement
-	fmt.Println("memprofile              :", *memprofile)
+	fmt.Println("memProfile              :", *memProfile)
 	fmt.Println("numthreads              :", *numThreads)
+	fmt.Println("load                    :", *load)
 	fmt.Println("outfile                 :", *outfile)
 	fmt.Println("version                 :", *version)
 
 	vcf.DEBUG = *debug
-	vcf.ONLYFIRST = *debug_first_only
-	vcf.BREAKAT_THREAD = *debug_maxregister_thread
-	vcf.BREAKAT_CHROM = *debug_maxregister_chrom
+	vcf.ONLYFIRST = *debugFirstOnly
+	vcf.BREAKAT_THREAD = *debugMaxRegisterThread
+	vcf.BREAKAT_CHROM = *debugMaxRegisterChrom
 
 	if *version {
 		fmt.Println("IBROWSER_GIT_COMMIT_AUTHOR  :", IBROWSER_GIT_COMMIT_AUTHOR)
@@ -73,18 +82,6 @@ func main() {
 		fmt.Println("IBROWSER_GO_VERSION         :", IBROWSER_GO_VERSION)
 		fmt.Println("IBROWSER_VERSION            :", IBROWSER_VERSION)
 		os.Exit(0)
-	}
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal("could not create CPU profile: ", err)
-		}
-		defer f.Close()
-		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal("could not start CPU profile: ", err)
-		}
-		defer pprof.StopCPUProfile()
 	}
 
 	if _, ok := save.Formats[*format]; !ok {
@@ -103,25 +100,64 @@ func main() {
 		os.Exit(1)
 	}
 
-	sourceFile := flag.Arg(0)
-
-	if sourceFile == "" {
-		fmt.Println("Dude, you didn't pass a input file!")
-		os.Exit(1)
-	} else {
-		fmt.Println("Openning", sourceFile)
+	if *cpuProfile != "" {
+		f, err := os.Create(*cpuProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
-	ibrowser := ibrowser.NewIBrowser(*blockSize, *keepEmptyBlock)
+	//
+	// Load or Save
+	//
 
-	vcf.OpenVcfFile(sourceFile, *continueOnError, *numThreads, ibrowser.RegisterCallBack)
+	sourceFile := flag.Arg(0)
+
+	log.Println("Openning", sourceFile)
+
+	if sourceFile == "" {
+		log.Fatal("Dude, you didn't pass a input file!")
+	}
+
+	ibrowser := ibrowser.NewIBrowser(*blockSize, *counterBits, *keepEmptyBlock)
+
+	if *load {
+		if *blockSize != DEFAULT_BLOCK_SIZE {
+			log.Fatal("cannot use blockSize and load at the same time")
+		}
+
+		if *chromosomes != "" {
+			log.Fatal("cannot use chromosomes and load at the same time")
+		}
+
+		if *outfile != DEFAULT_OUTFILE {
+			log.Fatal("cannot use outfile and load at the same time")
+		}
+
+		ibrowser.Load(sourceFile, *format, *compression)
+
+	} else {
+		callBackParameters := interfaces.CallBackParameters{
+			ContinueOnError: *continueOnError,
+			NumBits:         *counterBits,
+			NumThreads:      *numThreads,
+		}
+
+		vcf.OpenVcfFile(sourceFile, callBackParameters, ibrowser.RegisterCallBack)
+
+		ibrowser.Save(*outfile, *format, *compression)
+
+	}
 
 	runtime.GC() // get up-to-date statistics
 
-	ibrowser.Save(*outfile, *format, *compression)
-
-	if *memprofile != "" {
-		f, err := os.Create(*memprofile)
+	if *memProfile != "" {
+		f, err := os.Create(*memProfile)
 		if err != nil {
 			log.Fatal("could not create memory profile: ", err)
 		}

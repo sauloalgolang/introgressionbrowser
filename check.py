@@ -129,8 +129,19 @@ def readBlockMatrix(prefix, pos, isblocks=False):
     basefile = prefix + "_block{}.{:012d}_matrix.yaml".format("s" if isblocks else "",pos)
     fhd = open(basefile, 'rt')
     data = load(fhd, Loader=Loader)
-    bits = data["bits"]
-    dataKey = "data32" if bits == 32 else "data64"
+    bits = data["numbits"]
+    dataKey = None
+
+    if bits == 16:
+        dataKey = "data16"
+    elif bits == 32:
+        dataKey = "data32"
+    elif bits == 64:
+        dataKey = "data64"
+    else:
+        sys.stderr.write("unknown bits {}\n".format(bits))
+        sys.exit(1)
+
     fhd.close()
     return data, dataKey
 

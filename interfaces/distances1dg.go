@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"sync/atomic"
 )
 
 import "github.com/sauloalgolang/introgressionbrowser/save"
@@ -15,84 +14,97 @@ import "github.com/sauloalgolang/introgressionbrowser/save"
 //
 //
 
-// type DistanceRow32 []uint32
-// type DistanceRow64 []uint64
+type DistanceRow16 []uint16
+type DistanceRow32 []uint32
+type DistanceRow64 []uint64
 
 type DistanceMatrix1Dg struct {
 	ChromosomeName string
 	BlockSize      uint64
-	BlockPosition  uint64
-	BlockNumber    uint64
 	Dimension      uint64
 	Size           uint64
-	Bits           int
+	BlockPosition  uint64
+	BlockNumber    uint64
+	NumBits        int
+	Data16         DistanceRow16
 	Data32         DistanceRow32
 	Data64         DistanceRow64
 	// Data           []interface{}
 }
 
-func NewDistanceMatrix1Dg32(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64) *DistanceMatrix1Dg {
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, blockPosition, blockNumber, dimension, 32)
+func NewDistanceMatrix1Dg16(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
+	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 16, dimension, blockPosition, blockNumber)
 }
 
-func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64) *DistanceMatrix1Dg {
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, blockPosition, blockNumber, dimension, 64)
+func NewDistanceMatrix1Dg32(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
+	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 32, dimension, blockPosition, blockNumber)
 }
 
-func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, blockPosition uint64, blockNumber uint64, dimension uint64, bits int) *DistanceMatrix1Dg {
+func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
+	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 64, dimension, blockPosition, blockNumber)
+}
+
+func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	size := dimension * (dimension - 1) / 2
 
-	fmt.Println("   NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
-		" Dimension:", dimension,
+	fmt.Println("    NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
 		" Block Size: ", blockSize,
+		" Bits:", numBits,
+		" Dimension:", dimension,
+		" Size:", size,
 		" Block Position: ", blockPosition,
 		" Block Number: ", blockNumber,
-		" Size:", size,
-		" Bits:", bits,
 	)
 
-	r := DistanceMatrix1Dg{
+	d := DistanceMatrix1Dg{
 		ChromosomeName: chromosomeName,
 		BlockSize:      blockSize,
-		BlockPosition:  blockPosition,
-		BlockNumber:    blockNumber,
 		Dimension:      dimension,
 		Size:           size,
-		Bits:           bits,
+		NumBits:        numBits,
+		BlockPosition:  blockPosition,
+		BlockNumber:    blockNumber,
 	}
 
-	if r.Bits == 32 {
-		// r.Data = make(DistanceRow32, size, size)
-		r.Data32 = make(DistanceRow32, size, size)
-		r.Data64 = make(DistanceRow64, 0, 0)
-	} else if r.Bits == 64 {
-		// r.Data = make(DistanceRow64, size, size)
-		r.Data32 = make(DistanceRow32, 0, 0)
-		r.Data64 = make(DistanceRow64, size, size)
+	if d.NumBits == 16 {
+		// d.Data = make(DistanceRow32, size, size)
+		d.Data16 = make(DistanceRow16, size, size)
+		d.Data32 = make(DistanceRow32, 0, 0)
+		d.Data64 = make(DistanceRow64, 0, 0)
+	} else if d.NumBits == 32 {
+		// d.Data = make(DistanceRow32, size, size)
+		d.Data16 = make(DistanceRow16, 0, 0)
+		d.Data32 = make(DistanceRow32, size, size)
+		d.Data64 = make(DistanceRow64, 0, 0)
+	} else if d.NumBits == 64 {
+		// d.Data = make(DistanceRow64, size, size)
+		d.Data16 = make(DistanceRow16, 0, 0)
+		d.Data32 = make(DistanceRow32, 0, 0)
+		d.Data64 = make(DistanceRow64, size, size)
 	}
 
-	r.Clean()
+	d.Clean()
 
-	return &r
+	return &d
 }
 
 //
-// Exported Methods
+// Clean
 //
-
-func (d *DistanceMatrix1Dg) Add(e *DistanceMatrix1Dg) {
-	d.add(e, false)
-}
-
-func (d *DistanceMatrix1Dg) AddAtomic(e *DistanceMatrix1Dg) {
-	d.add(e, true)
-}
 
 func (d *DistanceMatrix1Dg) Clean() {
-	if d.Bits == 32 {
+	if d.NumBits == 16 {
+		d.clean16()
+	} else if d.NumBits == 32 {
 		d.clean32()
-	} else if d.Bits == 64 {
+	} else if d.NumBits == 64 {
 		d.clean64()
+	}
+}
+
+func (d *DistanceMatrix1Dg) clean16() {
+	for i := range (*d).Data16 {
+		(*d).Data16[i] = uint16(0)
 	}
 }
 
@@ -108,14 +120,32 @@ func (d *DistanceMatrix1Dg) clean64() {
 	}
 }
 
+//
+// Set
+//
+
 func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 
-	if d.Bits == 32 {
+	if d.NumBits == 16 {
+		d.set16(p, val)
+	} else if d.NumBits == 32 {
 		d.set32(p, val)
-	} else if d.Bits == 64 {
+	} else if d.NumBits == 64 {
 		d.set64(p, val)
 	}
+}
+
+func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
+	v := (*d).Data16[p]
+	r := v + uint16(val)
+
+	if val >= uint64(math.MaxUint16) {
+		fmt.Println("count overflow")
+		os.Exit(1)
+	}
+
+	(*d).Data16[p] = r
 }
 
 func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
@@ -134,12 +164,64 @@ func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
 	(*d).Data64[p] = val
 }
 
+//
+// Add
+//
+
+func (d *DistanceMatrix1Dg) Add(e *DistanceMatrix1Dg) {
+	d.add(e)
+}
+
+func (d *DistanceMatrix1Dg) add(e *DistanceMatrix1Dg) {
+	if d.NumBits == 16 {
+		d.add16(e)
+	} else if d.NumBits == 32 {
+		d.add32(e)
+	} else if d.NumBits == 64 {
+		d.add64(e)
+	}
+}
+
+func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
+	mi := uint64(math.MaxInt16)
+	for i := range (*d).Data16 {
+		if uint64((*d).Data16[i])+uint64((*e).Data16[i]) >= mi {
+			fmt.Println("counter overflow")
+			os.Exit(1)
+		}
+		(*d).Data16[i] += (*e).Data16[i]
+	}
+}
+
+func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg) {
+	mi := uint64(math.MaxInt32)
+	for i := range (*d).Data32 {
+		if uint64((*d).Data32[i])+uint64((*e).Data32[i]) >= mi {
+			fmt.Println("counter overflow")
+			os.Exit(1)
+		}
+		(*d).Data32[i] += (*e).Data32[i]
+	}
+}
+
+func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg) {
+	for i := range (*d).Data64 {
+		(*d).Data64[i] += (*e).Data64[i]
+	}
+}
+
+//
+// Get
+//
+
 func (d *DistanceMatrix1Dg) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
 	p := d.ijToK(p1, p2)
 
-	if d.Bits == 32 {
+	if d.NumBits == 16 {
+		return uint64((*d).Data16[p])
+	} else if d.NumBits == 32 {
 		return uint64((*d).Data32[p])
-	} else if d.Bits == 64 {
+	} else if d.NumBits == 64 {
 		return (*d).Data64[p]
 	}
 
@@ -168,45 +250,6 @@ func (d *DistanceMatrix1Dg) kToIJ(k uint64) (uint64, uint64) {
 	return kToIJ(d.Dimension, k)
 }
 
-func (d *DistanceMatrix1Dg) add(e *DistanceMatrix1Dg, isAtomic bool) {
-	if d.Bits == 32 {
-		d.add32(e, isAtomic)
-	} else if d.Bits == 64 {
-		d.add64(e, isAtomic)
-	}
-}
-
-func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg, isAtomic bool) {
-	if isAtomic {
-		for i := range (*d).Data32 {
-			atomic.AddUint32(&(*d).Data32[i], atomic.LoadUint32(&(*e).Data32[i]))
-		}
-	} else {
-		mi := uint64(math.MaxInt32)
-		for i := range (*d).Data32 {
-			if uint64((*d).Data32[i])+uint64((*e).Data32[i]) >= mi {
-				fmt.Println("counter overflow")
-				os.Exit(1)
-			}
-			(*d).Data32[i] += (*e).Data32[i]
-		}
-	}
-
-}
-
-func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg, isAtomic bool) {
-	if isAtomic {
-		for i := range (*d).Data64 {
-			atomic.AddUint64(&(*d).Data64[i], atomic.LoadUint64(&(*e).Data64[i]))
-		}
-	} else {
-		for i := range (*d).Data64 {
-			(*d).Data64[i] += (*e).Data64[i]
-		}
-	}
-
-}
-
 //
 // Save and Load
 //
@@ -223,10 +266,10 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 	saver := save.NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
-		fmt.Println("saving block matrix    : ", outPrefix, " block num: ", d.BlockNumber)
+		fmt.Printf("saving block             :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Save(d)
 	} else {
-		fmt.Println("loading block matrix   : ", outPrefix, " block num: ", d.BlockNumber)
+		fmt.Printf("loading block            :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Load(d)
 	}
 }

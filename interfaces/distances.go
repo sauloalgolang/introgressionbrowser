@@ -8,7 +8,7 @@ type DistanceTable []uint64
 
 type DistanceMatrix = DistanceMatrix1Dg
 
-var NewDistanceMatrix = NewDistanceMatrix1Dg32
+var NewDistanceMatrix = NewDistanceMatrix1Dg
 
 type DistanceMatrix1D_T interface {
 	// Exported Methods

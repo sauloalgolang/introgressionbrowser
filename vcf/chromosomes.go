@@ -18,7 +18,7 @@ import (
 //
 //
 
-func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnError bool) (chromosomeNames interfaces.ChromosomeNamesType) {
+func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackParameters interfaces.CallBackParameters) (chromosomeNames interfaces.ChromosomeNamesType) {
 	exists, _ := chromosomeNames.Exists(sourceFile)
 
 	if exists {
@@ -33,11 +33,14 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, continueOnE
 			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}
 
-		getNames := func(r io.Reader, continueOnError bool) {
-			ProcessVcfRaw(r, addToNames, continueOnError, []string{""})
+		getNames := func(r io.Reader, callBackParameters interfaces.CallBackParameters) {
+			ProcessVcfRaw(r,
+				callBackParameters,
+				addToNames,
+				[]string{""})
 		}
 
-		openfile.OpenFile(sourceFile, isTar, isGz, continueOnError, getNames)
+		openfile.OpenFile(sourceFile, isTar, isGz, callBackParameters, getNames)
 
 		chromosomeNames.Save(sourceFile)
 	}

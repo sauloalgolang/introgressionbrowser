@@ -15,7 +15,7 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 
-func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, callBack interfaces.VCFMaskedReaderType) {
+func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters interfaces.CallBackParameters, callBack interfaces.VCFMaskedReaderType) {
 	f, err := os.Open(sourceFile)
 	if err != nil {
 		fmt.Println(err)
@@ -24,7 +24,7 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, ca
 	defer f.Close()
 
 	if !isTar && !isGz {
-		callBack(io.Reader(f), continueOnError)
+		callBack(io.Reader(f), callBackParameters)
 	} else {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -36,7 +36,7 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, ca
 		defer gzReader.Close()
 
 		if !isTar {
-			callBack(gzReader, continueOnError)
+			callBack(gzReader, callBackParameters)
 		} else {
 			tarReader := tar.NewReader(gzReader)
 
@@ -60,7 +60,7 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, continueOnError bool, ca
 					continue
 				case tar.TypeReg:
 					fmt.Println("(", i, ")", "Name: ", name)
-					callBack(tarReader, continueOnError)
+					callBack(tarReader, callBackParameters)
 				default:
 					fmt.Printf("%s : %c %s %s\n",
 						"Yikes! Unable to figure out type",

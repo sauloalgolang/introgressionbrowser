@@ -22,7 +22,7 @@ func SliceIndex(limit int, predicate func(i int) bool) int {
 	return -1
 }
 
-func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError bool, chromosomeNames []string) {
+func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters, callback interfaces.VCFCallBack, chromosomeNames []string) {
 	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
 	contents := bufio.NewScanner(r)
@@ -70,7 +70,14 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
-					register.TempDistance = interfaces.NewDistanceMatrix("_tmp_"+strings.Join(chromosomeNames, "_"), 0, 0, 0, numSampleNames)
+					register.TempDistance = interfaces.NewDistanceMatrix(
+						"_tmp_"+strings.Join(chromosomeNames, "_"),
+						0,
+						callBackParameters.NumBits,
+						numSampleNames,
+						0,
+						0,
+					)
 					// fmt.Println("SampleNames", SampleNames, "chromosomeNames", chromosomeNames)
 				}
 			}
@@ -89,7 +96,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		if chrom != lastChrom {
 			registerNumberChrom = 0
 			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
-			fmt.Println("new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
+			fmt.Println("  new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
 
 		lastChrom = chrom
@@ -154,7 +161,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		}
 
 		if pos_err != nil {
-			if continueOnError {
+			if callBackParameters.ContinueOnError {
 				continue
 			} else {
 				fmt.Println(pos_err)
@@ -163,7 +170,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		}
 
 		if gtIndex == -1 {
-			if continueOnError {
+			if callBackParameters.ContinueOnError {
 				continue
 			} else {
 				fmt.Println("no genotype info field")
@@ -176,7 +183,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 		samplesGT := make([]interfaces.VCFGT, numSamples, numSamples)
 
 		if numSamples != numSampleNames {
-			if continueOnError {
+			if callBackParameters.ContinueOnError {
 				continue
 			} else {
 				fmt.Println("wrong number of columns: expected ", numSampleNames, " got ", numSamples)
@@ -199,7 +206,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 					sampleGT1, sampleGT1_err := strconv.Atoi(string(sampleGT[2]))
 
 					if sampleGT0_err != nil {
-						if continueOnError {
+						if callBackParameters.ContinueOnError {
 							continue
 						} else {
 							fmt.Println(sampleGT0_err)
@@ -208,7 +215,7 @@ func ProcessVcfRaw(r io.Reader, callback interfaces.VCFCallBack, continueOnError
 					}
 
 					if sampleGT1_err != nil {
-						if continueOnError {
+						if callBackParameters.ContinueOnError {
 							continue
 						} else {
 							fmt.Println(sampleGT1_err)

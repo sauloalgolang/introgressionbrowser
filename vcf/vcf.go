@@ -37,16 +37,16 @@ type ChromosomeCallbackRegister struct {
 	// wg             *sync.WaitGroup
 }
 
-func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, continueOnError bool) {
+func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, callBackParameters interfaces.CallBackParameters) {
 	defer cc.wg.Done()
 
-	cc.ChromosomeCallbackSingleThreaded(r, continueOnError)
+	cc.ChromosomeCallbackSingleThreaded(r, callBackParameters)
 }
 
-func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, continueOnError bool) {
+func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, callBackParameters interfaces.CallBackParameters) {
 	bufreader := bufio.NewReader(r)
 
-	ProcessVcfRaw(bufreader, cc.registerCallBack, continueOnError, cc.chromosomeNames)
+	ProcessVcfRaw(bufreader, callBackParameters, cc.registerCallBack, cc.chromosomeNames)
 
 	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
 }
@@ -96,15 +96,16 @@ func CheckVcfFormat(sourceFile string) VcfFormat {
 //
 
 // func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, registerCallBack interfaces.VCFMaskedReaderChromosomeType) {
-func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, registerCallBack interfaces.VCFCallBack) {
+func OpenVcfFile(sourceFile string, callBackParameters interfaces.CallBackParameters, registerCallBack interfaces.VCFCallBack) {
 	fmt.Println("OpenVcfFile :: ",
 		"sourceFile", sourceFile,
-		"continueOnError", continueOnError,
-		"numThreads", numThreads)
+		"numBits", callBackParameters.NumBits,
+		"continueOnError", callBackParameters.ContinueOnError,
+		"numThreads", callBackParameters.NumThreads)
 
 	vcfFormat := CheckVcfFormat(sourceFile)
 
-	chromosomeNames := GatherChromosomeNames(sourceFile, vcfFormat.isTar, vcfFormat.isGz, continueOnError)
+	chromosomeNames := GatherChromosomeNames(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters)
 
 	p := message.NewPrinter(language.English)
 	p.Print("Gathered Chromosome Names:\n")
@@ -113,7 +114,7 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, regist
 	p.Printf(" EndPosition    : %12d\n", chromosomeNames.EndPosition)
 	p.Printf(" NumRegisters   : %12d\n", chromosomeNames.NumRegisters)
 
-	if numThreads == 1 {
+	if callBackParameters.NumThreads == 1 {
 		fmt.Println("Running single threaded")
 
 		chromosomeGroup := make([]string, chromosomeNames.NumChromosomes, chromosomeNames.NumChromosomes)
@@ -127,15 +128,15 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, regist
 			chromosomeNames:  chromosomeGroup,
 		}
 
-		openfile.OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, continueOnError, ccr.ChromosomeCallbackSingleThreaded)
+		openfile.OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallbackSingleThreaded)
 
 		fmt.Println("Finished reading file")
 
 	} else {
-		chromosomeGroups := SpreadChromosomes(chromosomeNames, numThreads)
+		chromosomeGroups := SpreadChromosomes(chromosomeNames, callBackParameters.NumThreads)
 
 		// wg := sync.WaitGroup
-		wg := sizedwaitgroup.New(numThreads)
+		wg := sizedwaitgroup.New(callBackParameters.NumThreads)
 		for _, chromosomeGroup := range chromosomeGroups {
 			ccr := ChromosomeCallbackRegister{
 				registerCallBack: registerCallBack,
@@ -146,7 +147,7 @@ func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, regist
 			// wg.Add(1)
 			wg.Add()
 
-			go openfile.OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, continueOnError, ccr.ChromosomeCallback)
+			go openfile.OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallback)
 
 			if ONLYFIRST {
 				fmt.Println("Only sending first")

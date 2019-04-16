@@ -33,6 +33,7 @@ type IBrowser struct {
 	NumRegisters uint64
 	NumSNPs      uint64
 	NumBlocks    uint64
+	NumBits      int
 	//
 	ChromosomesNames []string
 	chromosomes      map[string]*IBChromosome
@@ -49,7 +50,7 @@ type IBrowser struct {
 	// TODO: per sample stats
 }
 
-func NewIBrowser(blockSize uint64, keepEmptyBlock bool) *IBrowser {
+func NewIBrowser(blockSize uint64, numBits int, keepEmptyBlock bool) *IBrowser {
 	if blockSize > uint64((math.MaxUint32/3)-1) {
 		fmt.Println("block size too large")
 		os.Exit(1)
@@ -65,6 +66,7 @@ func NewIBrowser(blockSize uint64, keepEmptyBlock bool) *IBrowser {
 		NumRegisters: 0,
 		NumSNPs:      0,
 		NumBlocks:    0,
+		NumBits:      numBits,
 		//
 		lastChrom:    "",
 		lastPosition: 0,
@@ -72,7 +74,7 @@ func NewIBrowser(blockSize uint64, keepEmptyBlock bool) *IBrowser {
 		ChromosomesNames: make([]string, 0, 100),
 		chromosomes:      make(map[string]*IBChromosome, 100),
 		//
-		block: NewIBBlock("_whole_genome", blockSize, 0, 0, 0),
+		// block: NewIBBlock("_whole_genome", blockSize, numBits, 0, 0, 0),
 	}
 
 	return &ib
@@ -83,7 +85,7 @@ func (ib *IBrowser) SetSamples(samples *interfaces.VCFSamples) {
 	ib.Samples = make(interfaces.VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.block = NewIBBlock("_whole_genome", ib.BlockSize, 0, 0, ib.NumSamples)
+	ib.block = NewIBBlock("_whole_genome", ib.BlockSize, ib.NumBits, ib.NumSamples, 0, 0)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -121,7 +123,7 @@ func (ib *IBrowser) AddChromosome(chromosomeName string) *IBChromosome {
 		os.Exit(1)
 	}
 
-	ib.chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumBits, ib.NumSamples, ib.KeepEmptyBlock)
 	ib.ChromosomesNames = append(ib.ChromosomesNames, chromosomeName)
 
 	return ib.chromosomes[chromosomeName]
@@ -217,13 +219,16 @@ func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, 
 func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
-		chromosome := ib.chromosomes[chromosomeName]
 
 		if isSave {
-			fmt.Println("saving chromosome      : ", chromosomeName)
+			fmt.Println("saving chromosome        : ", chromosomeName)
+			chromosome := ib.chromosomes[chromosomeName]
 			chromosome.Save(outPrefix, format, compression)
+
 		} else {
-			fmt.Println("loading chromosome     : ", chromosomeName)
+			fmt.Println("loading chromosome       : ", chromosomeName)
+			ib.chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, ib.BlockSize, ib.NumBits, ib.NumSamples, ib.KeepEmptyBlock)
+			chromosome := ib.chromosomes[chromosomeName]
 			chromosome.Load(outPrefix, format, compression)
 		}
 	}
