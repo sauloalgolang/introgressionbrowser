@@ -91,7 +91,7 @@ def checkBlockOfBlocks(prefix, chromosomeName, blocknames, block, blockMatrix, d
     return True
 
 def readChromosomes(prefix, chromosomesnames):
-    return {c: readChromosome(prefix, c) for c in chromosomesnames}
+    return {c["name"]: readChromosome(prefix, c["name"]) for c in chromosomesnames}
 
 def readChromosome(prefix, chromosomeName):
     basefile = prefix + "." + chromosomeName + ".yaml"
