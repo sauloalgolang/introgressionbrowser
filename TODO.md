@@ -4,6 +4,8 @@ TODO LIST
 TODO
 ----
 
+- [ ] Use logging
+- [ ] Let user choose distance matrix to use
 - [ ] Self check
 - [ ] Implement limits in main function
   - [ ] minSnpPerBlock
@@ -19,6 +21,8 @@ TODO
 DONE
 ----
 
+- [X] Keep chromosomes ordered
+- [X] Save parameters in dump
 - [X] Replace as many callbacks as possible
 - [X] Use snappy for compression
   - https://github.com/golang/snappy

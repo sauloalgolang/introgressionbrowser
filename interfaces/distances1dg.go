@@ -211,6 +211,121 @@ func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg) {
 }
 
 //
+// IsEqual
+//
+
+func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
+	res = true
+
+	res = res && (d.ChromosomeName == e.ChromosomeName)
+
+	if !res {
+		return res
+	}
+
+	res = res && (d.BlockSize == e.BlockSize)
+
+	if !res {
+		return res
+	}
+
+	res = res && (d.Dimension == e.Dimension)
+
+	if !res {
+		return res
+	}
+
+	res = res && (d.NumBits == e.NumBits)
+
+	if !res {
+		return res
+	}
+
+	res = res && (d.Size == e.Size)
+
+	if !res {
+		return res
+	}
+
+	if d.NumBits == 16 {
+		d.check16(e)
+	} else if d.NumBits == 32 {
+		d.check32(e)
+	} else if d.NumBits == 64 {
+		d.check64(e)
+	}
+
+	return res
+
+}
+
+func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
+	res = true
+
+	res = res && (d.Size == uint64(len(d.Data16)))
+
+	if !res {
+		return res
+	}
+
+	res = res && (e.Size == uint64(len(e.Data16)))
+
+	if !res {
+		return res
+	}
+
+	for i := range (*d).Data16 {
+		res = res && ((*d).Data16[i] == (*e).Data16[i])
+	}
+
+	return res
+}
+
+func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
+	res = true
+
+	res = res && (d.Size == uint64(len(d.Data32)))
+
+	if !res {
+		return res
+	}
+
+	res = res && (e.Size == uint64(len(e.Data32)))
+
+	if !res {
+		return res
+	}
+
+	for i := range (*d).Data32 {
+		res = res && ((*d).Data32[i] == (*e).Data32[i])
+	}
+
+	return res
+}
+
+func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
+	res = true
+
+	res = res && (d.Size == uint64(len(d.Data64)))
+
+	if !res {
+		return res
+	}
+
+	res = res && (e.Size == uint64(len(e.Data64)))
+
+	if !res {
+		return res
+	}
+
+	for i := range (*d).Data64 {
+		res = res && ((*d).Data64[i] == (*e).Data64[i])
+	}
+
+	return res
+}
+
+//
 // Get
 //
 
@@ -248,6 +363,15 @@ func (d *DistanceMatrix1Dg) ijToK(i uint64, j uint64) uint64 {
 
 func (d *DistanceMatrix1Dg) kToIJ(k uint64) (uint64, uint64) {
 	return kToIJ(d.Dimension, k)
+}
+
+//
+// Check
+//
+func (d *DistanceMatrix1Dg) Check() (res bool) {
+	res = true
+
+	return res
 }
 
 //

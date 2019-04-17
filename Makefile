@@ -147,7 +147,7 @@ data/360_merged_2.50.vcf.gz:
 
 
 
-.PHONY: clean run150 run360 prof prof_run
+.PHONY: clean run150 run360
 
 clean:
 	rm -v $(OUTFILE)*.yaml   || true
@@ -163,8 +163,21 @@ run150: clean ibrowser data/150_VCFs_2.50.tar.gz
 run360: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
-test: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debugMaxRegisterChrom 1000 -threads 4 data/360_merged_2.50.vcf.gz
+
+
+.PHONY: test test_load test_save
+
+test: test_load test_save
+
+test_save: clean ibrowser data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debugMaxRegisterChrom 1000 -threads 4 -check data/360_merged_2.50.vcf.gz
+
+test_load: test_save
+	bin/ibrowser -load -check res/output_360_merged_2.50.vcf.gz
+
+
+
+.PHONY: clean run150 run360 prof prof_run
 
 prof: prof_run ibrowser.cpu.prof
 	go tool pprof -tree bin/ibrowser ibrowser.cpu.prof

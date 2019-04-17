@@ -13,6 +13,10 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 )
 
+type VCFRegisterRaw = interfaces.VCFRegisterRaw
+type CallBackParameters = interfaces.CallBackParameters
+type VCFCallBack = interfaces.VCFCallBack
+
 func SliceIndex(limit int, predicate func(i int) bool) int {
 	for i := 0; i < limit; i++ {
 		if predicate(i) {
@@ -22,7 +26,7 @@ func SliceIndex(limit int, predicate func(i int) bool) int {
 	return -1
 }
 
-func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters, callback interfaces.VCFCallBack, chromosomeNames []string) {
+func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback VCFCallBack, chromosomeNames []string) {
 	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
 	contents := bufio.NewScanner(r)
@@ -33,16 +37,18 @@ func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters
 	SampleNames := make([]string, 0, 100)
 	numSampleNames := uint64(0)
 
-	register := interfaces.VCFRegisterRaw{
-		LineNumber: 0,
-		Chromosome: "",
-		Position:   0,
+	register := VCFRegisterRaw{
+		LineNumber:       0,
+		Chromosome:       "",
+		ChromosomeNumber: 0,
+		Position:         0,
 	}
 
 	sendOnlyChromosomeNames := len(chromosomeNames) == 1 && chromosomeNames[0] == ""
 
 	gtIndex := -1
 	lastChrom := ""
+	chromosomeNumber := -1
 	chromIndex := -1
 	lastChromosomeName := ""
 	lineNumber := int64(0)
@@ -94,6 +100,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters
 		chrom := cols[0]
 
 		if chrom != lastChrom {
+			chromosomeNumber++
 			registerNumberChrom = 0
 			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
 			fmt.Println("  new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
@@ -105,12 +112,13 @@ func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters
 			if chrom != lastChromosomeName { // first time to see it
 				lastChromosomeName = chrom
 
-				register := interfaces.VCFRegisterRaw{
-					LineNumber: lineNumber,
-					Chromosome: chrom,
-					Position:   0,
-					Alt:        nil,
-					Samples:    nil,
+				register := VCFRegisterRaw{
+					LineNumber:       lineNumber,
+					Chromosome:       chrom,
+					ChromosomeNumber: chromosomeNumber,
+					Position:         0,
+					Alt:              nil,
+					Samples:          nil,
 				}
 
 				callback(&SampleNames, &register)
@@ -253,6 +261,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters
 
 		register.LineNumber = lineNumber
 		register.Chromosome = chrom
+		register.ChromosomeNumber = chromosomeNumber
 		register.Position = pos
 		register.Alt = altCols
 		register.Samples = samplesGT
@@ -264,7 +273,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters interfaces.CallBackParameters
 	if sendOnlyChromosomeNames { // return only chromosome names
 		// return final count
 
-		register := interfaces.VCFRegisterRaw{
+		register := VCFRegisterRaw{
 			LineNumber: lineNumber,
 			Chromosome: "",
 			Position:   0,

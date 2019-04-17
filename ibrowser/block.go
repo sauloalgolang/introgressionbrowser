@@ -11,6 +11,10 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
+type DistanceMatrix = interfaces.DistanceMatrix
+
+var NewDistanceMatrix = interfaces.NewDistanceMatrix
+
 //
 //
 // BLOCK SECTION
@@ -20,17 +24,17 @@ import (
 type IBBlock struct {
 	ChromosomeName string
 	BlockSize      uint64
-	NumBits        int
+	CounterBits    int
 	BlockPosition  uint64
 	BlockNumber    uint64
 	MinPosition    uint64
 	MaxPosition    uint64
 	NumSNPS        uint64
 	NumSamples     uint64
-	matrix         *interfaces.DistanceMatrix
+	matrix         *DistanceMatrix
 }
 
-func NewIBBlock(chromosomeName string, blockSize uint64, numBits int, numSamples uint64, blockPosition uint64, blockNumber uint64) *IBBlock {
+func NewIBBlock(chromosomeName string, blockSize uint64, counterBits int, numSamples uint64, blockPosition uint64, blockNumber uint64) *IBBlock {
 	fmt.Println("   NewIBBlock :: chromosomeName: ", chromosomeName,
 		" blockSize: ", blockSize,
 		" blockPosition: ", blockPosition,
@@ -41,17 +45,17 @@ func NewIBBlock(chromosomeName string, blockSize uint64, numBits int, numSamples
 	ibb := IBBlock{
 		ChromosomeName: chromosomeName,
 		BlockSize:      blockSize,
-		NumBits:        numBits,
+		CounterBits:    counterBits,
 		NumSamples:     numSamples,
 		BlockPosition:  blockPosition,
 		BlockNumber:    blockNumber,
 		MinPosition:    math.MaxUint64,
 		MaxPosition:    0,
 		NumSNPS:        0,
-		matrix: interfaces.NewDistanceMatrix(
+		matrix: NewDistanceMatrix(
 			chromosomeName,
 			blockSize,
-			numBits,
+			counterBits,
 			numSamples,
 			blockPosition,
 			blockNumber,
@@ -61,13 +65,69 @@ func NewIBBlock(chromosomeName string, blockSize uint64, numBits int, numSamples
 	return &ibb
 }
 
-func (ibb *IBBlock) Add(position uint64, distance *interfaces.DistanceMatrix) {
+func (ibb *IBBlock) Add(position uint64, distance *DistanceMatrix) {
 	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
 	ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
 	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
 	ibb.matrix.Add(distance)
 }
+
+func (ibb *IBBlock) GetMatrix() *DistanceMatrix {
+	return ibb.matrix
+}
+
+func (ibb *IBBlock) Sum(other *IBBlock) {
+	ibb.NumSNPS += other.NumSNPS
+	ibb.MinPosition = tools.Min64(ibb.MinPosition, other.MinPosition)
+	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, other.MaxPosition)
+	ibb.matrix.Add(other.GetMatrix())
+}
+
+func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
+	res = true
+
+	res = res && (ibb.NumSNPS == other.NumSNPS)
+
+	if !res {
+		return res
+	}
+
+	res = res && (ibb.MinPosition == other.MinPosition)
+
+	if !res {
+		return res
+	}
+
+	res = res && (ibb.MaxPosition == other.MaxPosition)
+
+	if !res {
+		return res
+	}
+
+	res = res && ibb.matrix.IsEqual(other.GetMatrix())
+
+	return res
+}
+
+//
+// Check
+//
+
+func (ibb *IBBlock) Check() (res bool) {
+	res = true
+
+	res = res && (ibb.BlockNumber == ibb.matrix.BlockNumber)
+	res = res && (ibb.BlockPosition == ibb.matrix.BlockPosition)
+	res = res && (ibb.ChromosomeName == ibb.matrix.ChromosomeName)
+	res = res && (ibb.MinPosition <= ibb.MaxPosition)
+
+	return res
+}
+
+//
+// Filename
+//
 
 func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
@@ -111,10 +171,10 @@ func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compr
 		fmt.Printf("loading block            :  %-70s block num: %d block pos: %d\n", baseName, ibb.BlockNumber, ibb.BlockPosition)
 		saver.Load(ibb)
 
-		ibb.matrix = interfaces.NewDistanceMatrix(
+		ibb.matrix = NewDistanceMatrix(
 			ibb.ChromosomeName,
 			ibb.BlockSize,
-			ibb.NumBits,
+			ibb.CounterBits,
 			ibb.NumSamples,
 			ibb.BlockPosition,
 			ibb.BlockNumber,

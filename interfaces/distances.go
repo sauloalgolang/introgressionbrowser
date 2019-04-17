@@ -15,6 +15,7 @@ type DistanceMatrix1D_T interface {
 	Add(*DistanceMatrix1D_T)
 	AddAtomic(*DistanceMatrix1D_T)
 	Clean()
+	Check() bool
 	Set(uint64, uint64, uint64)
 	Get(uint64, uint64, uint64) uint64
 	GenFilename(string, string, string) (string, string)

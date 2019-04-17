@@ -18,15 +18,19 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
+type CallBackParameters = interfaces.CallBackParameters
+type Parameters = interfaces.Parameters
+
 var DEFAULT_BLOCK_SIZE = uint64(100000)
 var DEFAULT_OUTFILE = "output"
-var DEFAULT_COUTNER_BITS = 32
+var DEFAULT_COUNTER_BITS = 32
 
 var blockSize = flag.Uint64("blockSize", DEFAULT_BLOCK_SIZE, "Block size")
+var check = flag.Bool("check", false, "Check for self consistency")
 var chromosomes = flag.String("chromosomes", "", "Comma separated list of chromomomes to read")
 var compression = flag.String("compression", save.DefaultCompressor, "Compression format: "+strings.Join(save.CompressorNames, ", "))
 var continueOnError = flag.Bool("continueOnError", true, "Continue reading the file on parsing error")
-var counterBits = flag.Int("counterbits", DEFAULT_COUTNER_BITS, "Number of bits")
+var counterBits = flag.Int("counterbits", DEFAULT_COUNTER_BITS, "Number of bits")
 var cpuProfile = flag.String("cpuProfile", "", "Write cpu profile to `file`")
 var debug = flag.Bool("debug", false, "Print debug information")
 var debugFirstOnly = flag.Bool("debugFirstOnly", false, "Read only fist chromosome from each thread")
@@ -46,25 +50,26 @@ func main() {
 	// get the arguments from the command line
 	flag.Parse()
 
-	fmt.Println("blockSize               :", *blockSize)
-	fmt.Println("chromosomes             :", *chromosomes) // TODO: implement
-	fmt.Println("compression             :", *compression)
-	fmt.Println("continueOnError         :", *continueOnError)
-	fmt.Println("counterbits             :", *counterBits)
-	fmt.Println("cpuProfile              :", *cpuProfile)
-	fmt.Println("debug                   :", *debug)
-	fmt.Println("debugFirstOnly          :", *debugFirstOnly)
-	fmt.Println("debugMaxRegisterThread  :", *debugMaxRegisterThread)
-	fmt.Println("debugMaxRegisterChrom   :", *debugMaxRegisterChrom)
-	fmt.Println("format                  :", *format)
-	fmt.Println("keepemptyblock          :", *keepEmptyBlock)
-	fmt.Println("maxsnpperblock          :", *maxSnpPerBlock) // TODO: implement
-	fmt.Println("minsnpperblock          :", *minSnpPerBlock) // TODO: implement
-	fmt.Println("memProfile              :", *memProfile)
-	fmt.Println("numthreads              :", *numThreads)
-	fmt.Println("load                    :", *load)
-	fmt.Println("outfile                 :", *outfile)
-	fmt.Println("version                 :", *version)
+	fmt.Println("blockSize                   :", *blockSize)
+	fmt.Println("check                       :", *check)
+	fmt.Println("chromosomes                 :", *chromosomes) // TODO: implement
+	fmt.Println("compression                 :", *compression)
+	fmt.Println("continueOnError             :", *continueOnError)
+	fmt.Println("counterbits                 :", *counterBits)
+	fmt.Println("cpuProfile                  :", *cpuProfile)
+	fmt.Println("debug                       :", *debug)
+	fmt.Println("debugFirstOnly              :", *debugFirstOnly)
+	fmt.Println("debugMaxRegisterThread      :", *debugMaxRegisterThread)
+	fmt.Println("debugMaxRegisterChrom       :", *debugMaxRegisterChrom)
+	fmt.Println("format                      :", *format)
+	fmt.Println("keepemptyblock              :", *keepEmptyBlock)
+	fmt.Println("maxsnpperblock              :", *maxSnpPerBlock) // TODO: implement
+	fmt.Println("minsnpperblock              :", *minSnpPerBlock) // TODO: implement
+	fmt.Println("memProfile                  :", *memProfile)
+	fmt.Println("numthreads                  :", *numThreads)
+	fmt.Println("load                        :", *load)
+	fmt.Println("outfile                     :", *outfile)
+	fmt.Println("version                     :", *version)
 
 	vcf.DEBUG = *debug
 	vcf.ONLYFIRST = *debugFirstOnly
@@ -124,7 +129,23 @@ func main() {
 		log.Fatal("Dude, you didn't pass a input file!")
 	}
 
-	ibrowser := ibrowser.NewIBrowser(*blockSize, *counterBits, *keepEmptyBlock)
+	parameters := Parameters{
+		BlockSize:              *blockSize,
+		Chromosomes:            *chromosomes,
+		Compression:            *compression,
+		ContinueOnError:        *continueOnError,
+		CounterBits:            *counterBits,
+		DebugFirstOnly:         *debugFirstOnly,
+		DebugMaxRegisterThread: *debugMaxRegisterThread,
+		DebugMaxRegisterChrom:  *debugMaxRegisterChrom,
+		Format:                 *format,
+		KeepEmptyBlock:         *keepEmptyBlock,
+		MaxSnpPerBlock:         *maxSnpPerBlock,
+		MinSnpPerBlock:         *minSnpPerBlock,
+		SourceFile:             sourceFile,
+	}
+
+	ibrowser := ibrowser.NewIBrowser(parameters)
 
 	if *load {
 		if *blockSize != DEFAULT_BLOCK_SIZE {
@@ -141,14 +162,34 @@ func main() {
 
 		ibrowser.Load(sourceFile, *format, *compression)
 
+		if *check {
+			checkRes := ibrowser.Check()
+
+			if checkRes {
+				log.Println("Passed all tests")
+			} else {
+				log.Println("Failed tests")
+			}
+		}
+
 	} else {
-		callBackParameters := interfaces.CallBackParameters{
+		callBackParameters := CallBackParameters{
 			ContinueOnError: *continueOnError,
 			NumBits:         *counterBits,
 			NumThreads:      *numThreads,
 		}
 
 		vcf.OpenVcfFile(sourceFile, callBackParameters, ibrowser.RegisterCallBack)
+
+		if *check {
+			checkRes := ibrowser.Check()
+
+			if checkRes {
+				log.Println("Passed all tests")
+			} else {
+				log.Println("Failed tests")
+			}
+		}
 
 		ibrowser.Save(*outfile, *format, *compression)
 
