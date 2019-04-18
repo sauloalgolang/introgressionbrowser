@@ -23,7 +23,7 @@ type Parameters = interfaces.Parameters
 
 var DEFAULT_BLOCK_SIZE = uint64(100000)
 var DEFAULT_OUTFILE = "output"
-var DEFAULT_COUNTER_BITS = 16
+var DEFAULT_COUNTER_BITS = 32
 
 var blockSize = flag.Uint64("blockSize", DEFAULT_BLOCK_SIZE, "Block size")
 var check = flag.Bool("check", false, "Check for self consistency")

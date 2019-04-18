@@ -4,6 +4,7 @@ TODO LIST
 TODO
 ----
 
+- [ ] Add ibrowser merger
 - [ ] Use logging
 - [ ] Let user choose distance matrix to use
 - [ ] Self check
