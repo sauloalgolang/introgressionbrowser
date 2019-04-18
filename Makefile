@@ -172,7 +172,7 @@ test: test_load test_save
 test_save: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz -debugMaxRegisterChrom 1000 -threads 4 -check data/360_merged_2.50.vcf.gz
 
-test_load: test_save
+test_load:
 	bin/ibrowser -load -check res/output_360_merged_2.50.vcf.gz
 
 

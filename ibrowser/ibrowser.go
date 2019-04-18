@@ -197,6 +197,7 @@ func (ib *IBrowser) Check() (res bool) {
 	res = res && ib.selfCheck()
 
 	if !res {
+		fmt.Println("Failed ibrowser self check")
 		return res
 	}
 
@@ -207,6 +208,7 @@ func (ib *IBrowser) Check() (res bool) {
 		res = res && chromosome.Check()
 
 		if !res {
+			fmt.Printf("Failed ibrowser chromosome %s check\n", chromosomeName)
 			return res
 		}
 	}
@@ -220,6 +222,7 @@ func (ib *IBrowser) selfCheck() (res bool) {
 	res = res && ib.block.Check()
 
 	if !res {
+		fmt.Printf("Failed ibrowser self check - block check\n")
 		return res
 	}
 
@@ -227,12 +230,14 @@ func (ib *IBrowser) selfCheck() (res bool) {
 		res = res && (ib.BlockSize == ib.block.BlockSize)
 
 		if !res {
+			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, ib.block.BlockSize)
 			return res
 		}
 
 		res = res && (ib.CounterBits == ib.block.CounterBits)
 
 		if !res {
+			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, ib.block.CounterBits)
 			return res
 		}
 	}
@@ -240,12 +245,14 @@ func (ib *IBrowser) selfCheck() (res bool) {
 	res = res && (ib.NumSNPS == ib.block.NumSNPS)
 
 	if !res {
+		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, ib.block.NumSNPS)
 		return res
 	}
 
 	res = res && (ib.NumSamples == ib.block.NumSamples)
 
 	if !res {
+		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, ib.block.NumSamples)
 		return res
 	}
 

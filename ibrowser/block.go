@@ -90,22 +90,30 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 	res = res && (ibb.NumSNPS == other.NumSNPS)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed block %s - #%d check - NumSNPS: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.NumSNPS, other.NumSNPS)
 		return res
 	}
 
 	res = res && (ibb.MinPosition == other.MinPosition)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed block %s - #%d check - MinPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, other.MinPosition)
 		return res
 	}
 
 	res = res && (ibb.MaxPosition == other.MaxPosition)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed block %s - #%d check - MaxPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MaxPosition, other.MaxPosition)
 		return res
 	}
 
 	res = res && ibb.matrix.IsEqual(other.GetMatrix())
+
+	if !res {
+		fmt.Printf("IsEqual :: Failed block %s - #%d check - Matrix not equal\n", ibb.ChromosomeName, ibb.BlockNumber)
+		return res
+	}
 
 	return res
 }
@@ -118,9 +126,32 @@ func (ibb *IBBlock) Check() (res bool) {
 	res = true
 
 	res = res && (ibb.BlockNumber == ibb.matrix.BlockNumber)
+
+	if !res {
+		fmt.Printf("Failed block %s - #%d check - BlockNumber: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockNumber, ibb.matrix.BlockNumber)
+		return res
+	}
+
 	res = res && (ibb.BlockPosition == ibb.matrix.BlockPosition)
-	res = res && (ibb.ChromosomeName == ibb.matrix.ChromosomeName)
+
+	if !res {
+		fmt.Printf("Failed block %s - #%d check - BlockPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockPosition, ibb.matrix.BlockPosition)
+		return res
+	}
+
+	// res = res && (ibb.ChromosomeName == ibb.matrix.ChromosomeName)
+
+	// if !res {
+	// 	fmt.Printf("Failed block %s - #%d check - ChromosomeName: %s != %s\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.ChromosomeName, ibb.matrix.ChromosomeName)
+	// 	return res
+	// }
+
 	res = res && (ibb.MinPosition <= ibb.MaxPosition)
+
+	if !res {
+		fmt.Printf("Failed block %s - #%d check - MinPosition %d > MaxPosition %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, ibb.MaxPosition)
+		return res
+	}
 
 	return res
 }

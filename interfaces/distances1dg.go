@@ -217,33 +217,38 @@ func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg) {
 func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
-	res = res && (d.ChromosomeName == e.ChromosomeName)
-
-	if !res {
-		return res
-	}
+	// res = res && (d.ChromosomeName == e.ChromosomeName)
+	//
+	// if !res {
+	// 	fmt.Printf("IsEqual :: Failed matrix %s - #%d check - ChromosomeName %s != %s\n", d.ChromosomeName, d.BlockNumber, d.ChromosomeName, e.ChromosomeName)
+	// 	return res
+	// }
 
 	res = res && (d.BlockSize == e.BlockSize)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - BlockSize %d != %d\n", d.ChromosomeName, d.BlockNumber, d.BlockSize, e.BlockSize)
 		return res
 	}
 
 	res = res && (d.Dimension == e.Dimension)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - Dimension %d != %d\n", d.ChromosomeName, d.BlockNumber, d.Dimension, e.Dimension)
 		return res
 	}
 
 	res = res && (d.NumBits == e.NumBits)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - NumBits %d != %d\n", d.ChromosomeName, d.BlockNumber, d.NumBits, e.NumBits)
 		return res
 	}
 
 	res = res && (d.Size == e.Size)
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - Size %d != %d\n", d.ChromosomeName, d.BlockNumber, d.Size, e.Size)
 		return res
 	}
 
@@ -265,17 +270,23 @@ func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
 	res = res && (d.Size == uint64(len(d.Data16)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data16)))
 		return res
 	}
 
 	res = res && (e.Size == uint64(len(e.Data16)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data16)))
 		return res
 	}
 
 	for i := range (*d).Data16 {
 		res = res && ((*d).Data16[i] == (*e).Data16[i])
+
+		if !res {
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data16[i], (*e).Data16[i])
+		}
 	}
 
 	return res
@@ -287,17 +298,23 @@ func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
 	res = res && (d.Size == uint64(len(d.Data32)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data32)))
 		return res
 	}
 
 	res = res && (e.Size == uint64(len(e.Data32)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data32)))
 		return res
 	}
 
 	for i := range (*d).Data32 {
 		res = res && ((*d).Data32[i] == (*e).Data32[i])
+
+		if !res {
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data32[i], (*e).Data32[i])
+		}
 	}
 
 	return res
@@ -309,17 +326,23 @@ func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
 	res = res && (d.Size == uint64(len(d.Data64)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data64)))
 		return res
 	}
 
 	res = res && (e.Size == uint64(len(e.Data64)))
 
 	if !res {
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data64)))
 		return res
 	}
 
 	for i := range (*d).Data64 {
 		res = res && ((*d).Data64[i] == (*e).Data64[i])
+
+		if !res {
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data64[i], (*e).Data64[i])
+		}
 	}
 
 	return res

@@ -182,6 +182,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 	res = res && ibc.selfCheck()
 
 	if !res {
+		fmt.Printf("Failed chromosome self check\n")
 		return res
 	}
 
@@ -189,6 +190,11 @@ func (ibc *IBChromosome) Check() (res bool) {
 		res = res && block.Check()
 
 		if !res {
+			fmt.Printf("Failed chromosome - block check - block %s pos %d number %d\n",
+				block.ChromosomeName,
+				block.BlockPosition,
+				block.BlockNumber,
+			)
 			return res
 		}
 	}
@@ -202,6 +208,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 	res = res && ibc.block.Check()
 
 	if !res {
+		fmt.Printf("Failed chromosome self check - block chek\n")
 		return res
 	}
 
@@ -211,12 +218,14 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (ibc.block.NumSNPS == sumBlock.NumSNPS)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - block NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.block.NumSNPS, sumBlock.NumSNPS)
 			return res
 		}
 
 		res = res && (ibc.NumSNPS == sumBlock.NumSNPS)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - sumBlock NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.NumSNPS, sumBlock.NumSNPS)
 			return res
 		}
 	}
@@ -224,24 +233,28 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (ibc.block.MinPosition == sumBlock.MinPosition)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - block MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MinPosition, sumBlock.MinPosition)
 			return res
 		}
 
 		res = res && (ibc.MinPosition == sumBlock.MinPosition)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - sumBlock MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.MinPosition, sumBlock.MinPosition)
 			return res
 		}
-	}
-	{
+
 		res = res && (ibc.block.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - block MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
+
 		res = res && (ibc.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - sumblock MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
 	}
@@ -250,6 +263,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (ibc.block.IsEqual(sumBlock))
 
 		if !res {
+			fmt.Printf("Failed chromosome %s self check - blocks not equal\n", ibc.ChromosomeName)
 			return res
 		}
 	}
