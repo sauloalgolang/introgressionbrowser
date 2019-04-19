@@ -259,6 +259,53 @@ func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
 // SaveLoad
 //
 
+func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
+	mode := ""
+
+	if isSave {
+		mode = "w"
+	} else {
+		mode = "r"
+	}
+
+	dumper := NewMultiArrayFile(outPrefix+".bin", mode)
+	defer dumper.Close()
+
+	ib.dumperMatrix(dumper, isSave, ib.block.GetMatrix())
+
+	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
+		chromosomeName := ib.ChromosomesNames[chromosomePos]
+		chromosome := ib.chromosomes[chromosomeName.Name]
+
+		ib.dumperMatrix(dumper, isSave, chromosome.block.GetMatrix())
+
+		for _, blockPos := range chromosome.BlockNames {
+			block := chromosome.blocks[blockPos]
+			ib.dumperMatrix(dumper, isSave, block.GetMatrix())
+		}
+	}
+}
+
+func (ib *IBrowser) dumperMatrix(dumper *MultiArrayFile, isSave bool, data *DistanceMatrix) {
+	if isSave {
+		if ib.CounterBits == 16 {
+			dumper.Write16(&data.Data16)
+		} else if ib.CounterBits == 32 {
+			dumper.Write32(&data.Data32)
+		} else if ib.CounterBits == 64 {
+			dumper.Write64(&data.Data64)
+		}
+	} else {
+		if ib.CounterBits == 16 {
+			dumper.Read16(&data.Data16)
+		} else if ib.CounterBits == 32 {
+			dumper.Read32(&data.Data32)
+		} else if ib.CounterBits == 64 {
+			dumper.Read64(&data.Data64)
+		}
+	}
+}
+
 func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
 	saver := NewSaverCompressed(baseName, format, compression)
@@ -273,6 +320,8 @@ func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compr
 
 	ib.saveLoadBlock(isSave, baseName, format, compression)
 	ib.saveLoadChromosomes(isSave, baseName, format, compression)
+
+	ib.dumper(isSave, outPrefix)
 }
 
 func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {

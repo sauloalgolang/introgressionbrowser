@@ -14,9 +14,9 @@ import "github.com/sauloalgolang/introgressionbrowser/save"
 //
 //
 
-type DistanceRow16 []uint16
-type DistanceRow32 []uint32
-type DistanceRow64 []uint64
+type DistanceRow16 = []uint16
+type DistanceRow32 = []uint32
+type DistanceRow64 = []uint64
 
 type DistanceMatrix1Dg struct {
 	ChromosomeName string

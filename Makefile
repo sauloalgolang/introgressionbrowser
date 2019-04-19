@@ -64,10 +64,10 @@ LDFLAGS+=-X 'main.IBROWSER_GO_VERSION=$(GO_VERSION)'
 
 help:
 	@echo " build"
+	@echo "  ibrowser"
+	@echo "  ibrowser.exe"
+	@echo "  ibrowser.wasm"
 	@echo ""
-	@echo " ibrowser"
-	@echo " ibrowser.exe"
-	@echo " ibrowser.wasm"
 	@echo " httpserver"
 	@echo ""
 	@echo " examples"
@@ -81,6 +81,14 @@ help:
 	@echo " run360"
 	@echo ""
 	@echo " prof"
+	@echo " prof_run"
+	@echo " version"
+	@echo " check"
+	@echo " clean"
+	@echo ""
+	@echo " test"
+	@echo "  test_save"
+	@echo "  test_load"
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin version
 
@@ -169,13 +177,22 @@ run360: clean ibrowser data/360_merged_2.50.vcf.gz
 
 .PHONY: test test_load test_save
 
-test: test_load test_save
+test: test_save test_load
 
 test_save: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -threads 4 -check -counterbits 32 -debugMaxRegisterChrom 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 test_load:
 	bin/ibrowser -load -check res/output_360_merged_2.50.vcf.gz
+
+
+
+.PHONY: quick_test test_load quick_test_save
+
+quick_test: quick_test_save test_load
+
+quick_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterThread 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 
 

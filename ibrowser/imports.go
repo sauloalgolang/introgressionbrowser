@@ -8,12 +8,14 @@ import (
 )
 
 type DistanceMatrix = interfaces.DistanceMatrix
+type MultiArrayFile = save.MultiArrayFile
 
 var NewDistanceMatrix = matrix.NewDistanceMatrix
 
 var Min64 = tools.Min64
 var Max64 = tools.Max64
 var NewSaverCompressed = save.NewSaverCompressed
+var NewMultiArrayFile = save.NewMultiArrayFile
 
 //
 // Types
