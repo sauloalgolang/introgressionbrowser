@@ -5,16 +5,6 @@ import (
 	"math"
 )
 
-import (
-	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-	"github.com/sauloalgolang/introgressionbrowser/save"
-	"github.com/sauloalgolang/introgressionbrowser/tools"
-)
-
-type DistanceMatrix = interfaces.DistanceMatrix
-
-var NewDistanceMatrix = interfaces.NewDistanceMatrix
-
 //
 //
 // BLOCK SECTION
@@ -68,8 +58,8 @@ func NewIBBlock(chromosomeName string, blockSize uint64, counterBits int, numSam
 func (ibb *IBBlock) Add(position uint64, distance *DistanceMatrix) {
 	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
-	ibb.MinPosition = tools.Min64(ibb.MinPosition, position)
-	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, position)
+	ibb.MinPosition = Min64(ibb.MinPosition, position)
+	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
 	ibb.matrix.Add(distance)
 }
 
@@ -79,8 +69,8 @@ func (ibb *IBBlock) GetMatrix() *DistanceMatrix {
 
 func (ibb *IBBlock) Sum(other *IBBlock) {
 	ibb.NumSNPS += other.NumSNPS
-	ibb.MinPosition = tools.Min64(ibb.MinPosition, other.MinPosition)
-	ibb.MaxPosition = tools.Max64(ibb.MaxPosition, other.MaxPosition)
+	ibb.MinPosition = Min64(ibb.MinPosition, other.MinPosition)
+	ibb.MaxPosition = Max64(ibb.MaxPosition, other.MaxPosition)
 	ibb.matrix.Add(other.GetMatrix())
 }
 
@@ -163,7 +153,7 @@ func (ibb *IBBlock) Check() (res bool) {
 func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
 
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
@@ -192,7 +182,7 @@ func (ibb *IBBlock) Load(outPrefix string, format string, compression string) {
 
 func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ibb.GenFilename(outPrefix, format, compression)
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
 		fmt.Printf("saving block             :  %-70s block num: %d block pos: %d\n", baseName, ibb.BlockNumber, ibb.BlockPosition)

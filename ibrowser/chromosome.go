@@ -8,11 +8,6 @@ import (
 
 import "runtime/debug"
 
-import (
-	"github.com/sauloalgolang/introgressionbrowser/save"
-	"github.com/sauloalgolang/introgressionbrowser/tools"
-)
-
 //
 //
 // CHROMOSOME SECTION
@@ -166,8 +161,8 @@ func (ibc *IBChromosome) Add(reg *VCFRegister) (uint64, bool, uint64) {
 	block.Add(position, distance)
 	ibc.block.Add(position, distance)
 	ibc.NumSNPS++
-	ibc.MinPosition = tools.Min64(ibc.MinPosition, block.MinPosition)
-	ibc.MaxPosition = tools.Max64(ibc.MaxPosition, block.MaxPosition)
+	ibc.MinPosition = Min64(ibc.MinPosition, block.MinPosition)
+	ibc.MaxPosition = Max64(ibc.MaxPosition, block.MaxPosition)
 
 	return blockNum, isNew, numBlocksAdded
 }
@@ -295,7 +290,7 @@ func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 func (ibc *IBChromosome) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + ibc.ChromosomeName
 
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
@@ -323,7 +318,7 @@ func (ibc *IBChromosome) Load(outPrefix string, format string, compression strin
 
 func (ibc *IBChromosome) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ibc.GenFilename(outPrefix, format, compression)
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
 		fmt.Println("saving chromosome        : ", baseName)

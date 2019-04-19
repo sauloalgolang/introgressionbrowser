@@ -63,8 +63,10 @@ LDFLAGS+=-X 'main.IBROWSER_GO_VERSION=$(GO_VERSION)'
 .PHONY: help
 
 help:
-	@echo " bin"
+	@echo " build"
+	@echo ""
 	@echo " ibrowser"
+	@echo " ibrowser.exe"
 	@echo " ibrowser.wasm"
 	@echo " httpserver"
 	@echo ""
@@ -82,7 +84,7 @@ help:
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin version
 
-bin: ibrowser ibrowser.wasm httpserver
+build: ibrowser ibrowser.wasm httpserver
 
 ibrowser: bin/ibrowser
 

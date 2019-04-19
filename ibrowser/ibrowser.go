@@ -9,39 +9,6 @@ import (
 	"sync/atomic"
 )
 
-import (
-	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-	"github.com/sauloalgolang/introgressionbrowser/save"
-)
-
-//
-// Types
-//
-
-// type VCFReaderType = interfaces.VCFReaderType
-type VCFSamples = interfaces.VCFSamples
-type VCFRegister = interfaces.VCFRegister
-type Parameters = interfaces.Parameters
-
-type NamePosPair struct {
-	Name string
-	Pos  int
-}
-
-type NamePosPairList []NamePosPair
-
-func (s NamePosPairList) Len() int {
-	return len(s)
-}
-
-func (s NamePosPairList) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s NamePosPairList) Less(i, j int) bool {
-	return s[i].Pos < s[j].Pos
-}
-
 var mutex = &sync.Mutex{}
 
 //
@@ -266,7 +233,7 @@ func (ib *IBrowser) selfCheck() (res bool) {
 func (ib *IBrowser) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix
 
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	fileName = saver.GenFilename()
 
@@ -294,7 +261,7 @@ func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
 
 func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
-	saver := save.NewSaverCompressed(baseName, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
 		fmt.Println("saving global ibrowser status")

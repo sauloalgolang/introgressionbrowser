@@ -9,14 +9,6 @@ import (
 	"strings"
 )
 
-import (
-	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-)
-
-type VCFRegisterRaw = interfaces.VCFRegisterRaw
-type CallBackParameters = interfaces.CallBackParameters
-type VCFCallBack = interfaces.VCFCallBack
-
 func SliceIndex(limit int, predicate func(i int) bool) int {
 	for i := 0; i < limit; i++ {
 		if predicate(i) {
@@ -76,7 +68,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
-					register.TempDistance = interfaces.NewDistanceMatrix(
+					register.TempDistance = NewDistanceMatrix(
 						"_tmp_"+strings.Join(chromosomeNames, "_"),
 						0,
 						callBackParameters.NumBits,
@@ -188,7 +180,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 		samples := cols[9:]
 		numSamples := uint64(len(samples))
-		samplesGT := make([]interfaces.VCFGT, numSamples, numSamples)
+		samplesGT := make([]VCFGT, numSamples, numSamples)
 
 		if numSamples != numSampleNames {
 			if callBackParameters.ContinueOnError {
@@ -202,7 +194,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		for samplePos, sample := range samples {
 			sampleCols := strings.Split(sample, ";")
 			sampleGT := sampleCols[gtIndex]
-			sampleGTVal := make(interfaces.VCFGTVal, 2, 2)
+			sampleGTVal := make(VCFGTVal, 2, 2)
 
 			if sampleGT[0] == '.' {
 				sampleGTVal[0] = -1

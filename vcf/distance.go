@@ -5,16 +5,14 @@ import (
 	"os"
 )
 
-import "github.com/sauloalgolang/introgressionbrowser/interfaces"
-
 type GT struct {
 	Position  uint64
-	Gt        *interfaces.VCFGTVal
+	Gt        *VCFGTVal
 	Lgt       int
 	IsDiploid bool
 }
 
-var DistanceTableValuesHetLow = interfaces.DistanceTable{
+var DistanceTableValuesHetLow = DistanceTable{
 	3, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7
 	1, 2, 2, 1, //  8  9 10 11
@@ -29,7 +27,7 @@ var DistanceTableValuesHetLow = interfaces.DistanceTable{
 	//-------------------
 }
 
-var DistanceTableValuesHetEqual = interfaces.DistanceTable{
+var DistanceTableValuesHetEqual = DistanceTable{
 	2, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7
 	1, 2, 2, 1, //  8  9 10 11
@@ -46,7 +44,7 @@ var DistanceTableValuesHetEqual = interfaces.DistanceTable{
 
 var DistanceTableValues = DistanceTableValuesHetLow
 
-func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) uint64 {
+func CalculateDistanceDiploid(a *VCFGTVal, b *VCFGTVal) uint64 {
 	a0 := (*a)[0]
 	a1 := (*a)[1]
 	b0 := (*b)[0]
@@ -61,7 +59,7 @@ func CalculateDistanceDiploid(a *interfaces.VCFGTVal, b *interfaces.VCFGTVal) ui
 	return d
 }
 
-func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
+func GetValids(samples VCFSamplesGT) (valids []GT, numValids int) {
 	numSamples := uint64(len(samples))
 	numValids = 0
 	valids = make([]GT, numSamples, numSamples)
@@ -100,7 +98,7 @@ func GetValids(samples interfaces.VCFSamplesGT) (valids []GT, numValids int) {
 	return valids, numValids
 }
 
-func CalculateDistance(numSamples uint64, reg *interfaces.VCFRegister) *interfaces.DistanceMatrix {
+func CalculateDistance(numSamples uint64, reg *VCFRegister) *DistanceMatrix {
 	reg.TempDistance.Clean()
 
 	valids, numValids := GetValids(reg.Samples)
