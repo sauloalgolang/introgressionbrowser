@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 	// "io/ioutil"
 	"log"
 	"os"
@@ -188,30 +189,111 @@ func (m *MultiArrayFile) write(dataLen int64) {
 func (m *MultiArrayFile) Write16(data *[]uint16) {
 	m.write(int64(len(*data)))
 
-	err := binary.Write(m.bufWriter, m.endianness, *data)
+	ndata := make([]int16, len(*data), len(*data))
+	sumData := uint64(0)
 
-	if err != nil {
-		log.Fatalln("binary.Write failed to write data16:", err)
+	lastw := int16(0)
+	for i, v := range *data {
+		w := int16(v)
+
+		if w > int16(math.MaxInt16) {
+			log.Panicln("overflow")
+		}
+
+		if i == 0 {
+			ndata[i] = w
+		} else {
+			ndata[i] = int16(w - lastw)
+		}
+
+		sumData += uint64(w)
+		lastw = w
+	}
+
+	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
+
+	if err1 != nil {
+		log.Fatalln("binary.Write failed to write data16 sum:", err1)
+	}
+
+	err2 := binary.Write(m.bufWriter, m.endianness, &ndata)
+
+	if err2 != nil {
+		log.Fatalln("binary.Write failed to write data16:", err2)
 	}
 }
 
 func (m *MultiArrayFile) Write32(data *[]uint32) {
 	m.write(int64(len(*data)))
 
-	err := binary.Write(m.bufWriter, m.endianness, *data)
+	ndata := make([]int32, len(*data), len(*data))
+	sumData := uint64(0)
 
-	if err != nil {
-		log.Fatalln("binary.Write failed to write data32:", err)
+	lastw := int32(0)
+	for i, v := range *data {
+		w := int32(v)
+
+		if w > int32(math.MaxInt32) {
+			log.Panicln("overflow")
+		}
+
+		if i == 0 {
+			ndata[i] = w
+		} else {
+			ndata[i] = int32(w - lastw)
+		}
+
+		sumData += uint64(w)
+		lastw = w
+	}
+
+	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
+
+	if err1 != nil {
+		log.Fatalln("binary.Write failed to write data32 sum:", err1)
+	}
+
+	err2 := binary.Write(m.bufWriter, m.endianness, &ndata)
+
+	if err2 != nil {
+		log.Fatalln("binary.Write failed to write data32:", err2)
 	}
 }
 
 func (m *MultiArrayFile) Write64(data *[]uint64) {
 	m.write(int64(len(*data)))
 
-	err := binary.Write(m.bufWriter, m.endianness, *data)
+	ndata := make([]int64, len(*data), len(*data))
+	sumData := uint64(0)
 
-	if err != nil {
-		log.Fatalln("binary.Write failed to write data64:", err)
+	lastw := int64(0)
+	for i, v := range *data {
+		w := int64(v)
+
+		if w > int64(math.MaxInt64) {
+			log.Panicln("overflow")
+		}
+
+		if i == 0 {
+			ndata[i] = w
+		} else {
+			ndata[i] = int64(w - lastw)
+		}
+
+		sumData += uint64(w)
+		lastw = w
+	}
+
+	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
+
+	if err1 != nil {
+		log.Fatalln("binary.Write failed to write data64 sum:", err1)
+	}
+
+	err2 := binary.Write(m.bufWriter, m.endianness, &ndata)
+
+	if err2 != nil {
+		log.Fatalln("binary.Write failed to write data64:", err2)
 	}
 }
 
@@ -219,7 +301,7 @@ func (m *MultiArrayFile) Write64(data *[]uint64) {
 // MultiArrayFile :: Reader
 //
 
-func (m *MultiArrayFile) read() (hasData bool, dataLen int64) {
+func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64) {
 	if m.writeMode {
 		log.Fatalln("Trying to read from a writer")
 	}
@@ -229,6 +311,7 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64) {
 
 	dataLen = int64(0)
 	hasData = false
+	sumData = uint64(0)
 	serial := int64(0)
 
 	err1 := binary.Read(m.bufReader, m.endianness, &hasData)
@@ -239,7 +322,7 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64) {
 
 	if !hasData {
 		m.isFinished = true
-		return hasData, dataLen
+		return hasData, dataLen, sumData
 	}
 
 	err2 := binary.Read(m.bufReader, m.endianness, &serial)
@@ -266,22 +349,47 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64) {
 		log.Fatalln("Length <= 0", dataLen)
 	}
 
+	err4 := binary.Read(m.bufReader, m.endianness, &sumData)
+
+	if err4 != nil {
+		log.Fatalln("binary.Read failed reading sumData:", err4)
+	}
+
 	m.serial++
 
-	return hasData, dataLen
+	return hasData, dataLen, sumData
 }
 
 func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool) {
 	dataLen := int64(0)
+	sumData := uint64(0)
 
-	hasData, dataLen = m.read()
+	hasData, dataLen, sumData = m.read()
 
+	ndata := make([]int16, dataLen, dataLen)
 	*data = make([]uint16, dataLen, dataLen)
 
-	err := binary.Read(m.bufReader, m.endianness, data)
+	err := binary.Read(m.bufReader, m.endianness, &ndata)
 
 	if err != nil {
 		log.Fatalln("binary.Read failed reading data16:", err)
+	}
+
+	sumDataV := uint64(0)
+	lastw := int16(0)
+	for i, w := range ndata {
+		if i == 0 {
+			(*data)[i] = uint16(w)
+		} else {
+			(*data)[i] = uint16(lastw + w)
+		}
+
+		sumDataV += uint64((*data)[i])
+		lastw = int16((*data)[i])
+	}
+
+	if sumData != sumDataV {
+		log.Fatalln("binary.Read failed reading data16: checksum error", sumData, sumDataV)
 	}
 
 	return hasData
@@ -289,15 +397,34 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool) {
 
 func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool) {
 	dataLen := int64(0)
+	sumData := uint64(0)
 
-	hasData, dataLen = m.read()
+	hasData, dataLen, sumData = m.read()
 
+	ndata := make([]int32, dataLen, dataLen)
 	*data = make([]uint32, dataLen, dataLen)
 
-	err := binary.Read(m.bufReader, m.endianness, data)
+	err := binary.Read(m.bufReader, m.endianness, &ndata)
 
 	if err != nil {
 		log.Fatalln("binary.Read failed reading data32:", err)
+	}
+
+	sumDataV := uint64(0)
+	lastw := int32(0)
+	for i, w := range ndata {
+		if i == 0 {
+			(*data)[i] = uint32(w)
+		} else {
+			(*data)[i] = uint32(lastw + w)
+		}
+
+		sumDataV += uint64((*data)[i])
+		lastw = int32((*data)[i])
+	}
+
+	if sumData != sumDataV {
+		log.Fatalln("binary.Read failed reading data32: checksum error", sumData, sumDataV)
 	}
 
 	return hasData
@@ -305,15 +432,34 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool) {
 
 func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool) {
 	dataLen := int64(0)
+	sumData := uint64(0)
 
-	hasData, dataLen = m.read()
+	hasData, dataLen, sumData = m.read()
 
+	ndata := make([]int64, dataLen, dataLen)
 	*data = make([]uint64, dataLen, dataLen)
 
-	err := binary.Read(m.bufReader, m.endianness, data)
+	err := binary.Read(m.bufReader, m.endianness, &ndata)
 
 	if err != nil {
 		log.Fatalln("binary.Read failed reading data64:", err)
+	}
+
+	sumDataV := uint64(0)
+	lastw := int64(0)
+	for i, w := range ndata {
+		if i == 0 {
+			(*data)[i] = uint64(w)
+		} else {
+			(*data)[i] = uint64(lastw + w)
+		}
+
+		sumDataV += uint64((*data)[i])
+		lastw = int64((*data)[i])
+	}
+
+	if sumData != sumDataV {
+		log.Fatalln("binary.Read failed reading data64: checksum error", sumData, sumDataV)
 	}
 
 	return hasData

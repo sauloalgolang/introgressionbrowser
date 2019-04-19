@@ -141,7 +141,7 @@ func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
 	r := v + uint16(val)
 
 	if val >= uint64(math.MaxUint16) {
-		fmt.Println("count overflow")
+		fmt.Println("count 16 overflow")
 		os.Exit(1)
 	}
 
@@ -153,7 +153,7 @@ func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
 	r := v + uint32(val)
 
 	if val >= uint64(math.MaxUint32) {
-		fmt.Println("count overflow")
+		fmt.Println("count 32 overflow")
 		os.Exit(1)
 	}
 
@@ -186,7 +186,7 @@ func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt16)
 	for i := range (*d).Data16 {
 		if uint64((*d).Data16[i])+uint64((*e).Data16[i]) >= mi {
-			fmt.Println("counter overflow")
+			fmt.Println("counter 16 overflow")
 			os.Exit(1)
 		}
 		(*d).Data16[i] += (*e).Data16[i]
@@ -196,8 +196,10 @@ func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
 func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt32)
 	for i := range (*d).Data32 {
-		if uint64((*d).Data32[i])+uint64((*e).Data32[i]) >= mi {
-			fmt.Println("counter overflow")
+		vdi := uint64((*d).Data32[i])
+		vei := uint64((*e).Data32[i])
+		if (vdi + vei) >= mi {
+			fmt.Println("counter 32 overflow", vdi, vei, mi)
 			os.Exit(1)
 		}
 		(*d).Data32[i] += (*e).Data32[i]
