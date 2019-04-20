@@ -26,11 +26,24 @@ type DistanceMatrix1Dg struct {
 	BlockPosition  uint64
 	BlockNumber    uint64
 	Serial         int64
-	NumBits        int
-	Data16         DistanceRow16
-	Data32         DistanceRow32
-	Data64         DistanceRow64
+	CounterBits    int
+	data16         DistanceRow16
+	data32         DistanceRow32
+	data64         DistanceRow64
 	// Data           []interface{}
+}
+
+func (d *DistanceMatrix1Dg) String() string {
+	return fmt.Sprint("Matrix :: ",
+		" ChromosomeName: ", d.ChromosomeName, "\n",
+		" BlockSize:      ", d.BlockSize, "\n",
+		" Dimension:      ", d.Dimension, "\n",
+		" Size:           ", d.Size, "\n",
+		" BlockPosition:  ", d.BlockPosition, "\n",
+		" BlockNumber:    ", d.BlockNumber, "\n",
+		" Serial:         ", d.Serial, "\n",
+		" CounterBits:    ", d.CounterBits, "\n",
+	)
 }
 
 func NewDistanceMatrix1Dg16(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
@@ -62,27 +75,27 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 		BlockSize:      blockSize,
 		Dimension:      dimension,
 		Size:           size,
-		NumBits:        numBits,
+		CounterBits:    numBits,
 		BlockPosition:  blockPosition,
 		BlockNumber:    blockNumber,
 		Serial:         -1,
 	}
 
-	if d.NumBits == 16 {
+	if d.CounterBits == 16 {
 		// d.Data = make(DistanceRow32, size, size)
-		d.Data16 = make(DistanceRow16, size, size)
-		d.Data32 = make(DistanceRow32, 0, 0)
-		d.Data64 = make(DistanceRow64, 0, 0)
-	} else if d.NumBits == 32 {
+		d.data16 = make(DistanceRow16, size, size)
+		d.data32 = make(DistanceRow32, 0, 0)
+		d.data64 = make(DistanceRow64, 0, 0)
+	} else if d.CounterBits == 32 {
 		// d.Data = make(DistanceRow32, size, size)
-		d.Data16 = make(DistanceRow16, 0, 0)
-		d.Data32 = make(DistanceRow32, size, size)
-		d.Data64 = make(DistanceRow64, 0, 0)
-	} else if d.NumBits == 64 {
+		d.data16 = make(DistanceRow16, 0, 0)
+		d.data32 = make(DistanceRow32, size, size)
+		d.data64 = make(DistanceRow64, 0, 0)
+	} else if d.CounterBits == 64 {
 		// d.Data = make(DistanceRow64, size, size)
-		d.Data16 = make(DistanceRow16, 0, 0)
-		d.Data32 = make(DistanceRow32, 0, 0)
-		d.Data64 = make(DistanceRow64, size, size)
+		d.data16 = make(DistanceRow16, 0, 0)
+		d.data32 = make(DistanceRow32, 0, 0)
+		d.data64 = make(DistanceRow64, size, size)
 	}
 
 	d.Clean()
@@ -91,34 +104,65 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 }
 
 //
+// GetMatrix
+//
+
+func (d *DistanceMatrix1Dg) GetMatrix16() *DistanceRow16 {
+	if d.CounterBits != 16 {
+		fmt.Println("calling GetMatrix16 when numbits not 16")
+		os.Exit(1)
+	}
+
+	return &d.data16
+}
+
+func (d *DistanceMatrix1Dg) GetMatrix32() *DistanceRow32 {
+	if d.CounterBits != 32 {
+		fmt.Println("calling GetMatrix32 when numbits not 32")
+		os.Exit(1)
+	}
+
+	return &d.data32
+}
+
+func (d *DistanceMatrix1Dg) GetMatrix64() *DistanceRow64 {
+	if d.CounterBits != 64 {
+		fmt.Println("calling GetMatrix64 when numbits not 64")
+		os.Exit(1)
+	}
+
+	return &d.data64
+}
+
+//
 // Clean
 //
 
 func (d *DistanceMatrix1Dg) Clean() {
-	if d.NumBits == 16 {
+	if d.CounterBits == 16 {
 		d.clean16()
-	} else if d.NumBits == 32 {
+	} else if d.CounterBits == 32 {
 		d.clean32()
-	} else if d.NumBits == 64 {
+	} else if d.CounterBits == 64 {
 		d.clean64()
 	}
 }
 
 func (d *DistanceMatrix1Dg) clean16() {
-	for i := range (*d).Data16 {
-		(*d).Data16[i] = uint16(0)
+	for i := range (*d).data16 {
+		(*d).data16[i] = uint16(0)
 	}
 }
 
 func (d *DistanceMatrix1Dg) clean32() {
-	for i := range (*d).Data32 {
-		(*d).Data32[i] = uint32(0)
+	for i := range (*d).data32 {
+		(*d).data32[i] = uint32(0)
 	}
 }
 
 func (d *DistanceMatrix1Dg) clean64() {
-	for i := range (*d).Data64 {
-		(*d).Data64[i] = uint64(0)
+	for i := range (*d).data64 {
+		(*d).data64[i] = uint64(0)
 	}
 }
 
@@ -129,17 +173,17 @@ func (d *DistanceMatrix1Dg) clean64() {
 func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 
-	if d.NumBits == 16 {
+	if d.CounterBits == 16 {
 		d.set16(p, val)
-	} else if d.NumBits == 32 {
+	} else if d.CounterBits == 32 {
 		d.set32(p, val)
-	} else if d.NumBits == 64 {
+	} else if d.CounterBits == 64 {
 		d.set64(p, val)
 	}
 }
 
 func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
-	v := (*d).Data16[p]
+	v := (*d).data16[p]
 	r := v + uint16(val)
 
 	if val >= uint64(math.MaxUint16) {
@@ -147,11 +191,11 @@ func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
 		os.Exit(1)
 	}
 
-	(*d).Data16[p] = r
+	(*d).data16[p] = r
 }
 
 func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
-	v := (*d).Data32[p]
+	v := (*d).data32[p]
 	r := v + uint32(val)
 
 	if val >= uint64(math.MaxUint32) {
@@ -159,11 +203,11 @@ func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
 		os.Exit(1)
 	}
 
-	(*d).Data32[p] = r
+	(*d).data32[p] = r
 }
 
 func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
-	(*d).Data64[p] = val
+	(*d).data64[p] = val
 }
 
 //
@@ -175,42 +219,42 @@ func (d *DistanceMatrix1Dg) Add(e *DistanceMatrix1Dg) {
 }
 
 func (d *DistanceMatrix1Dg) add(e *DistanceMatrix1Dg) {
-	if d.NumBits == 16 {
+	if d.CounterBits == 16 {
 		d.add16(e)
-	} else if d.NumBits == 32 {
+	} else if d.CounterBits == 32 {
 		d.add32(e)
-	} else if d.NumBits == 64 {
+	} else if d.CounterBits == 64 {
 		d.add64(e)
 	}
 }
 
 func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt16)
-	for i := range (*d).Data16 {
-		if uint64((*d).Data16[i])+uint64((*e).Data16[i]) >= mi {
+	for i := range (*d).data16 {
+		if uint64((*d).data16[i])+uint64((*e).data16[i]) >= mi {
 			fmt.Println("counter 16 overflow")
 			os.Exit(1)
 		}
-		(*d).Data16[i] += (*e).Data16[i]
+		(*d).data16[i] += (*e).data16[i]
 	}
 }
 
 func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt32)
-	for i := range (*d).Data32 {
-		vdi := uint64((*d).Data32[i])
-		vei := uint64((*e).Data32[i])
+	for i := range (*d).data32 {
+		vdi := uint64((*d).data32[i])
+		vei := uint64((*e).data32[i])
 		if (vdi + vei) >= mi {
 			fmt.Println("counter 32 overflow", vdi, vei, mi)
 			os.Exit(1)
 		}
-		(*d).Data32[i] += (*e).Data32[i]
+		(*d).data32[i] += (*e).data32[i]
 	}
 }
 
 func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg) {
-	for i := range (*d).Data64 {
-		(*d).Data64[i] += (*e).Data64[i]
+	for i := range (*d).data64 {
+		(*d).data64[i] += (*e).data64[i]
 	}
 }
 
@@ -242,10 +286,10 @@ func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 		return res
 	}
 
-	res = res && (d.NumBits == e.NumBits)
+	res = res && (d.CounterBits == e.CounterBits)
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - NumBits %d != %d\n", d.ChromosomeName, d.BlockNumber, d.NumBits, e.NumBits)
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check - CounterBits %d != %d\n", d.ChromosomeName, d.BlockNumber, d.CounterBits, e.CounterBits)
 		return res
 	}
 
@@ -256,11 +300,11 @@ func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 		return res
 	}
 
-	if d.NumBits == 16 {
+	if d.CounterBits == 16 {
 		d.check16(e)
-	} else if d.NumBits == 32 {
+	} else if d.CounterBits == 32 {
 		d.check32(e)
-	} else if d.NumBits == 64 {
+	} else if d.CounterBits == 64 {
 		d.check64(e)
 	}
 
@@ -271,25 +315,25 @@ func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
-	res = res && (d.Size == uint64(len(d.Data16)))
+	res = res && (d.Size == uint64(len(d.data16)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data16)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.data16)))
 		return res
 	}
 
-	res = res && (e.Size == uint64(len(e.Data16)))
+	res = res && (e.Size == uint64(len(e.data16)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data16)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.data16)))
 		return res
 	}
 
-	for i := range (*d).Data16 {
-		res = res && ((*d).Data16[i] == (*e).Data16[i])
+	for i := range (*d).data16 {
+		res = res && ((*d).data16[i] == (*e).data16[i])
 
 		if !res {
-			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data16[i], (*e).Data16[i])
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 16 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).data16[i], (*e).data16[i])
 		}
 	}
 
@@ -299,25 +343,25 @@ func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
 func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
-	res = res && (d.Size == uint64(len(d.Data32)))
+	res = res && (d.Size == uint64(len(d.data32)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data32)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.data32)))
 		return res
 	}
 
-	res = res && (e.Size == uint64(len(e.Data32)))
+	res = res && (e.Size == uint64(len(e.data32)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data32)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.data32)))
 		return res
 	}
 
-	for i := range (*d).Data32 {
-		res = res && ((*d).Data32[i] == (*e).Data32[i])
+	for i := range (*d).data32 {
+		res = res && ((*d).data32[i] == (*e).data32[i])
 
 		if !res {
-			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data32[i], (*e).Data32[i])
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 32 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).data32[i], (*e).data32[i])
 		}
 	}
 
@@ -327,25 +371,25 @@ func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
 func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
-	res = res && (d.Size == uint64(len(d.Data64)))
+	res = res && (d.Size == uint64(len(d.data64)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.Data64)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - D Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, d.Size, uint64(len(d.data64)))
 		return res
 	}
 
-	res = res && (e.Size == uint64(len(e.Data64)))
+	res = res && (e.Size == uint64(len(e.data64)))
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.Data64)))
+		fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - E Size %d != Len %d\n", d.ChromosomeName, d.BlockNumber, e.Size, uint64(len(e.data64)))
 		return res
 	}
 
-	for i := range (*d).Data64 {
-		res = res && ((*d).Data64[i] == (*e).Data64[i])
+	for i := range (*d).data64 {
+		res = res && ((*d).data64[i] == (*e).data64[i])
 
 		if !res {
-			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).Data64[i], (*e).Data64[i])
+			fmt.Printf("IsEqual :: Failed matrix %s - #%d check 64 - Position %d : %d != %d\n", d.ChromosomeName, d.BlockNumber, i, (*d).data64[i], (*e).data64[i])
 		}
 	}
 
@@ -359,12 +403,12 @@ func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
 func (d *DistanceMatrix1Dg) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
 	p := d.ijToK(p1, p2)
 
-	if d.NumBits == 16 {
-		return uint64((*d).Data16[p])
-	} else if d.NumBits == 32 {
-		return uint64((*d).Data32[p])
-	} else if d.NumBits == 64 {
-		return (*d).Data64[p]
+	if d.CounterBits == 16 {
+		return uint64((*d).data16[p])
+	} else if d.CounterBits == 32 {
+		return uint64((*d).data32[p])
+	} else if d.CounterBits == 64 {
+		return (*d).data64[p]
 	}
 
 	return 0

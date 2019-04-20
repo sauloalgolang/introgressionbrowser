@@ -159,7 +159,7 @@ func NewMultiArrayFile(fileName string, mode string) *MultiArrayFile {
 // MultiArrayFile :: Writer
 //
 
-func (m *MultiArrayFile) write(dataLen int64) {
+func (m *MultiArrayFile) write(dataLen int64) (serial int64) {
 	if !m.writeMode {
 		log.Fatalln("Trying to write to a reader")
 	}
@@ -183,11 +183,15 @@ func (m *MultiArrayFile) write(dataLen int64) {
 		log.Fatalln("binary.Write failed to write dataLen:", err3)
 	}
 
+	serial = m.serial
+
 	m.serial++
+
+	return serial
 }
 
-func (m *MultiArrayFile) Write16(data *[]uint16) {
-	m.write(int64(len(*data)))
+func (m *MultiArrayFile) Write16(data *[]uint16) (serial int64) {
+	serial = m.write(int64(len(*data)))
 
 	ndata := make([]int16, len(*data), len(*data))
 	sumData := uint64(0)
@@ -221,10 +225,12 @@ func (m *MultiArrayFile) Write16(data *[]uint16) {
 	if err2 != nil {
 		log.Fatalln("binary.Write failed to write data16:", err2)
 	}
+
+	return serial
 }
 
-func (m *MultiArrayFile) Write32(data *[]uint32) {
-	m.write(int64(len(*data)))
+func (m *MultiArrayFile) Write32(data *[]uint32) (serial int64) {
+	serial = m.write(int64(len(*data)))
 
 	ndata := make([]int32, len(*data), len(*data))
 	sumData := uint64(0)
@@ -258,10 +264,12 @@ func (m *MultiArrayFile) Write32(data *[]uint32) {
 	if err2 != nil {
 		log.Fatalln("binary.Write failed to write data32:", err2)
 	}
+
+	return serial
 }
 
-func (m *MultiArrayFile) Write64(data *[]uint64) {
-	m.write(int64(len(*data)))
+func (m *MultiArrayFile) Write64(data *[]uint64) (serial int64) {
+	serial = m.write(int64(len(*data)))
 
 	ndata := make([]int64, len(*data), len(*data))
 	sumData := uint64(0)
@@ -295,16 +303,19 @@ func (m *MultiArrayFile) Write64(data *[]uint64) {
 	if err2 != nil {
 		log.Fatalln("binary.Write failed to write data64:", err2)
 	}
+
+	return serial
 }
 
 //
 // MultiArrayFile :: Reader
 //
 
-func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64) {
+func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64, serial int64) {
 	if m.writeMode {
 		log.Fatalln("Trying to read from a writer")
 	}
+
 	if m.isFinished {
 		log.Fatalln("Trying to read a finished file")
 	}
@@ -312,7 +323,7 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64) {
 	dataLen = int64(0)
 	hasData = false
 	sumData = uint64(0)
-	serial := int64(0)
+	serial = int64(0)
 
 	err1 := binary.Read(m.bufReader, m.endianness, &hasData)
 
@@ -322,7 +333,7 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64) {
 
 	if !hasData {
 		m.isFinished = true
-		return hasData, dataLen, sumData
+		return hasData, dataLen, sumData, serial
 	}
 
 	err2 := binary.Read(m.bufReader, m.endianness, &serial)
@@ -357,14 +368,22 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64) {
 
 	m.serial++
 
-	return hasData, dataLen, sumData
+	// log.Println("MultiArrayFile :: read() ::",
+	// 	" hasData: ", hasData,
+	// 	" dataLen: ", dataLen,
+	// 	" sumData: ", sumData,
+	// 	" serial: ", serial,
+	// )
+
+	return hasData, dataLen, sumData, serial
 }
 
-func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool) {
+func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	serial = int64(0)
 
-	hasData, dataLen, sumData = m.read()
+	hasData, dataLen, sumData, serial = m.read()
 
 	ndata := make([]int16, dataLen, dataLen)
 	*data = make([]uint16, dataLen, dataLen)
@@ -392,14 +411,15 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool) {
 		log.Fatalln("binary.Read failed reading data16: checksum error", sumData, sumDataV)
 	}
 
-	return hasData
+	return hasData, serial
 }
 
-func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool) {
+func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	serial = int64(0)
 
-	hasData, dataLen, sumData = m.read()
+	hasData, dataLen, sumData, serial = m.read()
 
 	ndata := make([]int32, dataLen, dataLen)
 	*data = make([]uint32, dataLen, dataLen)
@@ -427,14 +447,15 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool) {
 		log.Fatalln("binary.Read failed reading data32: checksum error", sumData, sumDataV)
 	}
 
-	return hasData
+	return hasData, serial
 }
 
-func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool) {
+func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	serial = int64(0)
 
-	hasData, dataLen, sumData = m.read()
+	hasData, dataLen, sumData, serial = m.read()
 
 	ndata := make([]int64, dataLen, dataLen)
 	*data = make([]uint64, dataLen, dataLen)
@@ -462,7 +483,7 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool) {
 		log.Fatalln("binary.Read failed reading data64: checksum error", sumData, sumDataV)
 	}
 
-	return hasData
+	return hasData, serial
 }
 
 //

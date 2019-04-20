@@ -29,8 +29,8 @@ type IBrowser struct {
 	Parameters     Parameters
 	//
 	ChromosomesNames NamePosPairList
-	chromosomes      map[string]*IBChromosome
-	block            *IBBlock
+	Chromosomes      map[string]*IBChromosome
+	Block            *IBBlock
 	//
 	lastChrom    string
 	lastPosition uint64
@@ -67,7 +67,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		lastPosition: 0,
 		//
 		ChromosomesNames: make(NamePosPairList, 0, 100),
-		chromosomes:      make(map[string]*IBChromosome, 100),
+		Chromosomes:      make(map[string]*IBChromosome, 100),
 		//
 		// block: NewIBBlock("_whole_genome", blockSize, counterBits, 0, 0, 0),
 	}
@@ -80,7 +80,7 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	ib.Samples = make(VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.block = NewIBBlock("_whole_genome", ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
+	ib.Block = NewIBBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -93,7 +93,7 @@ func (ib *IBrowser) GetSamples() VCFSamples {
 }
 
 func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
-	if chromosome, ok := ib.chromosomes[chromosomeName]; ok {
+	if chromosome, ok := ib.Chromosomes[chromosomeName]; ok {
 		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome, ok
 	} else {
@@ -118,13 +118,13 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 		os.Exit(1)
 	}
 
-	ib.chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, chromosomeNumber, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, chromosomeNumber, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
 
 	ib.ChromosomesNames = append(ib.ChromosomesNames, NamePosPair{chromosomeName, chromosomeNumber})
 
 	sort.Sort(ib.ChromosomesNames)
 
-	return ib.chromosomes[chromosomeName]
+	return ib.Chromosomes[chromosomeName]
 }
 
 func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
@@ -153,12 +153,14 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 		ib.NumSNPS++
 
-		ib.block.Add(0, reg.Distance)
+		ib.Block.Add(0, reg.Distance)
 	}
 	mutex.Unlock()
 }
 
 func (ib *IBrowser) Check() (res bool) {
+	fmt.Println("Starting self check")
+
 	res = true
 
 	res = res && ib.selfCheck()
@@ -170,7 +172,7 @@ func (ib *IBrowser) Check() (res bool) {
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
-		chromosome := ib.chromosomes[chromosomeName.Name]
+		chromosome := ib.Chromosomes[chromosomeName.Name]
 
 		res = res && chromosome.Check()
 
@@ -186,7 +188,7 @@ func (ib *IBrowser) Check() (res bool) {
 func (ib *IBrowser) selfCheck() (res bool) {
 	res = true
 
-	res = res && ib.block.Check()
+	res = res && ib.Block.Check()
 
 	if !res {
 		fmt.Printf("Failed ibrowser self check - block check\n")
@@ -194,32 +196,32 @@ func (ib *IBrowser) selfCheck() (res bool) {
 	}
 
 	{
-		res = res && (ib.BlockSize == ib.block.BlockSize)
+		res = res && (ib.BlockSize == ib.Block.BlockSize)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, ib.block.BlockSize)
+			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, ib.Block.BlockSize)
 			return res
 		}
 
-		res = res && (ib.CounterBits == ib.block.CounterBits)
+		res = res && (ib.CounterBits == ib.Block.CounterBits)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, ib.block.CounterBits)
+			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, ib.Block.CounterBits)
 			return res
 		}
 	}
 
-	res = res && (ib.NumSNPS == ib.block.NumSNPS)
+	res = res && (ib.NumSNPS == ib.Block.NumSNPS)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, ib.block.NumSNPS)
+		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, ib.Block.NumSNPS)
 		return res
 	}
 
-	res = res && (ib.NumSamples == ib.block.NumSamples)
+	res = res && (ib.NumSamples == ib.Block.NumSamples)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, ib.block.NumSamples)
+		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, ib.Block.NumSamples)
 		return res
 	}
 
@@ -259,6 +261,68 @@ func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
 // SaveLoad
 //
 
+func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
+	baseName, _ := ib.GenFilename(outPrefix, format, compression)
+	saver := NewSaverCompressed(baseName, format, compression)
+
+	if isSave {
+		fmt.Println("saving global ibrowser status")
+		ib.dumper(isSave, outPrefix)
+		saver.Save(ib)
+	} else {
+		fmt.Println("loading global ibrowser status")
+		saver.Load(ib)
+		sort.Sort(ib.ChromosomesNames)
+		ib.dumper(isSave, outPrefix)
+	}
+
+	// ib.saveLoadBlock(isSave, baseName, format, compression)
+	// ib.saveLoadChromosomes(isSave, baseName, format, compression)
+}
+
+func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
+	newPrefix := outPrefix + "_block"
+
+	if isSave {
+		fmt.Println("saving global ibrowser block")
+		ib.Block.Save(newPrefix, format, compression)
+	} else {
+		fmt.Println("loading global ibrowser block")
+		ib.Block = NewIBBlock(
+			"_whole_genome",
+			0,
+			ib.BlockSize,
+			ib.CounterBits,
+			ib.NumSamples,
+			0,
+			0,
+		)
+		ib.Block.Load(newPrefix, format, compression)
+	}
+}
+
+func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
+	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
+		chromosomeName := ib.ChromosomesNames[chromosomePos]
+
+		if isSave {
+			fmt.Println("saving chromosome        : ", chromosomeName)
+			chromosome := ib.Chromosomes[chromosomeName.Name]
+			chromosome.Save(outPrefix, format, compression)
+
+		} else {
+			fmt.Println("loading chromosome       : ", chromosomeName)
+			ib.Chromosomes[chromosomeName.Name] = NewIBChromosome(chromosomeName.Name, chromosomeName.Pos, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
+			chromosome := ib.Chromosomes[chromosomeName.Name]
+			chromosome.Load(outPrefix, format, compression)
+		}
+	}
+}
+
+//
+// Dumper
+//
+
 func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 	mode := ""
 
@@ -271,86 +335,55 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 	dumper := NewMultiArrayFile(outPrefix+".bin", mode)
 	defer dumper.Close()
 
-	ib.dumperMatrix(dumper, isSave, ib.block.GetMatrix())
+	ib.dumperMatrix(dumper, isSave, ib.Block)
+
+	// fmt.Println("ib.ChromosomesNames", ib.ChromosomesNames)
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
-		chromosome := ib.chromosomes[chromosomeName.Name]
+		chromosome := ib.Chromosomes[chromosomeName.Name]
 
-		ib.dumperMatrix(dumper, isSave, chromosome.block.GetMatrix())
+		ib.dumperMatrix(dumper, isSave, chromosome.Block)
 
-		for _, blockPos := range chromosome.BlockNames {
-			block := chromosome.blocks[blockPos]
-			ib.dumperMatrix(dumper, isSave, block.GetMatrix())
+		for _, block := range chromosome.Blocks {
+			ib.dumperMatrix(dumper, isSave, block)
 		}
 	}
 }
 
-func (ib *IBrowser) dumperMatrix(dumper *MultiArrayFile, isSave bool, data *DistanceMatrix) {
+func (ib *IBrowser) dumperMatrix(dumper *MultiArrayFile, isSave bool, block *IBBlock) {
+	serial := int64(0)
+	hasData := false
+	data := block.GetMatrix()
+
 	if isSave {
 		if ib.CounterBits == 16 {
-			dumper.Write16(&data.Data16)
+			serial = dumper.Write16(data.GetMatrix16())
 		} else if ib.CounterBits == 32 {
-			dumper.Write32(&data.Data32)
+			serial = dumper.Write32(data.GetMatrix32())
 		} else if ib.CounterBits == 64 {
-			dumper.Write64(&data.Data64)
+			serial = dumper.Write64(data.GetMatrix64())
 		}
+
+		block.SetSerial(serial)
+
 	} else {
 		if ib.CounterBits == 16 {
-			dumper.Read16(&data.Data16)
+			hasData, serial = dumper.Read16(data.GetMatrix16())
 		} else if ib.CounterBits == 32 {
-			dumper.Read32(&data.Data32)
+			hasData, serial = dumper.Read32(data.GetMatrix32())
 		} else if ib.CounterBits == 64 {
-			dumper.Read64(&data.Data64)
+			hasData, serial = dumper.Read64(data.GetMatrix64())
 		}
-	}
-}
 
-func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
-	baseName, _ := ib.GenFilename(outPrefix, format, compression)
-	saver := NewSaverCompressed(baseName, format, compression)
+		if !hasData {
+			fmt.Println("Tried to read beyond the file")
+			os.Exit(1)
+		}
 
-	if isSave {
-		fmt.Println("saving global ibrowser status")
-		saver.Save(ib)
-	} else {
-		fmt.Println("loading global ibrowser status")
-		saver.Load(ib)
-	}
-
-	ib.saveLoadBlock(isSave, baseName, format, compression)
-	ib.saveLoadChromosomes(isSave, baseName, format, compression)
-
-	ib.dumper(isSave, outPrefix)
-}
-
-func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
-	newPrefix := outPrefix + "_block"
-
-	if isSave {
-		fmt.Println("saving global ibrowser block")
-		ib.block.Save(newPrefix, format, compression)
-	} else {
-		fmt.Println("loading global ibrowser block")
-		ib.block = NewIBBlock("_whole_genome", ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
-		ib.block.Load(newPrefix, format, compression)
-	}
-}
-
-func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
-	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
-		chromosomeName := ib.ChromosomesNames[chromosomePos]
-
-		if isSave {
-			fmt.Println("saving chromosome        : ", chromosomeName)
-			chromosome := ib.chromosomes[chromosomeName.Name]
-			chromosome.Save(outPrefix, format, compression)
-
-		} else {
-			fmt.Println("loading chromosome       : ", chromosomeName)
-			ib.chromosomes[chromosomeName.Name] = NewIBChromosome(chromosomeName.Name, chromosomeName.Pos, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
-			chromosome := ib.chromosomes[chromosomeName.Name]
-			chromosome.Load(outPrefix, format, compression)
+		if !block.CheckSerial(serial) {
+			fmt.Println("Mismatch in order of files")
+			os.Exit(1)
 		}
 	}
 }

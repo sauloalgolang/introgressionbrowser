@@ -18,35 +18,56 @@ type IBChromosome struct {
 	ChromosomeName   string
 	ChromosomeNumber int
 	BlockSize        uint64
+	CounterBits      int
+	NumSamples       uint64
 	MinPosition      uint64
 	MaxPosition      uint64
 	NumBlocks        uint64
 	NumSNPS          uint64
-	NumSamples       uint64
-	CounterBits      int
 	KeepEmptyBlock   bool
 	BlockNames       map[uint64]uint64
-	block            *IBBlock
-	blocks           []*IBBlock
+	Block            *IBBlock
+	Blocks           []*IBBlock
+}
+
+func (ibc *IBChromosome) String() string {
+	return fmt.Sprint("Block :: ",
+		" ChromosomeName:   ", ibc.ChromosomeName, "\n",
+		" ChromosomeNumber: ", ibc.ChromosomeNumber, "\n",
+		" BlockSize:        ", ibc.BlockSize, "\n",
+		" CounterBits:      ", ibc.CounterBits, "\n",
+		" NumSamples:       ", ibc.NumSamples, "\n",
+		" MinPosition:      ", ibc.MinPosition, "\n",
+		" MaxPosition:      ", ibc.MaxPosition, "\n",
+		" NumBlocks:        ", ibc.NumBlocks, "\n",
+		" NumSNPS:          ", ibc.NumSNPS, "\n",
+		" KeepEmptyBlock:   ", ibc.KeepEmptyBlock, "\n",
+		" NumSBlockNames:   ", ibc.BlockNames, "\n",
+	)
 }
 
 func NewIBChromosome(chromosomeName string, chromosomeNumber int, blockSize uint64, counterBits int, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
-	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName, " chromosomeNumber: ", chromosomeNumber, " blockSize: ", blockSize, " counterBits: ", counterBits, " numSamples: ", numSamples)
+	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName,
+		" chromosomeNumber: ", chromosomeNumber,
+		" blockSize: ", blockSize,
+		" counterBits: ", counterBits,
+		" numSamples: ", numSamples,
+	)
 
 	ibc := IBChromosome{
 		ChromosomeName:   chromosomeName,
 		ChromosomeNumber: chromosomeNumber,
 		BlockSize:        blockSize,
+		CounterBits:      counterBits,
 		NumSamples:       numSamples,
 		MinPosition:      math.MaxUint64,
 		MaxPosition:      0,
 		NumBlocks:        0,
 		NumSNPS:          0,
-		CounterBits:      counterBits,
 		KeepEmptyBlock:   keepEmptyBlock,
 		BlockNames:       make(map[uint64]uint64, 100),
-		block:            NewIBBlock("_"+chromosomeName+"_block", blockSize, counterBits, numSamples, 0, 0),
-		blocks:           make([]*IBBlock, 0, 100),
+		Block:            NewIBBlock("_"+chromosomeName+"_block", chromosomeNumber, blockSize, counterBits, numSamples, 0, 0),
+		Blocks:           make([]*IBBlock, 0, 100),
 	}
 
 	return &ibc
@@ -60,10 +81,11 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 		os.Exit(1)
 	}
 
-	blockPos := uint64(len(ibc.blocks))
+	blockPos := uint64(len(ibc.Blocks))
 
 	block = NewIBBlock(
 		ibc.ChromosomeName,
+		ibc.ChromosomeNumber,
 		ibc.BlockSize,
 		ibc.CounterBits,
 		ibc.NumSamples,
@@ -71,7 +93,7 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 		blockNum,
 	)
 
-	ibc.blocks = append(ibc.blocks, block)
+	ibc.Blocks = append(ibc.Blocks, block)
 
 	ibc.BlockNames[blockNum] = blockPos
 
@@ -94,15 +116,15 @@ func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
 
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	if blockPos, ok := ibc.BlockNames[blockNum]; ok {
-		if blockPos >= uint64(len(ibc.blocks)) {
-			fmt.Println(&ibc, "Index out of range. block num:", blockNum, "block pos:", blockPos, "len:", len(ibc.blocks), "NumBlocks:", ibc.NumBlocks)
+		if blockPos >= uint64(len(ibc.Blocks)) {
+			fmt.Println(&ibc, "Index out of range. block num:", blockNum, "block pos:", blockPos, "len:", len(ibc.Blocks), "NumBlocks:", ibc.NumBlocks)
 			fmt.Println(&ibc, "BlockNames", ibc.BlockNames)
-			fmt.Println(&ibc, "Blocks", ibc.blocks)
+			fmt.Println(&ibc, "Blocks", ibc.Blocks)
 			debug.PrintStack()
 			os.Exit(1)
 		}
 
-		return ibc.blocks[blockPos], ok
+		return ibc.Blocks[blockPos], ok
 	} else {
 		return &IBBlock{}, ok
 	}
@@ -122,7 +144,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 
 		if ibc.KeepEmptyBlock {
 			lastBlockPos := uint64(0)
-			NumBlocks := uint64(len(ibc.blocks))
+			NumBlocks := uint64(len(ibc.Blocks))
 
 			if NumBlocks == 0 {
 				lastBlockPos = 0
@@ -159,7 +181,7 @@ func (ibc *IBChromosome) Add(reg *VCFRegister) (uint64, bool, uint64) {
 	block, isNew, numBlocksAdded := ibc.normalizeBlocks(blockNum)
 
 	block.Add(position, distance)
-	ibc.block.Add(position, distance)
+	ibc.Block.Add(position, distance)
 	ibc.NumSNPS++
 	ibc.MinPosition = Min64(ibc.MinPosition, block.MinPosition)
 	ibc.MaxPosition = Max64(ibc.MaxPosition, block.MaxPosition)
@@ -181,7 +203,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 		return res
 	}
 
-	for _, block := range ibc.blocks {
+	for _, block := range ibc.Blocks {
 		res = res && block.Check()
 
 		if !res {
@@ -200,7 +222,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 func (ibc *IBChromosome) selfCheck() (res bool) {
 	res = true
 
-	res = res && ibc.block.Check()
+	res = res && ibc.Block.Check()
 
 	if !res {
 		fmt.Printf("Failed chromosome self check - block chek\n")
@@ -210,10 +232,10 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 	sumBlock := ibc.GetSumBlocks()
 
 	{
-		res = res && (ibc.block.NumSNPS == sumBlock.NumSNPS)
+		res = res && (ibc.Block.NumSNPS == sumBlock.NumSNPS)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.block.NumSNPS, sumBlock.NumSNPS)
+			fmt.Printf("Failed chromosome %s self check - block NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.Block.NumSNPS, sumBlock.NumSNPS)
 			return res
 		}
 
@@ -225,10 +247,10 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		}
 	}
 	{
-		res = res && (ibc.block.MinPosition == sumBlock.MinPosition)
+		res = res && (ibc.Block.MinPosition == sumBlock.MinPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MinPosition, sumBlock.MinPosition)
+			fmt.Printf("Failed chromosome %s self check - block MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.Block.MinPosition, sumBlock.MinPosition)
 			return res
 		}
 
@@ -239,23 +261,23 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 			return res
 		}
 
-		res = res && (ibc.block.MaxPosition == sumBlock.MaxPosition)
+		res = res && (ibc.Block.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MaxPosition, sumBlock.MaxPosition)
+			fmt.Printf("Failed chromosome %s self check - block MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.Block.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
 
 		res = res && (ibc.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - sumblock MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.block.MaxPosition, sumBlock.MaxPosition)
+			fmt.Printf("Failed chromosome %s self check - sumblock MaxPosition: %d != %d\n", ibc.ChromosomeName, ibc.Block.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
 	}
 
 	{
-		res = res && (ibc.block.IsEqual(sumBlock))
+		res = res && (ibc.Block.IsEqual(sumBlock))
 
 		if !res {
 			fmt.Printf("Failed chromosome %s self check - blocks not equal\n", ibc.ChromosomeName)
@@ -269,6 +291,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 	sumBlock = NewIBBlock(
 		ibc.ChromosomeName,
+		ibc.ChromosomeNumber,
 		ibc.BlockSize,
 		ibc.CounterBits,
 		ibc.NumSamples,
@@ -276,7 +299,7 @@ func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 		0,
 	)
 
-	for _, block := range ibc.blocks {
+	for _, block := range ibc.Blocks {
 		sumBlock.Sum(block)
 	}
 
@@ -338,11 +361,19 @@ func (ibc *IBChromosome) saveLoadBlock(isSave bool, outPrefix string, format str
 
 	if isSave {
 		fmt.Println("saving chromosome block  : ", newPrefix)
-		ibc.block.Save(newPrefix, format, compression)
+		ibc.Block.Save(newPrefix, format, compression)
 	} else {
 		fmt.Println("loading chromosome block : ", newPrefix)
-		ibc.block = NewIBBlock("_"+ibc.ChromosomeName+"_block", ibc.BlockSize, ibc.CounterBits, ibc.NumSamples, 0, 0)
-		ibc.block.Load(newPrefix, format, compression)
+		ibc.Block = NewIBBlock(
+			"_"+ibc.ChromosomeName+"_block",
+			ibc.ChromosomeNumber,
+			ibc.BlockSize,
+			ibc.CounterBits,
+			ibc.NumSamples,
+			0,
+			0,
+		)
+		ibc.Block.Load(newPrefix, format, compression)
 	}
 }
 
@@ -350,9 +381,11 @@ func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format st
 	newPrefix := outPrefix + "_blocks"
 	// fmt.Println("saving blocks", ibc.BlockNames)
 
-	for blockNum, blockPos := range ibc.BlockNames {
+	for blockPos, block := range ibc.Blocks {
+		blockNum := block.BlockNumber
+
 		if isSave {
-			block := ibc.blocks[blockPos]
+			block := ibc.Blocks[blockPos]
 			fmt.Printf("saving chromosome blocks :  %-70s block num: %d block pos: %d\n", newPrefix, blockNum, blockPos)
 			block.Save(newPrefix, format, compression)
 
@@ -361,14 +394,15 @@ func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format st
 
 			block := NewIBBlock(
 				ibc.ChromosomeName,
+				ibc.ChromosomeNumber,
 				ibc.BlockSize,
 				ibc.CounterBits,
 				ibc.NumSamples,
-				blockPos,
+				uint64(blockPos),
 				blockNum,
 			)
 
-			ibc.blocks = append(ibc.blocks, block)
+			ibc.Blocks = append(ibc.Blocks, block)
 
 			block.Load(newPrefix, format, compression)
 		}
