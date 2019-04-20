@@ -25,6 +25,7 @@ type DistanceMatrix1Dg struct {
 	Size           uint64
 	BlockPosition  uint64
 	BlockNumber    uint64
+	Serial         int64
 	NumBits        int
 	Data16         DistanceRow16
 	Data32         DistanceRow32
@@ -64,6 +65,7 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 		NumBits:        numBits,
 		BlockPosition:  blockPosition,
 		BlockNumber:    blockNumber,
+		Serial:         -1,
 	}
 
 	if d.NumBits == 16 {

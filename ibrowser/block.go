@@ -21,6 +21,7 @@ type IBBlock struct {
 	MaxPosition    uint64
 	NumSNPS        uint64
 	NumSamples     uint64
+	Serial         int64
 	matrix         *DistanceMatrix
 }
 
@@ -42,6 +43,7 @@ func NewIBBlock(chromosomeName string, blockSize uint64, counterBits int, numSam
 		MinPosition:    math.MaxUint64,
 		MaxPosition:    0,
 		NumSNPS:        0,
+		Serial:         -1,
 		matrix: NewDistanceMatrix(
 			chromosomeName,
 			blockSize,
