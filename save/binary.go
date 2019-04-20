@@ -104,24 +104,28 @@ func ArrayWriter(v interface{}) {
 //
 
 type MultiArrayFile struct {
-	fileName   string
-	endianness binary.ByteOrder
-	buf        *bytes.Buffer
-	serial     int64
-	isFinished bool
-	writeMode  bool
-	bufReader  *bufio.Reader
-	bufWriter  *bufio.Writer
-	file       *os.File
+	fileName    string
+	endianness  binary.ByteOrder
+	buf         *bytes.Buffer
+	serial      int64
+	counterBits int64
+	dataLen     int64
+	isFinished  bool
+	writeMode   bool
+	bufReader   *bufio.Reader
+	bufWriter   *bufio.Writer
+	file        *os.File
 }
 
 func NewMultiArrayFile(fileName string, mode string) *MultiArrayFile {
 	m := MultiArrayFile{
-		fileName:   fileName,
-		endianness: binary.LittleEndian,
-		buf:        new(bytes.Buffer),
-		serial:     0,
-		isFinished: false,
+		fileName:    fileName,
+		endianness:  binary.LittleEndian,
+		buf:         new(bytes.Buffer),
+		serial:      0,
+		counterBits: 0,
+		dataLen:     0,
+		isFinished:  false,
 	}
 
 	if mode == "w" {
@@ -159,28 +163,31 @@ func NewMultiArrayFile(fileName string, mode string) *MultiArrayFile {
 // MultiArrayFile :: Writer
 //
 
-func (m *MultiArrayFile) write(dataLen int64) (serial int64) {
+func (m *MultiArrayFile) write() (serial int64) {
 	if !m.writeMode {
 		log.Fatalln("Trying to write to a reader")
 	}
 
 	hasData := true
-	err1 := binary.Write(m.bufWriter, m.endianness, &hasData)
 
-	if err1 != nil {
-		log.Fatalln("binary.Write failed to write hasData:", err1)
+	err := binary.Write(m.bufWriter, m.endianness, &hasData)
+	if err != nil {
+		log.Fatalln("binary.Write failed to write hasData:", err)
 	}
 
-	err2 := binary.Write(m.bufWriter, m.endianness, &m.serial)
-
-	if err2 != nil {
-		log.Fatalln("binary.Write failed to write serial:", err2)
+	err = binary.Write(m.bufWriter, m.endianness, &m.serial)
+	if err != nil {
+		log.Fatalln("binary.Write failed to write serial:", err)
 	}
 
-	err3 := binary.Write(m.bufWriter, m.endianness, &dataLen)
+	err = binary.Write(m.bufWriter, m.endianness, &m.counterBits)
+	if err != nil {
+		log.Fatalln("binary.Write failed to write counterBits:", err)
+	}
 
-	if err3 != nil {
-		log.Fatalln("binary.Write failed to write dataLen:", err3)
+	err = binary.Write(m.bufWriter, m.endianness, &m.dataLen)
+	if err != nil {
+		log.Fatalln("binary.Write failed to write dataLen:", err)
 	}
 
 	serial = m.serial
@@ -191,9 +198,23 @@ func (m *MultiArrayFile) write(dataLen int64) (serial int64) {
 }
 
 func (m *MultiArrayFile) Write16(data *[]uint16) (serial int64) {
-	serial = m.write(int64(len(*data)))
+	if m.counterBits == 0 {
+		m.counterBits = 16
+	} else if m.counterBits != 16 {
+		log.Panicln("can't write different bits", m.counterBits, " != ", 16)
+	}
 
-	ndata := make([]int16, len(*data), len(*data))
+	dataLen := int64(len(*data))
+
+	if m.dataLen == 0 {
+		m.dataLen = dataLen
+	} else if m.dataLen != dataLen {
+		log.Panicln("can't write different sizes", m.dataLen, " != ", dataLen)
+	}
+
+	serial = m.write()
+
+	ndata := make([]int16, dataLen, dataLen)
 	sumData := uint64(0)
 
 	lastw := int16(0)
@@ -230,9 +251,23 @@ func (m *MultiArrayFile) Write16(data *[]uint16) (serial int64) {
 }
 
 func (m *MultiArrayFile) Write32(data *[]uint32) (serial int64) {
-	serial = m.write(int64(len(*data)))
+	if m.counterBits == 0 {
+		m.counterBits = 32
+	} else if m.counterBits != 32 {
+		log.Panicln("can't write different bits", m.counterBits, " != ", 32)
+	}
 
-	ndata := make([]int32, len(*data), len(*data))
+	dataLen := int64(len(*data))
+
+	if m.dataLen == 0 {
+		m.dataLen = dataLen
+	} else if m.dataLen != dataLen {
+		log.Panicln("can't write different sizes", m.dataLen, " != ", dataLen)
+	}
+
+	serial = m.write()
+
+	ndata := make([]int32, dataLen, dataLen)
 	sumData := uint64(0)
 
 	lastw := int32(0)
@@ -269,9 +304,23 @@ func (m *MultiArrayFile) Write32(data *[]uint32) (serial int64) {
 }
 
 func (m *MultiArrayFile) Write64(data *[]uint64) (serial int64) {
-	serial = m.write(int64(len(*data)))
+	if m.counterBits == 0 {
+		m.counterBits = 64
+	} else if m.counterBits != 64 {
+		log.Panicln("can't write different bits", m.counterBits, " != ", 64)
+	}
 
-	ndata := make([]int64, len(*data), len(*data))
+	dataLen := int64(len(*data))
+
+	if m.dataLen == 0 {
+		m.dataLen = dataLen
+	} else if m.dataLen != dataLen {
+		log.Panicln("can't write different sizes", m.dataLen, " != ", dataLen)
+	}
+
+	serial = m.write()
+
+	ndata := make([]int64, dataLen, dataLen)
 	sumData := uint64(0)
 
 	lastw := int64(0)
@@ -311,7 +360,7 @@ func (m *MultiArrayFile) Write64(data *[]uint64) (serial int64) {
 // MultiArrayFile :: Reader
 //
 
-func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64, serial int64) {
+func (m *MultiArrayFile) read() (hasData bool, serial int64, counterBits int64, dataLen int64, sumData uint64) {
 	if m.writeMode {
 		log.Fatalln("Trying to read from a writer")
 	}
@@ -320,26 +369,32 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64, se
 		log.Fatalln("Trying to read a finished file")
 	}
 
-	dataLen = int64(0)
 	hasData = false
-	sumData = uint64(0)
 	serial = int64(0)
+	counterBits = int64(0)
+	dataLen = int64(0)
+	sumData = uint64(0)
 
-	err1 := binary.Read(m.bufReader, m.endianness, &hasData)
+	//
+	// HasData
 
-	if err1 != nil {
-		log.Fatalln("binary.Read failed reading hasData:", err1)
+	err := binary.Read(m.bufReader, m.endianness, &hasData)
+
+	if err != nil {
+		log.Fatalln("binary.Read failed reading hasData:", err)
 	}
 
 	if !hasData {
 		m.isFinished = true
-		return hasData, dataLen, sumData, serial
+		return hasData, serial, counterBits, dataLen, sumData
 	}
 
-	err2 := binary.Read(m.bufReader, m.endianness, &serial)
+	//
+	// Serial
+	err = binary.Read(m.bufReader, m.endianness, &serial)
 
-	if err2 != nil {
-		log.Fatalln("binary.Read failed reading serial:", err2)
+	if err != nil {
+		log.Fatalln("binary.Read failed reading serial:", err)
 	}
 
 	if serial < 0 {
@@ -350,40 +405,58 @@ func (m *MultiArrayFile) read() (hasData bool, dataLen int64, sumData uint64, se
 		log.Fatalln("serial out of order", serial, " != ", m.serial)
 	}
 
-	err3 := binary.Read(m.bufReader, m.endianness, &dataLen)
+	//
+	// counterBits
+	err = binary.Read(m.bufReader, m.endianness, &counterBits)
 
-	if err3 != nil {
-		log.Fatalln("binary.Read failed reading dataLen:", err3)
+	if err != nil {
+		log.Fatalln("binary.Read failed reading counterBits:", err)
+	}
+
+	if counterBits <= 0 {
+		log.Fatalln("Length <= 0", counterBits)
+	} else if counterBits != 16 && counterBits != 32 && counterBits != 64 {
+		log.Fatalln("Length not 16, 32 or 64", counterBits)
+	}
+
+	if m.counterBits == 0 {
+		m.counterBits = counterBits
+	} else if m.counterBits != counterBits {
+		log.Fatalln("counterBits mismatch", m.counterBits != counterBits)
+	}
+
+	//
+	// dataLen
+	err = binary.Read(m.bufReader, m.endianness, &dataLen)
+
+	if err != nil {
+		log.Fatalln("binary.Read failed reading dataLen:", err)
 	}
 
 	if dataLen <= 0 {
 		log.Fatalln("Length <= 0", dataLen)
 	}
 
-	err4 := binary.Read(m.bufReader, m.endianness, &sumData)
+	//
+	// sumData
+	err = binary.Read(m.bufReader, m.endianness, &sumData)
 
-	if err4 != nil {
-		log.Fatalln("binary.Read failed reading sumData:", err4)
+	if err != nil {
+		log.Fatalln("binary.Read failed reading sumData:", err)
 	}
 
 	m.serial++
 
-	// log.Println("MultiArrayFile :: read() ::",
-	// 	" hasData: ", hasData,
-	// 	" dataLen: ", dataLen,
-	// 	" sumData: ", sumData,
-	// 	" serial: ", serial,
-	// )
-
-	return hasData, dataLen, sumData, serial
+	return hasData, serial, counterBits, dataLen, sumData
 }
 
 func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	// counterBits := int(0)
 	serial = int64(0)
 
-	hasData, dataLen, sumData, serial = m.read()
+	hasData, serial, _, dataLen, sumData = m.read()
 
 	ndata := make([]int16, dataLen, dataLen)
 	*data = make([]uint16, dataLen, dataLen)
@@ -417,9 +490,10 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	// counterBits := int(0)
 	serial = int64(0)
 
-	hasData, dataLen, sumData, serial = m.read()
+	hasData, serial, _, dataLen, sumData = m.read()
 
 	ndata := make([]int32, dataLen, dataLen)
 	*data = make([]uint32, dataLen, dataLen)
@@ -453,9 +527,10 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
+	// counterBits := int(0)
 	serial = int64(0)
 
-	hasData, dataLen, sumData, serial = m.read()
+	hasData, serial, _, dataLen, sumData = m.read()
 
 	ndata := make([]int64, dataLen, dataLen)
 	*data = make([]uint64, dataLen, dataLen)
@@ -491,15 +566,46 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 //
 
 func (m *MultiArrayFile) Close() {
-	if m.writeMode {
-		err := binary.Write(m.bufWriter, m.endianness, false)
+	defer m.file.Close()
 
-		if err != nil {
-			log.Fatalln("binary.Write failed:", err)
+	if m.writeMode {
+		err1 := binary.Write(m.bufWriter, m.endianness, false)     // hasData
+		err2 := binary.Write(m.bufWriter, m.endianness, int64(0))  // serial
+		err3 := binary.Write(m.bufWriter, m.endianness, int64(0))  // counterBits
+		err4 := binary.Write(m.bufWriter, m.endianness, int64(0))  // dataLen
+		err5 := binary.Write(m.bufWriter, m.endianness, uint64(0)) // sumData
+
+		if err1 != nil {
+			log.Fatalln("binary.Read failed closing file:", err1)
+		}
+		if err2 != nil {
+			log.Fatalln("binary.Read failed closing file:", err2)
+		}
+		if err3 != nil {
+			log.Fatalln("binary.Read failed closing file:", err3)
+		}
+		if err4 != nil {
+			log.Fatalln("binary.Read failed closing file:", err4)
+		}
+		if err5 != nil {
+			log.Fatalln("binary.Read failed closing file:", err5)
+		}
+
+		if m.counterBits == 16 {
+			data := make([]int16, m.dataLen, m.dataLen)
+			err5 = binary.Write(m.bufWriter, m.endianness, data)
+		} else if m.counterBits == 32 {
+			data := make([]int32, m.dataLen, m.dataLen)
+			err5 = binary.Write(m.bufWriter, m.endianness, data)
+		} else if m.counterBits == 64 {
+			data := make([]int64, m.dataLen, m.dataLen)
+			err5 = binary.Write(m.bufWriter, m.endianness, data)
+		}
+
+		if err5 != nil {
+			log.Fatalln("binary.Read failed closing file:", err5)
 		}
 
 		m.bufWriter.Flush()
 	}
-
-	m.file.Close()
 }
