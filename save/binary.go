@@ -139,24 +139,6 @@ func (m *MultiArrayFile) Write16(data *[]uint16) (serial int64) {
 	ndata := make([]uint16, dataLen, dataLen)
 	sumData := uint64(0)
 
-	// lastw := int16(0)
-	// for i, v := range *data {
-	// 	if w > int64(math.MaxInt16) {
-	// 		log.Panicln("overflow")
-	// 	}
-
-	// 	w := int16(v)
-
-	// 	if i == 0 {
-	// 		ndata[i] = w
-	// 	} else {
-	// 		ndata[i] = int16(w - lastw)
-	// 	}
-
-	// 	sumData += uint64(w)
-	// 	lastw = w
-	// }
-
 	for i, v := range *data {
 		if int64(v) > int64(math.MaxInt16) {
 			log.Panicln("overflow")
@@ -201,24 +183,6 @@ func (m *MultiArrayFile) Write32(data *[]uint32) (serial int64) {
 	ndata := make([]uint32, dataLen, dataLen)
 	sumData := uint64(0)
 
-	// lastw := int32(0)
-	// for i, v := range *data {
-	// 	if int64(v) > int64(math.MaxInt32) {
-	// 		log.Panicln("overflow")
-	// 	}
-
-	// 	w := int32(v)
-
-	// 	if i == 0 {
-	// 		ndata[i] = w
-	// 	} else {
-	// 		ndata[i] = int32(w - lastw)
-	// 	}
-
-	// 	sumData += uint64(w)
-	// 	lastw = w
-	// }
-
 	for i, v := range *data {
 		if int64(v) > int64(math.MaxInt32) {
 			log.Panicln("overflow")
@@ -262,24 +226,6 @@ func (m *MultiArrayFile) Write64(data *[]uint64) (serial int64) {
 
 	ndata := make([]uint64, dataLen, dataLen)
 	sumData := uint64(0)
-
-	// lastw := int64(0)
-	// for i, v := range *data {
-	// 	if int64(v) > int64(math.MaxInt64) {
-	// 		log.Panicln("overflow")
-	// 	}
-
-	// 	w := int64(v)
-
-	// 	if i == 0 {
-	// 		ndata[i] = w
-	// 	} else {
-	// 		ndata[i] = int64(w - lastw)
-	// 	}
-
-	// 	sumData += uint64(w)
-	// 	lastw = w
-	// }
 
 	for i, v := range *data {
 		if int64(v) > int64(math.MaxInt64) {
@@ -402,7 +348,6 @@ func (m *MultiArrayFile) read() (hasData bool, serial int64, counterBits int64, 
 func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
-	// counterBits := int(0)
 	serial = int64(0)
 
 	hasData, serial, _, dataLen, sumData = m.read()
@@ -417,17 +362,10 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	// lastw := int16(0)
 	for i, w := range ndata {
-		// if i == 0 {
-		// 	(*data)[i] = uint16(w)
-		// } else {
-		// 	(*data)[i] = uint16(lastw + w)
-		// }
 		(*data)[i] = uint16(w)
 
 		sumDataV += uint64((*data)[i])
-		// lastw = int16((*data)[i])
 	}
 
 	if sumData != sumDataV {
@@ -440,7 +378,6 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
-	// counterBits := int(0)
 	serial = int64(0)
 
 	hasData, serial, _, dataLen, sumData = m.read()
@@ -455,17 +392,10 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	// lastw := int32(0)
 	for i, w := range ndata {
-		// if i == 0 {
-		// 	(*data)[i] = uint32(w)
-		// } else {
-		// 	(*data)[i] = uint32(lastw + w)
-		// }
 		(*data)[i] = uint32(w)
 
 		sumDataV += uint64((*data)[i])
-		// lastw = int32((*data)[i])
 	}
 
 	if sumData != sumDataV {
@@ -478,7 +408,6 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 	dataLen := int64(0)
 	sumData := uint64(0)
-	// counterBits := int(0)
 	serial = int64(0)
 
 	hasData, serial, _, dataLen, sumData = m.read()
@@ -493,17 +422,10 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	// lastw := int64(0)
 	for i, w := range ndata {
-		// if i == 0 {
-		// 	(*data)[i] = uint64(w)
-		// } else {
-		// 	(*data)[i] = uint64(lastw + w)
-		// }
 		(*data)[i] = uint64(w)
 
 		sumDataV += uint64((*data)[i])
-		// lastw = int64((*data)[i])
 	}
 
 	if sumData != sumDataV {
