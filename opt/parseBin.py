@@ -14,11 +14,11 @@ fname = "res/output_360_merged_2.50.vcf.gz_chromosomes.bin"
 
 def readIbrowserBinary(infile):
     dt0 = np.dtype([
-        ('hasData', bool), 
-        ('serial', np.int64),
+        ('hasData'    , bool    ), 
+        ('serial'     , np.int64),
         ('counterBits', np.int64),
-        ('dataLen', np.int64),
-        ('sumData', np.uint64)
+        ('dataLen'    , np.int64),
+        ('sumData'    , np.uint64)
     ])
 
     fileSize = os.stat(infile).st_size
@@ -33,13 +33,13 @@ def readIbrowserBinary(infile):
         dataFmtLen = None
         
         if counterBits == 16:
-            dataFmt = np.int16
+            dataFmt = np.uint16
             dataFmtLen = 2
         elif counterBits == 32:
-            dataFmt = np.int32
+            dataFmt = np.uint32
             dataFmtLen = 4
         elif counterBits == 64:
-            dataFmt = np.int64
+            dataFmt = np.uint64
             dataFmtLen = 8
         else:
             print("unknown counter bits", counterBits)
@@ -71,7 +71,7 @@ def registerToDataframe(regs):
 
     for reg in regs:
         if matrix is None:
-            matrix = pd.DataFrame({reg['serial']: reg['data']})
+            matrix = pd.DataFrame({reg['serial']: reg['data']}, copy=False)
         else:
             matrix[reg['serial']] = reg['data']
 
@@ -83,16 +83,21 @@ if __name__ == "__main__":
 
     numRegisters, memmap = readIbrowserBinary(fname)
 
-    for i in range(numRegisters):
-        # reg = ibb.getRegister(i)
-        reg = memmap[i]
-        print(str(reg)[:50])
-        print("  ", reg['data'][:10])
+    # for i in range(numRegisters):
+    #     reg = memmap[i]
+    #     # print(str(reg)[:50])
+    #     # print("  ", reg['data'][:10])
+    #     print(".", end="")
+    #     if ((i+1) % 100) == 0:
+    #         print(" ", i+1)
+    # print()
 
-    df = registerToDataframe(memmap[1:5])
+    # df = registerToDataframe(memmap[1:5])
 
-    print(df)
+    # print(df)
 
-    pd.DataFrame(memmap)
+    # pd.DataFrame(memmap)
 
-    
+    matrix = pd.DataFrame({reg['serial']: reg['data'] for reg in memmap}, copy=False)
+
+    print(matrix)

@@ -187,12 +187,21 @@ test_load:
 
 
 
-.PHONY: quick_test test_load quick_test_save
+.PHONY: quick_test quick_test_save
 
 quick_test: quick_test_save test_load
 
 quick_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
 	time bin/ibrowser -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterThread 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+
+
+
+.PHONY: large_test large_test_save
+
+large_test: large_test_save test_load
+
+quick_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
+	time bin/ibrowser -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterChrom 1000000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 
 

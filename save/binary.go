@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	// "fmt"
 	"math"
 	// "io/ioutil"
 	"log"
@@ -19,84 +19,6 @@ type payload struct {
 	One   float32
 	Two   float64
 	Three uint32
-}
-
-//
-// Read
-//
-
-func readFile() {
-	file, err := os.Open("res/test.bin")
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m := payload{}
-	for i := 0; i < 10; i++ {
-		data := readNextBytes(file, 16)
-		buffer := bytes.NewBuffer(data)
-		err = binary.Read(buffer, binary.BigEndian, &m)
-		if err != nil {
-			log.Fatal("binary.Read failed", err)
-		}
-
-		fmt.Println(m)
-	}
-}
-
-func readNextBytes(file *os.File, number int) []byte {
-	bytes := make([]byte, number)
-
-	_, err := file.Read(bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return bytes
-}
-
-//
-// Write
-//
-
-func writeFile() {
-	file, err := os.Create("res/test.bin")
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for i := 0; i < 10; i++ {
-		s := &payload{
-			2.0,
-			3.0,
-			1,
-		}
-		var bin_buf bytes.Buffer
-		binary.Write(&bin_buf, binary.BigEndian, s)
-		//b :=bin_buf.Bytes()
-		//l := len(b)
-		//fmt.Println(l)
-		writeNextBytes(file, bin_buf.Bytes())
-	}
-}
-
-func writeNextBytes(file *os.File, bytes []byte) {
-	_, err := file.Write(bytes)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func ArrayWriter(v interface{}) {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, v)
-	if err != nil {
-		fmt.Println("binary.Write failed:", err)
-	}
-	fmt.Printf("% x", buf.Bytes())
 }
 
 //
@@ -214,25 +136,34 @@ func (m *MultiArrayFile) Write16(data *[]uint16) (serial int64) {
 
 	serial = m.write()
 
-	ndata := make([]int16, dataLen, dataLen)
+	ndata := make([]uint16, dataLen, dataLen)
 	sumData := uint64(0)
 
-	lastw := int16(0)
-	for i, v := range *data {
-		w := int16(v)
+	// lastw := int16(0)
+	// for i, v := range *data {
+	// 	if w > int64(math.MaxInt16) {
+	// 		log.Panicln("overflow")
+	// 	}
 
-		if w > int16(math.MaxInt16) {
+	// 	w := int16(v)
+
+	// 	if i == 0 {
+	// 		ndata[i] = w
+	// 	} else {
+	// 		ndata[i] = int16(w - lastw)
+	// 	}
+
+	// 	sumData += uint64(w)
+	// 	lastw = w
+	// }
+
+	for i, v := range *data {
+		if int64(v) > int64(math.MaxInt16) {
 			log.Panicln("overflow")
 		}
 
-		if i == 0 {
-			ndata[i] = w
-		} else {
-			ndata[i] = int16(w - lastw)
-		}
-
-		sumData += uint64(w)
-		lastw = w
+		ndata[i] = uint16(v)
+		sumData += uint64(v)
 	}
 
 	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
@@ -267,25 +198,34 @@ func (m *MultiArrayFile) Write32(data *[]uint32) (serial int64) {
 
 	serial = m.write()
 
-	ndata := make([]int32, dataLen, dataLen)
+	ndata := make([]uint32, dataLen, dataLen)
 	sumData := uint64(0)
 
-	lastw := int32(0)
-	for i, v := range *data {
-		w := int32(v)
+	// lastw := int32(0)
+	// for i, v := range *data {
+	// 	if int64(v) > int64(math.MaxInt32) {
+	// 		log.Panicln("overflow")
+	// 	}
 
-		if w > int32(math.MaxInt32) {
+	// 	w := int32(v)
+
+	// 	if i == 0 {
+	// 		ndata[i] = w
+	// 	} else {
+	// 		ndata[i] = int32(w - lastw)
+	// 	}
+
+	// 	sumData += uint64(w)
+	// 	lastw = w
+	// }
+
+	for i, v := range *data {
+		if int64(v) > int64(math.MaxInt32) {
 			log.Panicln("overflow")
 		}
 
-		if i == 0 {
-			ndata[i] = w
-		} else {
-			ndata[i] = int32(w - lastw)
-		}
-
-		sumData += uint64(w)
-		lastw = w
+		ndata[i] = uint32(v)
+		sumData += uint64(v)
 	}
 
 	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
@@ -320,25 +260,34 @@ func (m *MultiArrayFile) Write64(data *[]uint64) (serial int64) {
 
 	serial = m.write()
 
-	ndata := make([]int64, dataLen, dataLen)
+	ndata := make([]uint64, dataLen, dataLen)
 	sumData := uint64(0)
 
-	lastw := int64(0)
-	for i, v := range *data {
-		w := int64(v)
+	// lastw := int64(0)
+	// for i, v := range *data {
+	// 	if int64(v) > int64(math.MaxInt64) {
+	// 		log.Panicln("overflow")
+	// 	}
 
-		if w > int64(math.MaxInt64) {
+	// 	w := int64(v)
+
+	// 	if i == 0 {
+	// 		ndata[i] = w
+	// 	} else {
+	// 		ndata[i] = int64(w - lastw)
+	// 	}
+
+	// 	sumData += uint64(w)
+	// 	lastw = w
+	// }
+
+	for i, v := range *data {
+		if int64(v) > int64(math.MaxInt64) {
 			log.Panicln("overflow")
 		}
 
-		if i == 0 {
-			ndata[i] = w
-		} else {
-			ndata[i] = int64(w - lastw)
-		}
-
-		sumData += uint64(w)
-		lastw = w
+		ndata[i] = uint64(v)
+		sumData += uint64(v)
 	}
 
 	err1 := binary.Write(m.bufWriter, m.endianness, &sumData)
@@ -458,7 +407,7 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 
 	hasData, serial, _, dataLen, sumData = m.read()
 
-	ndata := make([]int16, dataLen, dataLen)
+	ndata := make([]uint16, dataLen, dataLen)
 	*data = make([]uint16, dataLen, dataLen)
 
 	err := binary.Read(m.bufReader, m.endianness, &ndata)
@@ -468,16 +417,17 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	lastw := int16(0)
+	// lastw := int16(0)
 	for i, w := range ndata {
-		if i == 0 {
-			(*data)[i] = uint16(w)
-		} else {
-			(*data)[i] = uint16(lastw + w)
-		}
+		// if i == 0 {
+		// 	(*data)[i] = uint16(w)
+		// } else {
+		// 	(*data)[i] = uint16(lastw + w)
+		// }
+		(*data)[i] = uint16(w)
 
 		sumDataV += uint64((*data)[i])
-		lastw = int16((*data)[i])
+		// lastw = int16((*data)[i])
 	}
 
 	if sumData != sumDataV {
@@ -495,7 +445,7 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 
 	hasData, serial, _, dataLen, sumData = m.read()
 
-	ndata := make([]int32, dataLen, dataLen)
+	ndata := make([]uint32, dataLen, dataLen)
 	*data = make([]uint32, dataLen, dataLen)
 
 	err := binary.Read(m.bufReader, m.endianness, &ndata)
@@ -505,16 +455,17 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	lastw := int32(0)
+	// lastw := int32(0)
 	for i, w := range ndata {
-		if i == 0 {
-			(*data)[i] = uint32(w)
-		} else {
-			(*data)[i] = uint32(lastw + w)
-		}
+		// if i == 0 {
+		// 	(*data)[i] = uint32(w)
+		// } else {
+		// 	(*data)[i] = uint32(lastw + w)
+		// }
+		(*data)[i] = uint32(w)
 
 		sumDataV += uint64((*data)[i])
-		lastw = int32((*data)[i])
+		// lastw = int32((*data)[i])
 	}
 
 	if sumData != sumDataV {
@@ -532,7 +483,7 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 
 	hasData, serial, _, dataLen, sumData = m.read()
 
-	ndata := make([]int64, dataLen, dataLen)
+	ndata := make([]uint64, dataLen, dataLen)
 	*data = make([]uint64, dataLen, dataLen)
 
 	err := binary.Read(m.bufReader, m.endianness, &ndata)
@@ -542,16 +493,17 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial int64) {
 	}
 
 	sumDataV := uint64(0)
-	lastw := int64(0)
+	// lastw := int64(0)
 	for i, w := range ndata {
-		if i == 0 {
-			(*data)[i] = uint64(w)
-		} else {
-			(*data)[i] = uint64(lastw + w)
-		}
+		// if i == 0 {
+		// 	(*data)[i] = uint64(w)
+		// } else {
+		// 	(*data)[i] = uint64(lastw + w)
+		// }
+		(*data)[i] = uint64(w)
 
 		sumDataV += uint64((*data)[i])
-		lastw = int64((*data)[i])
+		// lastw = int64((*data)[i])
 	}
 
 	if sumData != sumDataV {

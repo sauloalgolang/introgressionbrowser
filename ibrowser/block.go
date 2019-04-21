@@ -196,11 +196,14 @@ func (ibb *IBBlock) Check() (res bool) {
 	// 	return res
 	// }
 
-	res = res && (ibb.MinPosition <= ibb.MaxPosition)
+	if ibb.NumSNPS > 0 {
+		res = res && (ibb.MinPosition <= ibb.MaxPosition)
 
-	if !res {
-		fmt.Printf("Failed block %s - #%d check - MinPosition %d > MaxPosition %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, ibb.MaxPosition)
-		return res
+		if !res {
+			fmt.Printf("Failed block %s - #%d check - MinPosition %d > MaxPosition %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, ibb.MaxPosition)
+			fmt.Println(ibb)
+			return res
+		}
 	}
 
 	return res
