@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	// "fmt"
-	"math"
-	// "io/ioutil"
 	"log"
+	"math"
 	"os"
+	// "io/ioutil"
+	// "fmt"
 )
 
 // https://golang.org/pkg/encoding/binary/
@@ -79,6 +79,14 @@ func NewMultiArrayFile(fileName string, mode string) *MultiArrayFile {
 	}
 
 	return &m
+}
+
+func (m *MultiArrayFile) SetSerial(serial int64) {
+	m.serial = serial
+}
+
+func (m *MultiArrayFile) GetSerial() (serial int64) {
+	return m.serial
 }
 
 //

@@ -348,9 +348,15 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 
 		ib.dumperMatrix(dumperg, isSave, chromosome.Block)
 
+		dumperl := NewMultiArrayFile(outPrefix+"_chromosomes_"+chromosomeName.Name+".bin", mode)
+		dumperl.SetSerial(dumperc.GetSerial())
+
 		for _, block := range chromosome.Blocks {
 			ib.dumperMatrix(dumperc, isSave, block)
+			ib.dumperMatrix(dumperl, isSave, block)
 		}
+
+		dumperl.Close()
 	}
 }
 
