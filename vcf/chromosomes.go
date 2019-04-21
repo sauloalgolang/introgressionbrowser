@@ -90,5 +90,15 @@ func SpreadChromosomes(chromosomeNames interfaces.ChromosomeNamesType, numThread
 
 	p.Println()
 
+	if len(chromosomeGroups[len(chromosomeGroups)-1]) == 0 {
+		for idx, cNames := range chromosomeGroups {
+			if idx != (len(chromosomeGroups) - 1) {
+				lastChrom := cNames[len(cNames)-1]
+				chromosomeGroups[idx+1] = append([]string{lastChrom}, chromosomeGroups[idx+1]...) //prepend
+				chromosomeGroups[idx] = cNames[:len(cNames)-1]
+			}
+		}
+	}
+
 	return chromosomeGroups
 }

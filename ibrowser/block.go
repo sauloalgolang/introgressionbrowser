@@ -113,18 +113,20 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 		return res
 	}
 
-	res = res && (ibb.MinPosition == other.MinPosition)
+	if ibb.NumSNPS > 0 {
+		res = res && (ibb.MinPosition == other.MinPosition)
 
-	if !res {
-		fmt.Printf("IsEqual :: Failed block %s - #%d check - MinPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, other.MinPosition)
-		return res
-	}
+		if !res {
+			fmt.Printf("IsEqual :: Failed block %s - #%d check - MinPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, other.MinPosition)
+			return res
+		}
 
-	res = res && (ibb.MaxPosition == other.MaxPosition)
+		res = res && (ibb.MaxPosition == other.MaxPosition)
 
-	if !res {
-		fmt.Printf("IsEqual :: Failed block %s - #%d check - MaxPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MaxPosition, other.MaxPosition)
-		return res
+		if !res {
+			fmt.Printf("IsEqual :: Failed block %s - #%d check - MaxPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MaxPosition, other.MaxPosition)
+			return res
+		}
 	}
 
 	res = res && ibb.Matrix.IsEqual(other.GetMatrix())

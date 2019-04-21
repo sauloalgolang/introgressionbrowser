@@ -177,7 +177,7 @@ func (ib *IBrowser) Check() (res bool) {
 		res = res && chromosome.Check()
 
 		if !res {
-			fmt.Printf("Failed ibrowser chromosome %s check\n", chromosomeName)
+			fmt.Printf("Failed ibrowser chromosome %s (%d) check\n", chromosomeName.Name, chromosomeName.Pos)
 			return res
 		}
 	}

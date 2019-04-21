@@ -123,10 +123,16 @@ func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, regis
 		fmt.Println("Finished reading file")
 
 	} else {
-		chromosomeGroups := SpreadChromosomes(chromosomeNames, callBackParameters.NumThreads)
+		threads := callBackParameters.NumThreads
+
+		if threads > int(chromosomeNames.NumChromosomes) {
+			threads = int(chromosomeNames.NumChromosomes)
+		}
+
+		chromosomeGroups := SpreadChromosomes(chromosomeNames, threads)
 
 		// wg := sync.WaitGroup
-		wg := sizedwaitgroup.New(callBackParameters.NumThreads)
+		wg := sizedwaitgroup.New(threads)
 		for _, chromosomeGroup := range chromosomeGroups {
 			ccr := ChromosomeCallbackRegister{
 				registerCallBack: registerCallBack,
@@ -137,7 +143,13 @@ func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, regis
 			// wg.Add(1)
 			wg.Add()
 
-			go OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallback)
+			go OpenFile(
+				sourceFile,
+				vcfFormat.isTar,
+				vcfFormat.isGz,
+				callBackParameters,
+				ccr.ChromosomeCallback,
+			)
 
 			if ONLYFIRST {
 				fmt.Println("Only sending first")
