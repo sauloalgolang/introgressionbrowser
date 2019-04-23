@@ -25,3 +25,14 @@ VcfGo w/ bufread
 1700000 SL2.50ch02 23977842
 1746.71user
 VcfGo w/o bufread
+
+## Compression
+
+~~~
+3.8M output_360_merged_2.50.vcf.gz_summary.bin
+672K output_360_merged_2.50.vcf.gz_summary.bin.1.gz
+563K output_360_merged_2.50.vcf.gz_summary.bin.6.gz
+522K output_360_merged_2.50.vcf.gz_summary.bin.9.gz
+350K output_360_merged_2.50.vcf.gz_summary.bin.7z
+1.1M output_360_merged_2.50.vcf.gz_summary.bin.snappy
+~~~

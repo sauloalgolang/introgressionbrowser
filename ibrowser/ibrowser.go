@@ -333,10 +333,10 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 	}
 
 	dumperg := NewMultiArrayFile(outPrefix+"_summary.bin", mode)
-	dumperc := NewMultiArrayFile(outPrefix+"_chromosomes.bin", mode)
+	// dumperc := NewMultiArrayFile(outPrefix+"_chromosomes.bin", mode)
 
 	defer dumperg.Close()
-	defer dumperc.Close()
+	// defer dumperc.Close()
 
 	ib.dumperMatrix(dumperg, isSave, ib.Block)
 
@@ -349,10 +349,10 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 		ib.dumperMatrix(dumperg, isSave, chromosome.Block)
 
 		dumperl := NewMultiArrayFile(outPrefix+"_chromosomes_"+chromosomeName.Name+".bin", mode)
-		dumperl.SetSerial(dumperc.GetSerial())
+		// dumperl.SetSerial(dumperc.GetSerial())
 
 		for _, block := range chromosome.Blocks {
-			ib.dumperMatrix(dumperc, isSave, block)
+			// ib.dumperMatrix(dumperc, isSave, block)
 			ib.dumperMatrix(dumperl, isSave, block)
 		}
 
