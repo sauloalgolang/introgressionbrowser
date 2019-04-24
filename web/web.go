@@ -17,15 +17,15 @@ import (
 
 const HTTP_ROOT_DIR = "http"
 
-func NewWeb(staticDir string, host string, port int) {
+func NewWeb(databaseDir string, host string, port int) {
 	router := mux.NewRouter()
 
 	fmt.Println("open your browser at http://" + host + ":" + strconv.Itoa(port))
 
-	api := router.PathPrefix("/api").Subrouter()
+	api := router.PathPrefix("/api/").Subrouter()
 
-	newStatic(staticDir, router)
-	newApi(api)
+	newStatic(databaseDir, router)
+	newApi(databaseDir, api)
 	newRoot(HTTP_ROOT_DIR, router)
 
 	srv := &http.Server{
@@ -48,11 +48,12 @@ func newRoot(dir string, router *mux.Router) {
 }
 
 func newStatic(dir string, router *mux.Router) {
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
+	router.PathPrefix("/database/").Handler(http.StripPrefix("/database/", http.FileServer(http.Dir(dir))))
 }
 
-func newApi(router *mux.Router) {
-	router.HandleFunc("/databases", endpoints.Databases).Methods("GET").HeadersRegexp("Content-Type", "application/json")
+func newApi(dir string, router *mux.Router) {
+	endpoints.DATABASE_DIR = dir
+	router.HandleFunc("/databases", endpoints.Databases).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/", endpoints.Database).Methods("GET").HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/chromosomes", endpoints.Chromosomes).Methods("GET").HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}", endpoints.Chromosome).Methods("GET").HeadersRegexp("Content-Type", "application/json")
