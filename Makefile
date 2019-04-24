@@ -108,11 +108,11 @@ version:
 bin/ibrowser: version */*.go
 	cd main/ && GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
 	md5sum $@
-	bin/ibrowser --version
+	bin/ibrowser version
 
 bin/ibrowser.exe: version */*.go
 	cd main/ && GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
-	@#bin/ibrowser.exe --version
+	@#bin/ibrowser.exe version
 	md5sum $@
 
 bin/ibrowser.wasm: ibrowser */*.go
@@ -168,10 +168,10 @@ clean:
 	rm -v $(OUTFILE)*.snappy || true
 
 run150: clean ibrowser data/150_VCFs_2.50.tar.gz
-	time bin/ibrowser -threads 4 -check -counterbits 32 -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
+	time bin/ibrowser save -threads 4 -check -counterbits 32 -format $(FORMAT) -outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
 
 run360: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -threads 4 -check -counterbits 32 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+	time bin/ibrowser save -threads 4 -check -counterbits 32 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 
 
@@ -180,10 +180,10 @@ run360: clean ibrowser data/360_merged_2.50.vcf.gz
 test: test_save test_load
 
 test_save: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -threads 4 -check -counterbits 32 -debugMaxRegisterChrom 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+	time bin/ibrowser save -threads 4 -check -counterbits 32 -debugMaxRegisterChrom 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 test_load:
-	bin/ibrowser -load -check res/output_360_merged_2.50.vcf.gz
+	bin/ibrowser load -check res/output_360_merged_2.50.vcf.gz
 
 
 
@@ -192,7 +192,7 @@ test_load:
 quick_test: quick_test_save test_load
 
 quick_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterThread 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+	time bin/ibrowser save -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterThread 1000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 
 
@@ -201,7 +201,7 @@ quick_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
 large_test: large_test_save test_load
 
 large_test_save: clean ibrowser data/360_merged_2.50.vcf.gz
-	time bin/ibrowser -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterChrom 10000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
+	time bin/ibrowser save -threads 4 -check -counterbits 32 -debugFirstOnly -debugMaxRegisterChrom 10000 -format $(FORMAT) -outfile $(OUTFILE)_360_merged_2.50.vcf.gz data/360_merged_2.50.vcf.gz
 
 
 
@@ -213,7 +213,7 @@ prof: prof_run ibrowser.cpu.prof
 
 ibrowser.cpu.prof: clean
 	rm -v ibrowser.cpu.prof ibrowser.mem.prof || true
-	time bin/ibrowser -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof -format $(FORMAT) data/360_merged_2.50.vcf.gz
+	time bin/ibrowser save -cpuprofile ibrowser.cpu.prof -memprofile ibrowser.mem.prof -format $(FORMAT) data/360_merged_2.50.vcf.gz
 
 prof_run: clean ibrowser data/360_merged_2.50.vcf.gz
 
