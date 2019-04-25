@@ -1,31 +1,19 @@
 package main
 
 import (
-	// "flag"
 	"fmt"
-	// "log"
-	// "math"
 	"os"
-	// "strings"
 )
 
 // import "github.com/jessevdk/go-flags"
 import "github.com/sauloalgolang/go-flags"
 
 import (
-	// "github.com/sauloalgolang/introgressionbrowser/api"
-	// "github.com/sauloalgolang/introgressionbrowser/ibrowser"
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-	// "github.com/sauloalgolang/introgressionbrowser/save"
-	// "github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
 type CallBackParameters = interfaces.CallBackParameters
 type Parameters = interfaces.Parameters
-
-var DEFAULT_BLOCK_SIZE = uint64(100000)
-var DEFAULT_OUTFILE = "output"
-var DEFAULT_COUNTER_BITS = 32
 
 type Options struct {
 }

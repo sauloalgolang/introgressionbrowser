@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 import (
@@ -26,6 +27,16 @@ var webCommand WebCommand
 func (x *WebCommand) Execute(args []string) error {
 	fmt.Printf("Web\n")
 	fmt.Println(x)
+
+	fi, err := os.Stat(x.Dir)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	if !fi.Mode().IsDir() {
+		fmt.Println("input folder ", x.Dir, " is not a folder")
+		os.Exit(1)
+	}
 
 	web.NewWeb(x.Dir, x.Host, x.Port)
 

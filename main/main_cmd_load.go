@@ -10,8 +10,13 @@ import (
 )
 
 type LoadCommand struct {
+	Infile          LoadArgsOptions `long:"indb" description:"Input database prefix" positional-args:"true" positional-arg-name:"Input Database Prefix" hidden:"true"`
 	ProfileOptions  ProfileOptions
 	SaveLoadOptions SaveLoadOptions
+}
+
+type LoadArgsOptions struct {
+	DbPrefix string `long:"indb" description:"Input database prefix" required:"true" positional-arg-name:"Input Database Prefix"`
 }
 
 var loadCommand LoadCommand
@@ -19,9 +24,11 @@ var loadCommand LoadCommand
 func (x *LoadCommand) Execute(args []string) error {
 	fmt.Printf("Load\n")
 
-	sourceFile := processArgs(args)
+	// sourceFile := processArgs(args)
+	sourceFile := x.Infile.DbPrefix
 
 	parameters := Parameters{}
+	x.SaveLoadOptions.NoCheck = false
 
 	processSaveLoadParameters(&parameters, x.SaveLoadOptions)
 

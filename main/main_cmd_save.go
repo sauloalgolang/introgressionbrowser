@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 import (
@@ -11,17 +13,23 @@ import (
 )
 
 type SaveCommand struct {
-	BlockSize         uint64 `long:"blockSize" description:"Block size" default:"100000"`
-	Chromosomes       string `long:"chromosomes" description:"Comma separated list of chromomomes to read" default:""`
-	NoContinueOnError bool   `long:"continueOnError" description:"Continue reading the file on parsing error"`
-	CounterBits       int    `long:"counterBits" description:"Number of bits" default:"32"`
-	NoKeepEmptyBlock  bool   `long:"keepEmptyBlocks" description:"Keep empty blocks"`
-	MaxSnpPerBlock    uint64 `long:"maxSnpPerBlock" description:"Maximum number of SNPs per block" default:"18446744073709551615"`
-	MinSnpPerBlock    uint64 `long:"minSnpPerBlock" description:"Minimum number of SNPs per block" default:"10"`
-	Outfile           string `long:"outfile" description:"Output file" default:"output"`
+	BlockSize         uint64          `long:"blockSize" description:"Block size" default:"100000"`
+	Chromosomes       string          `long:"chromosomes" description:"Comma separated list of chromomomes to read" default:""`
+	NoContinueOnError bool            `long:"continueOnError" description:"Continue reading the file on parsing error"`
+	CounterBits       int             `long:"counterBits" description:"Number of bits" default:"32"`
+	NoKeepEmptyBlock  bool            `long:"keepEmptyBlocks" description:"Keep empty blocks"`
+	MaxSnpPerBlock    uint64          `long:"maxSnpPerBlock" description:"Maximum number of SNPs per block" default:"18446744073709551615"`
+	MinSnpPerBlock    uint64          `long:"minSnpPerBlock" description:"Minimum number of SNPs per block" default:"10"`
+	Outfile           string          `long:"outfile" description:"Output file prefix" default:"res/output"`
+	Description       string          `long:"description" description:"Description of the database" default:""`
+	Infile            SaveArgsOptions `long:"infile" description:"Input VCF file" positional-args:"true" positional-arg-name:"Input VCF file" hidden:"true"`
 	ProfileOptions    ProfileOptions
 	SaveLoadOptions   SaveLoadOptions
 	DebugOptions      DebugOptions
+}
+
+type SaveArgsOptions struct {
+	VCF string `long:"infile" description:"Input VCF file" required:"true" positional-arg-name:"Input VCF file"`
 }
 
 type DebugOptions struct {
@@ -45,10 +53,25 @@ var saveCommand SaveCommand
 func (x *SaveCommand) Execute(args []string) error {
 	fmt.Printf("Save\n")
 
-	sourceFile := processArgs(args)
+	// sourceFile := processArgs(args)
+	sourceFile := x.Infile.VCF
+
+	fi, err := os.Stat(sourceFile)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	if !fi.Mode().IsRegular() {
+		fmt.Println("input file ", sourceFile, " is not a file")
+		os.Exit(1)
+	}
 
 	parameters := Parameters{
 		SourceFile: sourceFile,
+	}
+
+	if x.Description == "" {
+		x.Description = filepath.Base(sourceFile)
 	}
 
 	processDebugParameters(&parameters, x.DebugOptions)
@@ -105,6 +128,7 @@ func processSaveParameters(parameters *Parameters, saveCommand SaveCommand) {
 	parameters.Chromosomes = saveCommand.Chromosomes
 	parameters.ContinueOnError = !saveCommand.NoContinueOnError
 	parameters.CounterBits = saveCommand.CounterBits
+	parameters.Description = saveCommand.Description
 	parameters.KeepEmptyBlock = !saveCommand.NoKeepEmptyBlock
 	parameters.MaxSnpPerBlock = saveCommand.MaxSnpPerBlock
 	parameters.MinSnpPerBlock = saveCommand.MinSnpPerBlock
