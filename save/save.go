@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type Saver struct {
@@ -234,4 +235,64 @@ func loadData(outfile string, unmarshaler UnMarshaler, val interface{}) {
 func loadDataStream(outfile string, unmarshaler UnMarshalerStreamer, val interface{}) {
 	fmt.Println("loading from ", outfile)
 	unmarshaler(outfile, val)
+}
+
+func GuessFormat(filename string) (found bool, format string, compression string, prefix string) {
+	found = false
+	format = ""
+	compression = ""
+	prefix = ""
+
+	for fn, fv := range Formats {
+		fext := fv.Extension
+		for cn, cv := range Compressors {
+			cext := cv.Extension
+			extension := "." + fext
+
+			if cext != "" {
+				extension += "." + cext
+			}
+
+			if strings.HasSuffix(filename, extension) {
+				found = true
+				format = fn
+				compression = cn
+				prefix = strings.TrimSuffix(filename, extension)
+				return found, format, compression, prefix
+			}
+		}
+	}
+	return found, format, compression, prefix
+}
+
+func GuessPrefixFormat(prefix string) (found bool, format string, compression string, filename string) {
+	found = false
+	format = ""
+	compression = ""
+	filename = ""
+
+	for fn, fv := range Formats {
+		fext := fv.Extension
+		for cn, cv := range Compressors {
+			cext := cv.Extension
+			filename := prefix + "." + fext
+
+			if cext != "" {
+				filename += "." + cext
+			}
+
+			_, err := os.Stat(filename)
+
+			if err != nil {
+				continue
+			} else {
+				found = true
+				format = fn
+				compression = cn
+				return found, format, compression, filename
+			}
+		}
+	}
+
+	return found, format, compression, filename
 }

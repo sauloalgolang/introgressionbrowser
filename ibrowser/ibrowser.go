@@ -9,6 +9,10 @@ import (
 	"sync/atomic"
 )
 
+import (
+	"github.com/sauloalgolang/introgressionbrowser/save"
+)
+
 var mutex = &sync.Mutex{}
 
 //
@@ -252,6 +256,28 @@ func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 //
 // Load
 //
+
+func (ib *IBrowser) EasyLoadPrefix(outPrefix string) {
+	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
+
+	if !found {
+		fmt.Println("could not easy load prefix: ", outPrefix)
+		os.Exit(1)
+	}
+
+	ib.saveLoad(false, outPrefix, format, compression)
+}
+
+func (ib *IBrowser) EasyLoadFile(outFile string) {
+	found, format, compression, outPrefix := save.GuessFormat(outFile)
+
+	if !found {
+		fmt.Println("could not easy load file:", outFile)
+		os.Exit(1)
+	}
+
+	ib.saveLoad(false, outPrefix, format, compression)
+}
 
 func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
 	ib.saveLoad(false, outPrefix, format, compression)

@@ -41,7 +41,7 @@ var Formats = map[string]SaveFormat{
 	},
 }
 
-var FormatNames = []string{"yaml", "gob"}
+var FormatNames = []string{"yaml"}
 var DefaultFormat = "yaml"
 
 //

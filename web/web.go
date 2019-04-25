@@ -53,8 +53,8 @@ func newStatic(dir string, router *mux.Router) {
 
 func newApi(dir string, router *mux.Router) {
 	endpoints.DATABASE_DIR = dir
-	router.HandleFunc("/databases", endpoints.Databases).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/", endpoints.Database).Methods("GET").HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc("/databases", endpoints.Databases).Methods("GET")            //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc("/databases/{database}/", endpoints.Database).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/chromosomes", endpoints.Chromosomes).Methods("GET").HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}", endpoints.Chromosome).Methods("GET").HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}/matrices", endpoints.Matrices).Methods("GET").HeadersRegexp("Content-Type", "application/json")
