@@ -7,7 +7,6 @@ TODO
 - [ ] Add ibrowser merger
 - [ ] Use logging
 - [ ] Let user choose distance matrix to use
-- [ ] Self check
 - [ ] Implement limits in main function
   - [ ] minSnpPerBlock
   - [ ] maxSnpPerBlock
@@ -22,6 +21,7 @@ TODO
 DONE
 ----
 
+- [X] Self check
 - [X] Keep chromosomes ordered
 - [X] Save parameters in dump
 - [X] Replace as many callbacks as possible

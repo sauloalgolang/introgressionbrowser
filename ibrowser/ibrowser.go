@@ -250,14 +250,14 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 // Save
 //
 func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
-	ib.saveLoad(true, outPrefix, format, compression)
+	ib.saveLoad(true, outPrefix, format, compression, false)
 }
 
 //
 // Load
 //
 
-func (ib *IBrowser) EasyLoadPrefix(outPrefix string) {
+func (ib *IBrowser) EasyLoadPrefix(outPrefix string, soft bool) {
 	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
 
 	if !found {
@@ -265,10 +265,10 @@ func (ib *IBrowser) EasyLoadPrefix(outPrefix string) {
 		os.Exit(1)
 	}
 
-	ib.saveLoad(false, outPrefix, format, compression)
+	ib.saveLoad(false, outPrefix, format, compression, soft)
 }
 
-func (ib *IBrowser) EasyLoadFile(outFile string) {
+func (ib *IBrowser) EasyLoadFile(outFile string, soft bool) {
 	found, format, compression, outPrefix := save.GuessFormat(outFile)
 
 	if !found {
@@ -276,18 +276,18 @@ func (ib *IBrowser) EasyLoadFile(outFile string) {
 		os.Exit(1)
 	}
 
-	ib.saveLoad(false, outPrefix, format, compression)
+	ib.saveLoad(false, outPrefix, format, compression, soft)
 }
 
-func (ib *IBrowser) Load(outPrefix string, format string, compression string) {
-	ib.saveLoad(false, outPrefix, format, compression)
+func (ib *IBrowser) Load(outPrefix string, format string, compression string, soft bool) {
+	ib.saveLoad(false, outPrefix, format, compression, soft)
 }
 
 //
 // SaveLoad
 //
 
-func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string) {
+func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string, soft bool) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
 	saver := NewSaverCompressed(baseName, format, compression)
 
@@ -299,7 +299,9 @@ func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compr
 		fmt.Println("loading global ibrowser status")
 		saver.Load(ib)
 		sort.Sort(ib.ChromosomesNames)
-		ib.dumper(isSave, outPrefix)
+		if !soft {
+			ib.dumper(isSave, outPrefix)
+		}
 	}
 
 	// ib.saveLoadBlock(isSave, baseName, format, compression)
