@@ -122,6 +122,8 @@ func DatabaseSummaryMatrixTable(w http.ResponseWriter, r *http.Request) {
 
 	db.FileName = strings.Join([]string{tmpl, db.FileName}, "/")
 
+	// CalculateRegisterSize
+
 	resp := Message(true, "success")
 	resp["data"] = db
 

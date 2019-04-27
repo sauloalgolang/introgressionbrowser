@@ -14,16 +14,35 @@ import (
 // https://golang.org/pkg/encoding/binary/
 // https://varunpant.com/posts/reading-and-writing-binary-files-in-go-lang
 
-// Example payload
-type payload struct {
-	One   float32
-	Two   float64
-	Three uint32
-}
-
 //
 // MultiArrayFile
 //
+
+func CalculateRegisterSize(counterBits int, size uint64) (res uint64) {
+	res += 1 // hasData     bool
+	res += 8 // serial      int64
+	res += 8 // counterBits int64
+	res += 8 // dataLen     int64
+	res += 8 // sumData     uint64
+
+	dbytes := uint64(0)
+	switch counterBits {
+	case 16:
+		dbytes = 2
+	case 32:
+		dbytes = 4
+	case 64:
+		dbytes = 8
+	}
+
+	if dbytes == 0 {
+		panic("wrong counterbits")
+	}
+
+	res += dbytes * size
+
+	return
+}
 
 type MultiArrayFile struct {
 	fileName    string
