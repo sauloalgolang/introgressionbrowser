@@ -5,10 +5,10 @@ import (
 	// "go-contacts/models"
 	// u "go-contacts/utils"
 	// "strconv"
-	// "fmt"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 )
 
 // router.HandleFunc(DATABASE_ENDPOINT, endpoints.Databases).Methods("GET")                                                                                    //.HeadersRegexp("Content-Type", "application/json")
@@ -104,6 +104,23 @@ func DatabaseSummaryMatrixTable(w http.ResponseWriter, r *http.Request) {
 		Respond(w, resp)
 		return
 	}
+
+	if ROUTER == nil {
+		log.Panic("Router not defined")
+	}
+
+	route := ROUTER.Get("data")
+
+	if route == nil {
+		log.Panic("No data router")
+	}
+
+	tmpl, t_err := route.GetPathTemplate()
+	if t_err != nil {
+		log.Panic("No data router template")
+	}
+
+	db.FileName = strings.Join([]string{tmpl, db.FileName}, "/")
 
 	resp := Message(true, "success")
 	resp["data"] = db
