@@ -114,6 +114,14 @@ func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
 	}
 }
 
+func (ibc *IBChromosome) GetSummaryBlock() (*IBBlock, bool) {
+	return ibc.Block, true
+}
+
+func (ibc *IBChromosome) GetBlocks() ([]*IBBlock, bool) {
+	return ibc.Blocks, true
+}
+
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	if blockPos, ok := ibc.BlockNames[blockNum]; ok {
 		if blockPos >= uint64(len(ibc.Blocks)) {
@@ -126,7 +134,7 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 
 		return ibc.Blocks[blockPos], ok
 	} else {
-		return &IBBlock{}, ok
+		return nil, ok
 	}
 }
 

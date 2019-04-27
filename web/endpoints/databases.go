@@ -11,8 +11,11 @@ import (
 	"net/http"
 )
 
-// router.HandleFunc("/databases", endpoints.Databases).Methods("GET")                                                              //.HeadersRegexp("Content-Type", "application/json")
-// router.HandleFunc("/databases/{database}/block", endpoints.DatabaseBlock).Methods("GET")                                         //.HeadersRegexp("Content-Type", "application/json")
+// router.HandleFunc(DATABASE_ENDPOINT, endpoints.Databases).Methods("GET")                                                                                    //.HeadersRegexp("Content-Type", "application/json")
+// router.HandleFunc(DATABASE_ENDPOINT+"/{database}", endpoints.Database).Methods("GET")                                                                       //.HeadersRegexp("Content-Type", "application/json")
+// router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary", endpoints.DatabaseSummary).Methods("GET")                                                        //.HeadersRegexp("Content-Type", "application/json")
+// router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix", endpoints.DatabaseSummaryMatrix).Methods("GET")                                           //.HeadersRegexp("Content-Type", "application/json")
+// router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix/table", endpoints.DatabaseSummaryMatrixTable).Methods("GET")                                //.HeadersRegexp("Content-Type", "application/json")
 
 func Databases(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Databases %#v", r)
@@ -24,13 +27,76 @@ func Databases(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
-func DatabaseBlock(w http.ResponseWriter, r *http.Request) {
-	log.Tracef("DatabaseBlock %#v", r)
+func Database(w http.ResponseWriter, r *http.Request) {
+	log.Tracef("Database %#v", r)
 
 	params := mux.Vars(r)
 	database := params["database"]
 
-	db, ok := databases.GetDatabaseBlock(database)
+	db, ok := databases.GetDatabase(database)
+
+	if !ok {
+		resp := Message(false, "fail")
+		resp["data"] = "No such database: " + database
+		Respond(w, resp)
+		return
+	}
+
+	resp := Message(true, "success")
+	resp["data"] = db
+
+	Respond(w, resp)
+}
+
+func DatabaseSummary(w http.ResponseWriter, r *http.Request) {
+	log.Tracef("DatabaseSummary %#v", r)
+
+	params := mux.Vars(r)
+	database := params["database"]
+
+	db, ok := databases.GetDatabaseSummaryBlock(database)
+
+	if !ok {
+		resp := Message(false, "fail")
+		resp["data"] = "No such database: " + database
+		Respond(w, resp)
+		return
+	}
+
+	resp := Message(true, "success")
+	resp["data"] = db
+
+	Respond(w, resp)
+}
+
+func DatabaseSummaryMatrix(w http.ResponseWriter, r *http.Request) {
+	log.Tracef("DatabaseBlockMatrix %#v", r)
+
+	params := mux.Vars(r)
+	database := params["database"]
+
+	db, ok := databases.GetDatabaseSummaryBlockMatrix(database)
+
+	if !ok {
+		resp := Message(false, "fail")
+		resp["data"] = "No such database: " + database
+		Respond(w, resp)
+		return
+	}
+
+	resp := Message(true, "success")
+	resp["data"] = db
+
+	Respond(w, resp)
+}
+
+func DatabaseSummaryMatrixTable(w http.ResponseWriter, r *http.Request) {
+	log.Tracef("DatabaseBlockMatrix %#v", r)
+
+	params := mux.Vars(r)
+	database := params["database"]
+
+	db, ok := databases.GetDatabaseSummaryBlockMatrixTable(database)
 
 	if !ok {
 		resp := Message(false, "fail")

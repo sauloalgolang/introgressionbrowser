@@ -22,6 +22,7 @@ type IBrowser = ibrowser.IBrowser
 type IBChromosome = ibrowser.IBChromosome
 type IBBlock = ibrowser.IBBlock
 type IBMatrix = ibrowser.DistanceMatrix
+type IBDistanceTable = ibrowser.IBDistanceTable
 
 var GuessPrefixFormat = save.GuessPrefixFormat
 var GuessFormat = save.GuessFormat
@@ -75,65 +76,238 @@ func (d *DbDb) Register(fileName string, path string) (err error) {
 }
 
 //
-// Get data from ibrowser
+// Get database
 //
 
 func (d *DbDb) getDatabase(fileName string) (*IBrowser, bool) {
-	if dbi, ok := d.Databases[fileName]; ok {
-		return dbi.ib, ok
-	} else {
-		return nil, ok
-	}
-}
-
-func (d *DbDb) getChromosome(fileName string, chromosome string) (*IBChromosome, bool) {
-	db, hasDb := d.getDatabase(fileName)
+	dbi, hasDb := d.Databases[fileName]
 
 	if !hasDb {
 		return nil, hasDb
 	}
 
-	chrom, hasChrom := db.GetChromosome(chromosome)
+	ib := dbi.ib
 
-	if !hasChrom {
-		return nil, hasChrom
-	}
-
-	return chrom, hasChrom
+	return ib, true
 }
 
-func (d *DbDb) getBlock(fileName string, chromosome string, blockNum uint64) (*IBBlock, bool) {
-	chrom, hasChrom := d.getChromosome(fileName, chromosome)
+//
+// Get database summary
+//
+
+func (d *DbDb) getDatabaseSummaryBlock(fileName string) (*IBrowser, *IBBlock, bool) {
+	ib, hasDatabase := d.getDatabase(fileName)
+
+	if !hasDatabase {
+		return nil, nil, hasDatabase
+	}
+
+	block, hasBlock := ib.GetSummaryBlock()
+
+	if !hasBlock {
+		return nil, nil, hasBlock
+	}
+
+	return ib, block, true
+}
+
+func (d *DbDb) getDatabaseSummaryBlockMatrix(fileName string) (*IBrowser, *IBBlock, *IBMatrix, bool) {
+	ib, block, hasBlock := d.getDatabaseSummaryBlock(fileName)
+
+	if !hasBlock {
+		return nil, nil, nil, hasBlock
+	}
+
+	matrix, hasMatrix := block.GetMatrix()
+
+	if !hasMatrix {
+		return nil, nil, nil, hasMatrix
+	}
+
+	return ib, block, matrix, true
+}
+
+func (d *DbDb) getDatabaseSummaryBlockMatrixData(fileName string) (*IBrowser, *IBBlock, *IBMatrix, *IBDistanceTable, bool) {
+	ib, block, matrix, hasMatrix := d.getDatabaseSummaryBlockMatrix(fileName)
+
+	if !hasMatrix {
+		return nil, nil, nil, nil, hasMatrix
+	}
+
+	table, hasTable := block.GetMatrixData()
+
+	if !hasTable {
+		return nil, nil, nil, nil, hasTable
+	}
+
+	return ib, block, matrix, table, true
+}
+
+//
+// Get chromosome
+//
+
+func (d *DbDb) getChromosomeNames(fileName string) ([]string, bool) {
+	ib, ok := d.getDatabase(fileName)
+
+	if !ok {
+		return nil, ok
+	}
+
+	chromosomes := ib.GetChromosomeNames()
+
+	return chromosomes, true
+}
+
+func (d *DbDb) getChromosomes(fileName string) (*IBrowser, []*IBChromosome, bool) {
+	ib, ok := d.getDatabase(fileName)
+
+	if !ok {
+		return nil, nil, ok
+	}
+
+	chromosomes := ib.GetChromosomes()
+
+	return ib, chromosomes, true
+}
+
+func (d *DbDb) getChromosome(fileName string, chromosome string) (*IBrowser, *IBChromosome, bool) {
+	ib, hasDb := d.getDatabase(fileName)
+
+	if !hasDb {
+		return nil, nil, hasDb
+	}
+
+	chrom, hasChrom := ib.GetChromosome(chromosome)
 
 	if !hasChrom {
-		return nil, hasChrom
+		return nil, nil, hasChrom
+	}
+
+	return ib, chrom, true
+}
+
+func (d *DbDb) getChromosomeSummaryBlock(fileName string, chromosome string) (*IBrowser, *IBChromosome, *IBBlock, bool) {
+	ib, chrom, hasChrom := d.getChromosome(fileName, chromosome)
+
+	if !hasChrom {
+		return nil, nil, nil, hasChrom
+	}
+
+	block, hasBlock := chrom.GetSummaryBlock()
+
+	if !hasBlock {
+		return nil, nil, nil, hasBlock
+	}
+
+	return ib, chrom, block, true
+}
+
+func (d *DbDb) getChromosomeSummaryBlockMatrix(fileName string, chromosome string) (*IBrowser, *IBChromosome, *IBBlock, *IBMatrix, bool) {
+	ib, chrom, block, hasBlock := d.getChromosomeSummaryBlock(fileName, chromosome)
+
+	if !hasBlock {
+		return nil, nil, nil, nil, hasBlock
+	}
+
+	matrix, hasMatrix := block.GetMatrix()
+
+	if !hasMatrix {
+		return nil, nil, nil, nil, hasMatrix
+	}
+
+	return ib, chrom, block, matrix, true
+}
+
+func (d *DbDb) getChromosomeSummaryBlockMatrixTable(fileName string, chromosome string) (*IBrowser, *IBChromosome, *IBBlock, *IBMatrix, *IBDistanceTable, bool) {
+	ib, chrom, block, matrix, hasMatrix := d.getChromosomeSummaryBlockMatrix(fileName, chromosome)
+
+	if !hasMatrix {
+		return nil, nil, nil, nil, nil, hasMatrix
+	}
+
+	table, hasTable := matrix.GetMatrix()
+
+	if !hasTable {
+		return nil, nil, nil, nil, nil, hasTable
+	}
+
+	return ib, chrom, block, matrix, table, true
+}
+
+//
+// Get blocks
+//
+func (d *DbDb) getChromosomeBlocks(fileName string, chromosome string) (*IBrowser, *IBChromosome, []*IBBlock, bool) {
+	ib, chrom, hasChrom := d.getChromosome(fileName, chromosome)
+
+	if !hasChrom {
+		return nil, nil, nil, hasChrom
+	}
+
+	blocks, hasBlock := chrom.GetBlocks()
+
+	if !hasBlock {
+		return nil, nil, nil, hasBlock
+	}
+
+	return ib, chrom, blocks, true
+}
+
+func (d *DbDb) getChromosomeBlock(fileName string, chromosome string, blockNum uint64) (*IBrowser, *IBChromosome, *IBBlock, bool) {
+	ib, chrom, hasChrom := d.getChromosome(fileName, chromosome)
+
+	if !hasChrom {
+		return nil, nil, nil, hasChrom
 	}
 
 	block, hasBlock := chrom.GetBlock(blockNum)
 
 	if !hasBlock {
-		return nil, hasBlock
+		return nil, nil, nil, hasBlock
 	}
 
-	return block, hasBlock
+	return ib, chrom, block, true
 }
 
-func (d *DbDb) getMatrix(fileName string, chromosome string, blockNum uint64) (*IBMatrix, bool) {
-	block, hasBlock := d.getBlock(fileName, chromosome, blockNum)
+func (d *DbDb) getChromosomeBlockMatrix(fileName string, chromosome string, blockNum uint64) (*IBrowser, *IBChromosome, *IBBlock, *IBMatrix, bool) {
+	ib, chrom, block, hasBlock := d.getChromosomeBlock(fileName, chromosome, blockNum)
 
 	if !hasBlock {
-		return nil, hasBlock
+		return nil, nil, nil, nil, hasBlock
 	}
 
-	matrix := block.Matrix
+	matrix, hasMatrix := block.GetMatrix()
 
-	return matrix, true
+	if !hasMatrix {
+		return nil, nil, nil, nil, hasMatrix
+	}
+
+	return ib, chrom, block, matrix, true
+}
+
+func (d *DbDb) getChromosomeBlockMatrixTable(fileName string, chromosome string, blockNum uint64) (*IBrowser, *IBChromosome, *IBBlock, *IBMatrix, *IBDistanceTable, bool) {
+	ib, chrom, block, matrix, hasMatrix := d.getChromosomeBlockMatrix(fileName, chromosome, blockNum)
+
+	if !hasMatrix {
+		return nil, nil, nil, nil, nil, hasMatrix
+	}
+
+	table, hasTable := matrix.GetMatrix()
+
+	if !hasTable {
+		return nil, nil, nil, nil, nil, hasTable
+	}
+
+	return ib, chrom, block, matrix, table, true
 }
 
 //
 // Get web versions of data
 //
 
+//
+// Database
 func (d *DbDb) GetDatabases() (files []*DatabaseInfo) {
 	files = make([]*DatabaseInfo, 0, len(d.Databases))
 
@@ -152,100 +326,165 @@ func (d *DbDb) GetDatabase(fileName string) (*DatabaseInfo, bool) {
 	}
 }
 
-func (d *DbDb) GetDatabaseBlock(fileName string) (*BlockInfo, bool) {
-	if dbi, ok := d.GetDatabase(fileName); ok {
-		bl := NewBlockInfo(dbi.ib.Block)
-		return bl, ok
-	} else {
+//
+// Database summary block
+func (d *DbDb) GetDatabaseSummaryBlock(fileName string) (*BlockInfo, bool) {
+	ib, block, ok := d.getDatabaseSummaryBlock(fileName)
+
+	if !ok {
 		return nil, ok
 	}
+
+	bi := NewBlockInfo(ib, nil, block)
+
+	return bi, true
 }
 
+func (d *DbDb) GetDatabaseSummaryBlockMatrix(fileName string) (*MatrixInfo, bool) {
+	ib, block, matrix, ok := d.getDatabaseSummaryBlockMatrix(fileName)
+
+	if !ok {
+		return nil, ok
+	}
+
+	mi := NewMatrixInfo(ib, nil, block, matrix)
+
+	return mi, true
+}
+
+func (d *DbDb) GetDatabaseSummaryBlockMatrixTable(fileName string) (*TableInfo, bool) {
+	ib, block, matrix, table, ok := d.getDatabaseSummaryBlockMatrixData(fileName)
+
+	if !ok {
+		return nil, ok
+	}
+
+	ti := NewTableInfo(ib, nil, block, matrix, table)
+
+	return ti, true
+}
+
+//
+// Chromosomes
 func (d *DbDb) GetChromosomes(fileName string) ([]*ChromosomeInfo, bool) {
-	db, hasDb := d.GetDatabase(fileName)
+	ib, chromosomes, ok := d.getChromosomes(fileName)
 
-	if !hasDb {
-		return nil, hasDb
+	if !ok {
+		return nil, ok
 	}
 
-	dbib := db.ib
+	numChromosomes := len(chromosomes)
+	chromosomesi := make([]*ChromosomeInfo, numChromosomes, numChromosomes)
 
-	numChromosomes := len(dbib.ChromosomesNames)
-	chromosomes := make([]*ChromosomeInfo, numChromosomes, numChromosomes)
-
-	for cl, chromNamePosPair := range dbib.ChromosomesNames {
-		chromName := chromNamePosPair.Name
-		// chromPos := chromNamePosPair.Pos
-		chromosome := dbib.Chromosomes[chromName]
-
-		ci := NewChromosomeInfo(chromosome)
-
-		chromosomes[cl] = ci
+	for cl, chromosome := range chromosomes {
+		ci := NewChromosomeInfo(ib, chromosome)
+		chromosomesi[cl] = ci
 	}
 
-	return chromosomes, true
+	return chromosomesi, true
 }
 
 func (d *DbDb) GetChromosome(fileName string, chromosome string) (*ChromosomeInfo, bool) {
-	chrom, hasChrom := d.getChromosome(fileName, chromosome)
+	ib, chrom, hasChrom := d.getChromosome(fileName, chromosome)
 
 	if !hasChrom {
 		return nil, hasChrom
 	}
 
-	ci := NewChromosomeInfo(chrom)
+	ci := NewChromosomeInfo(ib, chrom)
 
 	return ci, true
 }
 
-func (d *DbDb) GetChromosomeBlock(fileName string, chromosome string) (*BlockInfo, bool) {
-	if dbi, ok := d.GetChromosome(fileName, chromosome); ok {
-		bl := NewBlockInfo(dbi.chromosome.Block)
-		return bl, ok
-	} else {
+func (d *DbDb) GetChromosomeSummaryBlock(fileName string, chromosome string) (*BlockInfo, bool) {
+	ib, chrom, block, ok := d.getChromosomeSummaryBlock(fileName, chromosome)
+
+	if !ok {
 		return nil, ok
 	}
+
+	bl := NewBlockInfo(ib, chrom, block)
+
+	return bl, true
 }
 
+func (d *DbDb) GetChromosomeSummaryBlockMatrix(fileName string, chromosome string) (*MatrixInfo, bool) {
+	ib, chrom, block, matrix, ok := d.getChromosomeSummaryBlockMatrix(fileName, chromosome)
+
+	if !ok {
+		return nil, ok
+	}
+
+	bl := NewMatrixInfo(ib, chrom, block, matrix)
+
+	return bl, true
+}
+
+func (d *DbDb) GetChromosomeSummaryBlockMatrixTable(fileName string, chromosome string) (*TableInfo, bool) {
+	ib, chrom, block, matrix, table, ok := d.getChromosomeSummaryBlockMatrixTable(fileName, chromosome)
+
+	if !ok {
+		return nil, ok
+	}
+
+	bl := NewTableInfo(ib, chrom, block, matrix, table)
+
+	return bl, true
+}
+
+//
+// Blocks
 func (d *DbDb) GetBlocks(fileName string, chromosome string) ([]*BlockInfo, bool) {
-	chrom, hasChrom := d.getChromosome(fileName, chromosome)
+	ib, chrom, blocks, hasChrom := d.getChromosomeBlocks(fileName, chromosome)
 
 	if !hasChrom {
 		return nil, hasChrom
 	}
 
-	numBlocks := chrom.NumBlocks
-	blocks := make([]*BlockInfo, numBlocks, numBlocks)
+	numBlocks := len(blocks)
+	blocksi := make([]*BlockInfo, numBlocks, numBlocks)
 
-	for bl, block := range chrom.Blocks {
-		blocks[bl] = NewBlockInfo(block)
+	for bl, block := range blocks {
+		blocksi[bl] = NewBlockInfo(ib, chrom, block)
 	}
 
-	return blocks, true
+	return blocksi, true
 }
 
 func (d *DbDb) GetBlock(fileName string, chromosome string, blockNum uint64) (*BlockInfo, bool) {
-	block, hasBlock := d.getBlock(fileName, chromosome, blockNum)
+	ib, chrom, block, hasBlock := d.getChromosomeBlock(fileName, chromosome, blockNum)
 
 	if !hasBlock {
 		return nil, hasBlock
 	}
 
-	bi := NewBlockInfo(block)
+	bi := NewBlockInfo(ib, chrom, block)
 
 	return bi, true
 }
 
 func (d *DbDb) GetBlockMatrix(fileName string, chromosome string, blockNum uint64) (*MatrixInfo, bool) {
-	matrix, hasMatrix := d.getMatrix(fileName, chromosome, blockNum)
+	ib, chrom, block, matrix, ok := d.getChromosomeBlockMatrix(fileName, chromosome, blockNum)
 
-	if !hasMatrix {
-		return nil, hasMatrix
+	if !ok {
+		return nil, ok
 	}
 
-	mi := NewMatrixInfo(matrix)
+	mi := NewMatrixInfo(ib, chrom, block, matrix)
 
 	return mi, true
+}
+
+func (d *DbDb) GetBlockMatrixTable(fileName string, chromosome string, blockNum uint64) (*TableInfo, bool) {
+	ib, chrom, block, matrix, table, ok := d.getChromosomeBlockMatrixTable(fileName, chromosome, blockNum)
+
+	if !ok {
+		return nil, ok
+	}
+
+	ti := NewTableInfo(ib, chrom, block, matrix, table)
+
+	return ti, true
 }
 
 //
@@ -322,9 +561,10 @@ type ChromosomeInfo struct {
 	NumBlocks   uint64
 	NumSNPS     uint64
 	chromosome  *IBChromosome
+	ib          *IBrowser
 }
 
-func NewChromosomeInfo(chromosome *IBChromosome) (c *ChromosomeInfo) {
+func NewChromosomeInfo(ib *IBrowser, chromosome *IBChromosome) (c *ChromosomeInfo) {
 	c = &ChromosomeInfo{
 		Name:        chromosome.ChromosomeName,
 		Number:      chromosome.ChromosomeNumber,
@@ -333,6 +573,7 @@ func NewChromosomeInfo(chromosome *IBChromosome) (c *ChromosomeInfo) {
 		NumBlocks:   chromosome.NumBlocks,
 		NumSNPS:     chromosome.NumSNPS,
 		chromosome:  chromosome,
+		ib:          ib,
 	}
 
 	return
@@ -361,9 +602,11 @@ type BlockInfo struct {
 	BlockNumber   uint64
 	Serial        int64
 	block         *IBBlock
+	chromosome    *IBChromosome
+	ib            *IBrowser
 }
 
-func NewBlockInfo(block *IBBlock) (m *BlockInfo) {
+func NewBlockInfo(ib *IBrowser, chromosome *IBChromosome, block *IBBlock) (m *BlockInfo) {
 	m = &BlockInfo{
 		MinPosition:   block.MinPosition,
 		MaxPosition:   block.MaxPosition,
@@ -373,7 +616,12 @@ func NewBlockInfo(block *IBBlock) (m *BlockInfo) {
 		BlockNumber:   block.BlockNumber,
 		Serial:        block.Serial,
 		block:         block,
+		chromosome:    chromosome,
+		ib:            ib,
 	}
+
+	// output_360_merged_2.50.vcf.gz_chromosomes_SL2.50ch00.bin
+
 	return
 }
 
@@ -398,9 +646,12 @@ type MatrixInfo struct {
 	BlockNumber   uint64
 	Serial        int64
 	matrix        *IBMatrix
+	block         *IBBlock
+	chromosome    *IBChromosome
+	ib            *IBrowser
 }
 
-func NewMatrixInfo(matrix *IBMatrix) (m *MatrixInfo) {
+func NewMatrixInfo(ib *IBrowser, chromosome *IBChromosome, block *IBBlock, matrix *IBMatrix) (m *MatrixInfo) {
 	m = &MatrixInfo{
 		Dimension:     matrix.Dimension,
 		Size:          matrix.Size,
@@ -408,6 +659,9 @@ func NewMatrixInfo(matrix *IBMatrix) (m *MatrixInfo) {
 		BlockNumber:   matrix.BlockNumber,
 		Serial:        matrix.Serial,
 		matrix:        matrix,
+		block:         block,
+		chromosome:    chromosome,
+		ib:            ib,
 	}
 	return
 }
@@ -418,6 +672,31 @@ func (m MatrixInfo) String() (res string) {
 	res += fmt.Sprintf(" BlockPosition %d\n", m.BlockPosition)
 	res += fmt.Sprintf(" BlockNumber   %d\n", m.BlockNumber)
 	res += fmt.Sprintf(" Serial        %d\n", m.Serial)
+	return res
+}
+
+//
+// TableInfo
+//
+
+type TableInfo struct {
+	matrix     *IBMatrix
+	block      *IBBlock
+	chromosome *IBChromosome
+	ib         *IBrowser
+}
+
+func NewTableInfo(ib *IBrowser, chromosome *IBChromosome, block *IBBlock, matrix *IBMatrix, table *IBDistanceTable) (m *TableInfo) {
+	m = &TableInfo{
+		matrix:     matrix,
+		block:      block,
+		chromosome: chromosome,
+		ib:         ib,
+	}
+	return
+}
+
+func (m TableInfo) String() (res string) {
 	return res
 }
 

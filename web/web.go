@@ -15,6 +15,8 @@ import (
 )
 
 const HTTP_ROOT_DIR = "http"
+const DATA_ENDPOINT = "/data"
+const DATABASE_ENDPOINT = "/database"
 
 func NewWeb(databaseDir string, host string, port int, verbosityLevel log.Level) {
 	router := mux.NewRouter()
@@ -47,17 +49,25 @@ func newRoot(dir string, router *mux.Router) {
 }
 
 func newStatic(dir string, router *mux.Router) {
-	router.PathPrefix("/database/").Handler(http.StripPrefix("/database/", http.FileServer(http.Dir(dir))))
+	router.PathPrefix(DATA_ENDPOINT).Handler(http.StripPrefix(DATA_ENDPOINT+"/", http.FileServer(http.Dir(dir))))
 }
 
 func newApi(dir string, router *mux.Router, verbosityLevel log.Level) {
-	router.HandleFunc("/databases", endpoints.Databases).Methods("GET")                                                                        //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/block", endpoints.DatabaseBlock).Methods("GET")                                                   //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/chromosomes", endpoints.Chromosomes).Methods("GET")                                               //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}/block", endpoints.ChromosomeBlock).Methods("GET")                        //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}/blocks", endpoints.Blocks).Methods("GET")                                //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/block", endpoints.BlocksBlock).Methods("GET")   //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/databases/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix", endpoints.BlocksMatrix).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc("update", endpoints.Update).Methods("POST")                                                                                               //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT, endpoints.Databases).Methods("GET")                                                                                    //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}", endpoints.Database).Methods("GET")                                                                       //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary", endpoints.DatabaseSummary).Methods("GET")                                                        //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix", endpoints.DatabaseSummaryMatrix).Methods("GET")                                           //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix/table", endpoints.DatabaseSummaryMatrixTable).Methods("GET")                                //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome", endpoints.Chromosomes).Methods("GET")                                                         //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}", endpoints.Chromosome).Methods("GET")                                             //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/summary", endpoints.ChromosomeSummary).Methods("GET")                              //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/summary/matrix", endpoints.ChromosomeSummaryMatrix).Methods("GET")                 //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/summary/table", endpoints.ChromosomeSummaryMatrixTable).Methods("GET")             //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block", endpoints.Blocks).Methods("GET")                                           //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}", endpoints.Block).Methods("GET")                          //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix", endpoints.BlockMatrix).Methods("GET")             //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix/table", endpoints.BlocksMatrixTable).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
 
 	endpoints.DATABASE_DIR = dir
 	endpoints.VERBOSITY = verbosityLevel

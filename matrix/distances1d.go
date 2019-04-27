@@ -107,6 +107,26 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 // GetMatrix
 //
 
+func (d *DistanceMatrix1Dg) GetMatrix() (*DistanceRow64, bool) {
+	if d.CounterBits == 64 {
+		return &d.data64, true
+	} else {
+		data := make(DistanceRow64, d.Size, d.Size)
+		if d.CounterBits == 16 {
+			for i := range (*d).data16 {
+				data[i] = uint64((*d).data16[i])
+			}
+			return &d.data64, true
+		} else if d.CounterBits == 32 {
+			for i := range (*d).data32 {
+				data[i] = uint64((*d).data32[i])
+			}
+			return &d.data64, true
+		}
+	}
+	return nil, false
+}
+
 func (d *DistanceMatrix1Dg) GetMatrix16() *DistanceRow16 {
 	if d.CounterBits != 16 {
 		fmt.Println("calling GetMatrix16 when numbits not 16")
@@ -301,18 +321,18 @@ func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 	}
 
 	if d.CounterBits == 16 {
-		d.check16(e)
+		d.isEqual16(e)
 	} else if d.CounterBits == 32 {
-		d.check32(e)
+		d.isEqual32(e)
 	} else if d.CounterBits == 64 {
-		d.check64(e)
+		d.isEqual64(e)
 	}
 
 	return res
 
 }
 
-func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
+func (d *DistanceMatrix1Dg) isEqual16(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
 	res = res && (d.Size == uint64(len(d.data16)))
@@ -340,7 +360,7 @@ func (d *DistanceMatrix1Dg) check16(e *DistanceMatrix1Dg) (res bool) {
 	return res
 }
 
-func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
+func (d *DistanceMatrix1Dg) isEqual32(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
 	res = res && (d.Size == uint64(len(d.data32)))
@@ -368,7 +388,7 @@ func (d *DistanceMatrix1Dg) check32(e *DistanceMatrix1Dg) (res bool) {
 	return res
 }
 
-func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
+func (d *DistanceMatrix1Dg) isEqual64(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
 	res = res && (d.Size == uint64(len(d.data64)))
@@ -400,7 +420,7 @@ func (d *DistanceMatrix1Dg) check64(e *DistanceMatrix1Dg) (res bool) {
 // Get
 //
 
-func (d *DistanceMatrix1Dg) Get(p1 uint64, p2 uint64, dim uint64) uint64 {
+func (d *DistanceMatrix1Dg) GetPos(p1 uint64, p2 uint64) uint64 {
 	p := d.ijToK(p1, p2)
 
 	if d.CounterBits == 16 {

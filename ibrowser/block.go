@@ -92,15 +92,32 @@ func (ibb *IBBlock) Add(position uint64, distance *DistanceMatrix) {
 	ibb.Matrix.Add(distance)
 }
 
-func (ibb *IBBlock) GetMatrix() *DistanceMatrix {
-	return ibb.Matrix
+func (ibb *IBBlock) GetMatrix() (*DistanceMatrix, bool) {
+	return ibb.Matrix, true
+}
+
+func (ibb *IBBlock) GetMatrixData() (*IBDistanceTable, bool) {
+	matrix, hasMatrix := ibb.Matrix.GetMatrix()
+
+	if !hasMatrix {
+		return nil, false
+	}
+
+	return matrix, true
 }
 
 func (ibb *IBBlock) Sum(other *IBBlock) {
 	ibb.NumSNPS += other.NumSNPS
 	ibb.MinPosition = Min64(ibb.MinPosition, other.MinPosition)
 	ibb.MaxPosition = Max64(ibb.MaxPosition, other.MaxPosition)
-	ibb.Matrix.Add(other.GetMatrix())
+
+	matrix, hasMatrix := other.GetMatrix()
+
+	if !hasMatrix {
+		panic("no matrix")
+	}
+
+	ibb.Matrix.Add(matrix)
 }
 
 func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
@@ -129,7 +146,9 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 		}
 	}
 
-	res = res && ibb.Matrix.IsEqual(other.GetMatrix())
+	matrix, _ := other.GetMatrix()
+
+	res = res && ibb.Matrix.IsEqual(matrix)
 
 	if !res {
 		fmt.Printf("IsEqual :: Failed block %s - #%d check - Matrix not equal\n", ibb.ChromosomeName, ibb.BlockNumber)

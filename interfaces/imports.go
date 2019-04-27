@@ -60,5 +60,6 @@ type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)
 //
 
 type DistanceMatrix = matrix.DistanceMatrix
+type DistanceTable = matrix.DistanceTable
 
 var NewSaver = save.NewSaver

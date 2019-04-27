@@ -8,7 +8,10 @@ import (
 )
 
 type DistanceMatrix = interfaces.DistanceMatrix
+type DistanceTable = interfaces.DistanceTable
 type MultiArrayFile = save.MultiArrayFile
+type IBDistanceMatrix = DistanceMatrix
+type IBDistanceTable = DistanceTable
 
 var NewDistanceMatrix = matrix.NewDistanceMatrix
 

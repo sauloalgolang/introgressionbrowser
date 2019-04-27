@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-type DistanceTable []uint64
+type DistanceTable = DistanceRow64
 
 // type DistanceMatrix = DistanceMatrix1D64
 
