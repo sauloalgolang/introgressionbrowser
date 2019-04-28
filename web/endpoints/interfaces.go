@@ -14,7 +14,8 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/save"
 )
 
-var DATABASE_DIR = "res/"
+var DATABASE_DIR = "database/"
+var DATA_ENDPOINT = "dataep/"
 var VERBOSITY = log.WarnLevel
 
 type Parameters = ibrowser.Parameters
@@ -46,7 +47,7 @@ func (d *DbDb) Register(fileName string, path string) (err error) {
 	err = nil
 
 	if _, ok := d.Databases[fileName]; ok {
-		log.Debug("Registering db :: filename: '%s' path: '%s' - Exists", fileName, path)
+		log.Debugf("Registering db :: filename: '%s' path: '%s' - Exists", fileName, path)
 		return err
 
 	} else {
@@ -55,7 +56,7 @@ func (d *DbDb) Register(fileName string, path string) (err error) {
 		defer func() {
 			// recover from panic if one occured. Set err to nil otherwise.
 			if recover() != nil {
-				log.Warning("Error registering", fileName, path)
+				log.Warningf("Registering db :: filename: '%s' path: '%s' - Error registering", fileName, path)
 				err = errors.New(fmt.Sprintf("Error registering :: fileName '%s' path '%s'", fileName, path))
 				// return err
 				return
@@ -713,12 +714,19 @@ func NewTableInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, blo
 		isChromosomes = true
 	}
 
-	FileName := ib.GenMatrixDumpFileName(dbi.FilePath, chromosomeName, isSummary, isChromosomes)
 	RegisterPosition := ib.RegisterSize * uint64(matrix.Serial)
+
+	fileName := ib.GenMatrixDumpFileName(dbi.FilePath, chromosomeName, isSummary, isChromosomes)
+	if DATABASE_DIR[len(DATABASE_DIR)-1] == '/' {
+		fileName = strings.TrimPrefix(fileName, DATABASE_DIR)
+	} else {
+		fileName = strings.TrimPrefix(fileName, DATABASE_DIR+"/")
+	}
+	fileName = strings.Join([]string{strings.TrimSuffix(DATA_ENDPOINT, "/"), fileName}, "/")
 
 	m = &TableInfo{
 		DatabaseName:     dbi.DatabaseName,
-		FileName:         FileName,
+		FileName:         fileName,
 		RegisterPosition: RegisterPosition,
 		RegisterSize:     ib.RegisterSize,
 		Serial:           uint64(matrix.Serial),
@@ -762,7 +770,7 @@ func ListDatabases() {
 			if fi.Mode().IsRegular() {
 				log.Tracef("ListDatabases :: path '%s' is file", path)
 
-				fn := strings.TrimPrefix(prefix, DATABASE_DIR)
+				fn := strings.TrimPrefix(prefix, DATABASE_DIR+"/")
 				parts := filepath.SplitList(fn)
 				fn = strings.Join(parts, " - ")
 

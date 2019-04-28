@@ -12,17 +12,19 @@ import (
 )
 
 type WebCommand struct {
-	Host      string `long:"host" description:"Hostname" default:"127.0.0.1"`
-	Port      int    `long:"port" description:"Port" default:"8000"`
-	Dir       string `long:"dir" description:"Directory to be served" default:"res/"`
-	Verbose   []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
-	verbosity int
+	Host        string `long:"host" description:"Hostname" default:"127.0.0.1"`
+	Port        int    `long:"port" description:"Port" default:"8000"`
+	DatabaseDir string `long:"DatabaseDir" description:"Databases folder" default:"res/"`
+	HttpDir     string `long:"HttpDir" description:"Web page folder to be served folder" default:"http/"`
+	Verbose     []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
+	verbosity   int
 }
 
 func (w WebCommand) String() (res string) {
 	res += fmt.Sprintf(" Host                   : %s\n", w.Host)
 	res += fmt.Sprintf(" Port                   : %d\n", w.Port)
-	res += fmt.Sprintf(" Dir                    : %s\n", w.Dir)
+	res += fmt.Sprintf(" DatabaseDir            : %s\n", w.DatabaseDir)
+	res += fmt.Sprintf(" HttpDir                : %s\n", w.HttpDir)
 	return res
 }
 
@@ -61,16 +63,16 @@ func (x *WebCommand) Execute(args []string) error {
 	log.Info("Web")
 	log.Info("\n", x)
 
-	fi, err := os.Stat(x.Dir)
+	fi, err := os.Stat(x.DatabaseDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !fi.Mode().IsDir() {
-		log.Fatal("input folder ", x.Dir, " is not a folder")
+		log.Fatal("input folder ", x.DatabaseDir, " is not a folder")
 	}
 
-	web.NewWeb(x.Dir, x.Host, x.Port, verbosityLevel)
+	web.NewWeb(x.DatabaseDir, x.HttpDir, x.Host, x.Port, verbosityLevel)
 
 	return nil
 }

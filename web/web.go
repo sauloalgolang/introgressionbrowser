@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,23 +15,25 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/web/endpoints"
 )
 
-const HTTP_ROOT_DIR = "http"
 const API_ENDPOINT = "/api"
 const DATA_ENDPOINT = "/data"
 const DATABASE_ENDPOINT = "/database"
 
-func NewWeb(databaseDir string, host string, port int, verbosityLevel log.Level) {
+func NewWeb(databaseDir string, httpDir string, host string, port int, verbosityLevel log.Level) {
 	router := mux.NewRouter()
 
-	endpoints.SetRouter(router)
+	router.StrictSlash(false)
+	// endpoints.SetRouter(router)
 
 	log.Warn("open your browser at http://" + host + ":" + strconv.Itoa(port))
 
 	api := router.PathPrefix(API_ENDPOINT).Subrouter()
+	api.StrictSlash(false)
+	router.HandleFunc(API_ENDPOINT+"/", Template).Methods("GET").Name("apiSlash") //.HeadersRegexp("Content-Type", "application/json")
 
 	newData(databaseDir, router)
 	newApi(databaseDir, api, verbosityLevel)
-	newRoot(HTTP_ROOT_DIR, router)
+	newRoot(httpDir, router)
 
 	srv := &http.Server{
 		Handler: router,
@@ -48,17 +51,17 @@ func NewWeb(databaseDir string, host string, port int, verbosityLevel log.Level)
 }
 
 func newRoot(dir string, router *mux.Router) {
-	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir)))).Name("root")
+	router.PathPrefix("").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir)))).Name("root")
 }
 
 func newData(dir string, router *mux.Router) {
-	router.PathPrefix(DATA_ENDPOINT).Handler(http.StripPrefix(DATA_ENDPOINT+"/", http.FileServer(http.Dir(dir)))).Name("data")
+	router.PathPrefix(DATA_ENDPOINT + "/").Handler(http.StripPrefix(DATA_ENDPOINT+"/", http.FileServer(http.Dir(dir)))).Name("dataSlash")
+	router.PathPrefix(DATA_ENDPOINT).Handler(http.StripPrefix(DATA_ENDPOINT, http.FileServer(http.Dir(dir)))).Name("data")
 }
 
 func newApi(dir string, router *mux.Router, verbosityLevel log.Level) {
-	router.HandleFunc("update", endpoints.Update).Methods("POST").Name("update")                                                                                                                           //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("", Template).Methods("GET").Name("api")                                                                                                                                             //.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("/", Template).Methods("GET").Name("apiSlash")                                                                                                                                       //.HeadersRegexp("Content-Type", "application/json")
+	router.HandleFunc("/update", endpoints.Update).Methods("POST").Name("update")                                                                                                                          //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc(DATABASE_ENDPOINT, endpoints.Databases).Methods("GET").Name("databases")                                                                                                             //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc(DATABASE_ENDPOINT+"/{database}", endpoints.Database).Methods("GET").Name("database")                                                                                                 //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary", endpoints.DatabaseSummary).Methods("GET").Name("databaseSummary")                                                                           //.HeadersRegexp("Content-Type", "application/json")
@@ -74,7 +77,21 @@ func newApi(dir string, router *mux.Router, verbosityLevel log.Level) {
 	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix", endpoints.BlockMatrix).Methods("GET").Name("databaseChromosomeBlockMatrix")                  //.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix/table", endpoints.BlocksMatrixTable).Methods("GET").Name("databaseChromosomeBlockMatrixTable") //.HeadersRegexp("Content-Type", "application/json")
 
-	endpoints.DATABASE_DIR = dir
+	route := router.Get("data")
+
+	if route == nil {
+		log.Panic("No data router")
+	}
+
+	tmpl, t_err := route.GetPathTemplate()
+	if t_err != nil {
+		log.Panic("No data router template")
+	}
+
+	tmpl = strings.TrimSuffix(tmpl, "/")
+
+	endpoints.DATA_ENDPOINT = tmpl
+	endpoints.DATABASE_DIR = strings.TrimSuffix(dir, "/")
 	endpoints.VERBOSITY = verbosityLevel
 
 	endpoints.ListDatabases()
@@ -105,12 +122,4 @@ func Template(w http.ResponseWriter, r *http.Request) {
 	resp["data"] = tmp
 
 	endpoints.Respond(w, resp)
-}
-
-type Templates struct {
-	DatabaseInfo   endpoints.DatabaseInfo
-	ChromosomeInfo endpoints.ChromosomeInfo
-	BlockInfo      endpoints.BlockInfo
-	MatrixInfo     endpoints.MatrixInfo
-	TableInfo      endpoints.TableInfo
 }
