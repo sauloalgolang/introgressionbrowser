@@ -30,6 +30,7 @@ type IBrowser struct {
 	NumSNPS        uint64
 	NumBlocks      uint64
 	CounterBits    int
+	RegisterSize   uint64
 	Parameters     Parameters
 	//
 	ChromosomesNames NamePosPairList
@@ -65,6 +66,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		NumSNPS:      0,
 		NumBlocks:    0,
 		CounterBits:  counterBits,
+		RegisterSize: 0,
 		Parameters:   parameters,
 		//
 		lastChrom:    "",
@@ -75,7 +77,6 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		//
 		// block: NewIBBlock("_whole_genome", blockSize, counterBits, 0, 0, 0),
 	}
-
 	return &ib
 }
 
@@ -549,6 +550,8 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 
 	dumperg := NewMultiArrayFile(summaryFileName, mode)
 	// dumperc := NewMultiArrayFile(summaryChromFileName, mode)
+
+	ib.RegisterSize = dumperg.CalculateRegisterSize(ib.CounterBits, ib.Block.Matrix.Size)
 
 	defer dumperg.Close()
 	// defer dumperc.Close()

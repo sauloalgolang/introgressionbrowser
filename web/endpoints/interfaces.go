@@ -692,8 +692,9 @@ func (m MatrixInfo) String() (res string) {
 type TableInfo struct {
 	DatabaseName     string
 	FileName         string
-	RegisterPosition int
-	RegisterLength   int
+	RegisterPosition uint64
+	RegisterSize     uint64
+	Serial           uint64
 	matrix           *IBMatrix
 	block            *IBBlock
 	chromosome       *IBChromosome
@@ -713,14 +714,14 @@ func NewTableInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, blo
 	}
 
 	FileName := ib.GenMatrixDumpFileName(dbi.FilePath, chromosomeName, isSummary, isChromosomes)
-	RegisterPosition := 0
-	RegisterLength := 0
+	RegisterPosition := ib.RegisterSize * uint64(matrix.Serial)
 
 	m = &TableInfo{
 		DatabaseName:     dbi.DatabaseName,
 		FileName:         FileName,
 		RegisterPosition: RegisterPosition,
-		RegisterLength:   RegisterLength,
+		RegisterSize:     ib.RegisterSize,
+		Serial:           uint64(matrix.Serial),
 		matrix:           matrix,
 		block:            block,
 		chromosome:       chromosome,
@@ -734,7 +735,8 @@ func NewTableInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, blo
 func (t TableInfo) String() (res string) {
 	res += fmt.Sprintf(" FileName         %s\n", t.FileName)
 	res += fmt.Sprintf(" RegisterPosition %d\n", t.RegisterPosition)
-	res += fmt.Sprintf(" RegisterLength   %d\n", t.RegisterLength)
+	res += fmt.Sprintf(" RegisterSize     %d\n", t.RegisterSize)
+	res += fmt.Sprintf(" Serial           %d\n", t.Serial)
 	return res
 }
 
