@@ -9,15 +9,6 @@ import (
 	"strings"
 )
 
-func SliceIndex(limit int, predicate func(i int) bool) int {
-	for i := 0; i < limit; i++ {
-		if predicate(i) {
-			return i
-		}
-	}
-	return -1
-}
-
 func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback VCFCallBack, chromosomeNames []string) {
 	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
@@ -42,6 +33,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 	lastChrom := ""
 	chromosomeNumber := -1
 	chromIndex := -1
+	// chromIndexOk := false
 	lastChromosomeName := ""
 	lineNumber := int64(0)
 	registerNumberThread := int64(0)
@@ -94,7 +86,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		if chrom != lastChrom {
 			chromosomeNumber++
 			registerNumberChrom = 0
-			chromIndex = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
+			chromIndex, _ = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
 			fmt.Println("  new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
 
@@ -157,7 +149,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		}
 
 		if gtIndex == -1 || infoCols[gtIndex] != "GT" {
-			gtIndex = SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
+			gtIndex, _ = SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
 		}
 
 		if pos_err != nil {

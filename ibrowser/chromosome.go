@@ -138,6 +138,18 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	}
 }
 
+func (ibc *IBChromosome) GetColumn(referenceNumber int) (*[]*IBDistanceTable, bool) {
+	cols := make([]*IBDistanceTable, ibc.NumBlocks)
+	for bc, block := range ibc.Blocks {
+		col, nc := block.GetColumn(referenceNumber)
+		if !nc {
+			return nil, nc
+		}
+		cols[bc] = col
+	}
+	return &cols, false
+}
+
 func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint64) {
 	// fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum)
 

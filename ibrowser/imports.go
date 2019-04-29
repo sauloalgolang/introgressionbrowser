@@ -7,11 +7,9 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
-type DistanceMatrix = interfaces.DistanceMatrix
-type DistanceTable = interfaces.DistanceTable
+type IBDistanceMatrix = interfaces.DistanceMatrix
+type IBDistanceTable = interfaces.DistanceTable
 type MultiArrayFile = save.MultiArrayFile
-type IBDistanceMatrix = DistanceMatrix
-type IBDistanceTable = DistanceTable
 
 var NewDistanceMatrix = matrix.NewDistanceMatrix
 
@@ -19,6 +17,8 @@ var Min64 = tools.Min64
 var Max64 = tools.Max64
 var NewSaverCompressed = save.NewSaverCompressed
 var NewMultiArrayFile = save.NewMultiArrayFile
+
+var SliceIndex = tools.SliceIndex
 
 //
 // Types

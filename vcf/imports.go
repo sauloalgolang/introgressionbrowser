@@ -8,12 +8,15 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 	"github.com/sauloalgolang/introgressionbrowser/matrix"
 	"github.com/sauloalgolang/introgressionbrowser/openfile"
+	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
 var DEBUG bool = false
 var ONLYFIRST bool = false
 var BREAKAT_THREAD int64 = 0
 var BREAKAT_CHROM int64 = 0
+
+var SliceIndex = tools.SliceIndex
 
 type CallBackParameters = interfaces.CallBackParameters
 

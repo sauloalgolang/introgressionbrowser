@@ -227,6 +227,26 @@ func (ib *IBrowser) GetSamples() VCFSamples {
 	return ib.Samples
 }
 
+func (ib *IBrowser) HasSample(sampleName string) bool {
+	samples := ib.GetSamples()
+	_, ok := SliceIndex(len(samples), func(i int) bool { return samples[i] == sampleName })
+	return ok
+}
+
+func (ib *IBrowser) GetSampleId(sampleName string) (int, bool) {
+	samples := ib.GetSamples()
+	ind, ok := SliceIndex(len(samples), func(i int) bool { return samples[i] == sampleName })
+	return ind, ok
+}
+
+func (ib *IBrowser) GetSampleName(sampleId int) (string, bool) {
+	samples := ib.GetSamples()
+	if sampleId >= len(samples) {
+		return "", false
+	}
+	return samples[sampleId], true
+}
+
 func (ib *IBrowser) GetSummaryBlock() (*IBBlock, bool) {
 	return ib.Block, true
 }
@@ -254,7 +274,7 @@ func (ib *IBrowser) GetSummaryBlockMatrixData() (*IBBlock, *IBDistanceMatrix, *I
 		return nil, nil, nil, hasMatrix
 	}
 
-	table, hasTable := matrix.GetMatrix()
+	table, hasTable := matrix.GetTable()
 
 	if !hasTable {
 		return nil, nil, nil, hasTable
@@ -332,7 +352,7 @@ func (ib *IBrowser) getChromosomeSummaryBlockMatrixTable(chromosomeName string) 
 		return nil, nil, nil, nil, hasChrom
 	}
 
-	table, hasTable := matrix.GetMatrix()
+	table, hasTable := matrix.GetTable()
 
 	if !hasTable {
 		return nil, nil, nil, nil, hasTable
@@ -396,7 +416,7 @@ func (ib *IBrowser) getChromosomeBlockMatrixTable(chromosomeName string, blockNu
 		return nil, nil, nil, nil, hasMatrix
 	}
 
-	table, hasTable := matrix.GetMatrix()
+	table, hasTable := matrix.GetTable()
 
 	if !hasTable {
 		return nil, nil, nil, nil, hasTable
@@ -592,22 +612,22 @@ func (ib *IBrowser) dumperMatrix(dumper *MultiArrayFile, isSave bool, block *IBB
 
 	if isSave {
 		if ib.CounterBits == 16 {
-			serial = dumper.Write16(data.GetMatrix16())
+			serial = dumper.Write16(data.GetTable16())
 		} else if ib.CounterBits == 32 {
-			serial = dumper.Write32(data.GetMatrix32())
+			serial = dumper.Write32(data.GetTable32())
 		} else if ib.CounterBits == 64 {
-			serial = dumper.Write64(data.GetMatrix64())
+			serial = dumper.Write64(data.GetTable64())
 		}
 
 		block.SetSerial(serial)
 
 	} else {
 		if ib.CounterBits == 16 {
-			hasData, serial = dumper.Read16(data.GetMatrix16())
+			hasData, serial = dumper.Read16(data.GetTable16())
 		} else if ib.CounterBits == 32 {
-			hasData, serial = dumper.Read32(data.GetMatrix32())
+			hasData, serial = dumper.Read32(data.GetTable32())
 		} else if ib.CounterBits == 64 {
-			hasData, serial = dumper.Read64(data.GetMatrix64())
+			hasData, serial = dumper.Read64(data.GetTable64())
 		}
 
 		if !hasData {

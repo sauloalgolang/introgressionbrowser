@@ -12,17 +12,19 @@ import (
 import (
 	"github.com/sauloalgolang/introgressionbrowser/ibrowser"
 	"github.com/sauloalgolang/introgressionbrowser/save"
+	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
 var DATABASE_DIR = "database/"
 var DATA_ENDPOINT = "dataep/"
 var VERBOSITY = log.WarnLevel
+var SliceIndex = tools.SliceIndex
 
 type Parameters = ibrowser.Parameters
 type IBrowser = ibrowser.IBrowser
 type IBChromosome = ibrowser.IBChromosome
 type IBBlock = ibrowser.IBBlock
-type IBMatrix = ibrowser.DistanceMatrix
+type IBMatrix = ibrowser.IBDistanceMatrix
 type IBDistanceTable = ibrowser.IBDistanceTable
 
 var GuessPrefixFormat = save.GuessPrefixFormat
@@ -225,7 +227,7 @@ func (d *DbDb) getChromosomeSummaryBlockMatrixTable(fileName string, chromosome 
 		return nil, nil, nil, nil, nil, nil, hasMatrix
 	}
 
-	table, hasTable := matrix.GetMatrix()
+	table, hasTable := matrix.GetTable()
 
 	if !hasTable {
 		return nil, nil, nil, nil, nil, nil, hasTable
@@ -292,7 +294,7 @@ func (d *DbDb) getChromosomeBlockMatrixTable(fileName string, chromosome string,
 		return nil, nil, nil, nil, nil, nil, hasMatrix
 	}
 
-	table, hasTable := matrix.GetMatrix()
+	table, hasTable := matrix.GetTable()
 
 	if !hasTable {
 		return nil, nil, nil, nil, nil, nil, hasTable
@@ -485,6 +487,91 @@ func (d *DbDb) GetBlockMatrixTable(fileName string, chromosome string, blockNum 
 
 	return ti, true
 }
+
+//
+// Plots
+//
+
+// router.HandleFunc(PLOTS_ENDPOINT+"/{database}/{chromosome}/{referenceName}", endpoints.Plots).Methods("GET").Name("plots")
+
+func (d *DbDb) referenceName2referenceNumber(fileName string, referenceName string) (referenceNumber int, ok bool) {
+	referenceNumber = 0
+	ok = false
+
+	_, ib, hasDb := d.getDatabase(fileName)
+
+	if !hasDb {
+		return
+	}
+
+	referenceNumber, ok = ib.GetSampleId(referenceName)
+
+	return
+}
+
+func (d *DbDb) referenceNumber2referenceName(fileName string, referenceNumber int) (referenceName string, ok bool) {
+	referenceName = ""
+	ok = false
+
+	_, ib, hasDb := d.getDatabase(fileName)
+
+	if !hasDb {
+		return
+	}
+
+	referenceName, ok = ib.GetSampleName(referenceNumber)
+
+	return
+}
+
+func (d *DbDb) GetPlotTable(fileName string, chromosome string, referenceName string) (*PlotInfo, bool) {
+	referenceNumber, has_rfn := d.referenceName2referenceNumber(fileName, referenceName)
+
+	fmt.Printf("GetPlotTable :: fileName %s chromosome %s referenceName %s referenceNumber %d\n",
+		fileName,
+		chromosome,
+		referenceName,
+		referenceNumber)
+
+	if !has_rfn {
+		return nil, false
+	}
+
+	_, _, chrom, hasChrom := d.getChromosome(fileName, chromosome)
+
+	if !hasChrom {
+		return nil, false
+	}
+
+	distanceTable, hasTable := chrom.GetColumn(referenceNumber)
+
+	if !hasTable {
+		return nil, false
+	}
+
+	pi := NewPlotInfo(distanceTable)
+
+	return pi, true
+}
+
+type PlotInfo struct {
+	DistanceTable *[]*IBDistanceTable
+}
+
+func NewPlotInfo(d *[]*IBDistanceTable) (pi *PlotInfo) {
+	pi = &PlotInfo{
+		DistanceTable: d,
+	}
+	return pi
+}
+
+//
+//
+//
+// STRUCT
+//
+//
+//
 
 //
 // DatabaseInfo

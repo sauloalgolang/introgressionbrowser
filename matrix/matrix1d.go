@@ -104,10 +104,10 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 }
 
 //
-// GetMatrix
+// GetTable
 //
 
-func (d *DistanceMatrix1Dg) GetMatrix() (*DistanceRow64, bool) {
+func (d *DistanceMatrix1Dg) GetTable() (*DistanceRow64, bool) {
 	if d.CounterBits == 64 {
 		return &d.data64, true
 	} else {
@@ -127,31 +127,43 @@ func (d *DistanceMatrix1Dg) GetMatrix() (*DistanceRow64, bool) {
 	return nil, false
 }
 
-func (d *DistanceMatrix1Dg) GetMatrix16() *DistanceRow16 {
+func (d *DistanceMatrix1Dg) GetTable16() *DistanceRow16 {
 	if d.CounterBits != 16 {
-		fmt.Println("calling GetMatrix16 when numbits not 16")
+		fmt.Println("calling GetTable16 when numbits not 16")
 		os.Exit(1)
 	}
 
 	return &d.data16
 }
 
-func (d *DistanceMatrix1Dg) GetMatrix32() *DistanceRow32 {
+func (d *DistanceMatrix1Dg) GetTable32() *DistanceRow32 {
 	if d.CounterBits != 32 {
-		fmt.Println("calling GetMatrix32 when numbits not 32")
+		fmt.Println("calling GetTable32 when numbits not 32")
 		os.Exit(1)
 	}
 
 	return &d.data32
 }
 
-func (d *DistanceMatrix1Dg) GetMatrix64() *DistanceRow64 {
+func (d *DistanceMatrix1Dg) GetTable64() *DistanceRow64 {
 	if d.CounterBits != 64 {
-		fmt.Println("calling GetMatrix64 when numbits not 64")
+		fmt.Println("calling GetTable64 when numbits not 64")
 		os.Exit(1)
 	}
 
 	return &d.data64
+}
+
+//
+// Get Column
+func (d *DistanceMatrix1Dg) GetColumn(columNumber int) (*DistanceRow64, bool) {
+	dr := make(DistanceRow64, d.Dimension, d.Dimension)
+
+	for p := uint64(0); p < uint64(columNumber); p++ {
+		dr[p] = d.GetPos(uint64(columNumber), p)
+	}
+
+	return &dr, true
 }
 
 //
@@ -422,6 +434,8 @@ func (d *DistanceMatrix1Dg) isEqual64(e *DistanceMatrix1Dg) (res bool) {
 
 func (d *DistanceMatrix1Dg) GetPos(p1 uint64, p2 uint64) uint64 {
 	p := d.ijToK(p1, p2)
+
+	fmt.Printf("GetPos :: p1 %d p2 %d p %d len data16 %d data32 %d data64 %d", p1, p2, p, len((*d).data16), len((*d).data32), len((*d).data64))
 
 	if d.CounterBits == 16 {
 		return uint64((*d).data16[p])

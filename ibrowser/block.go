@@ -23,7 +23,7 @@ type IBBlock struct {
 	BlockPosition    uint64
 	BlockNumber      uint64
 	Serial           int64
-	Matrix           *DistanceMatrix
+	Matrix           *IBDistanceMatrix
 }
 
 func NewIBBlock(
@@ -84,7 +84,7 @@ func (ibb *IBBlock) String() string {
 	)
 }
 
-func (ibb *IBBlock) Add(position uint64, distance *DistanceMatrix) {
+func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
 	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
 	ibb.MinPosition = Min64(ibb.MinPosition, position)
@@ -92,18 +92,40 @@ func (ibb *IBBlock) Add(position uint64, distance *DistanceMatrix) {
 	ibb.Matrix.Add(distance)
 }
 
-func (ibb *IBBlock) GetMatrix() (*DistanceMatrix, bool) {
+func (ibb *IBBlock) GetMatrix() (*IBDistanceMatrix, bool) {
 	return ibb.Matrix, true
 }
 
 func (ibb *IBBlock) GetMatrixData() (*IBDistanceTable, bool) {
-	matrix, hasMatrix := ibb.Matrix.GetMatrix()
+	matrix, hasMatrix := ibb.GetMatrix()
 
 	if !hasMatrix {
 		return nil, false
 	}
 
-	return matrix, true
+	table, hasTable := matrix.GetTable()
+
+	if !hasTable {
+		return nil, false
+	}
+
+	return table, true
+}
+
+func (ibb *IBBlock) GetColumn(referenceNumber int) (*IBDistanceTable, bool) {
+	matrix, hasMatrix := ibb.GetMatrix()
+
+	if !hasMatrix {
+		return nil, false
+	}
+
+	col, hasCol := matrix.GetColumn(referenceNumber)
+
+	if !hasCol {
+		return nil, false
+	}
+
+	return col, hasCol
 }
 
 func (ibb *IBBlock) Sum(other *IBBlock) {

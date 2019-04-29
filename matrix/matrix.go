@@ -42,6 +42,10 @@ func ijToK(dimension uint64, i uint64, j uint64) uint64 {
 	fi := float64(i)
 	fj := float64(j)
 
+	if fi > fj {
+		fi, fj = fj, fi
+	}
+
 	fk := (dim * (dim - 1) / 2) - (dim-fi)*((dim-fi)-1)/2 + fj - fi - 1
 
 	return uint64(fk)
