@@ -5,6 +5,7 @@
 
 attempt of ibrowser
 
+~~~
 VcfRaw w/o bufreader - w/o register
 1500000 SL2.50ch02 6627975
 76.03user
@@ -25,6 +26,7 @@ VcfGo w/ bufread
 1700000 SL2.50ch02 23977842
 1746.71user
 VcfGo w/o bufread
+~~~
 
 ## Compression
 

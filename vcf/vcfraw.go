@@ -60,14 +60,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
-					register.TempDistance = NewDistanceMatrix(
-						"_tmp_"+strings.Join(chromosomeNames, "_"),
-						0,
-						callBackParameters.NumBits,
-						numSampleNames,
-						0,
-						0,
-					)
+					register.TempDistance = NewDistanceMatrix(numSampleNames)
 					// fmt.Println("SampleNames", SampleNames, "chromosomeNames", chromosomeNames)
 				}
 			}

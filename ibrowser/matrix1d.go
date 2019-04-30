@@ -1,4 +1,4 @@
-package matrix
+package ibrowser
 
 import (
 	"fmt"
@@ -13,10 +13,6 @@ import "github.com/sauloalgolang/introgressionbrowser/save"
 // Matrix 1D
 //
 //
-
-type DistanceRow16 = []uint16
-type DistanceRow32 = []uint32
-type DistanceRow64 = []uint64
 
 type DistanceMatrix1Dg struct {
 	ChromosomeName string
@@ -199,6 +195,55 @@ func (d *DistanceMatrix1Dg) clean64() {
 }
 
 //
+// Increment
+//
+
+func (d *DistanceMatrix1Dg) Increment(p1 uint64, p2 uint64, val uint64) {
+	p := d.ijToK(p1, p2)
+
+	if d.CounterBits == 16 {
+		d.increment16(p, val)
+	} else if d.CounterBits == 32 {
+		d.increment32(p, val)
+	} else if d.CounterBits == 64 {
+		d.increment64(p, val)
+	}
+}
+
+func (d *DistanceMatrix1Dg) increment16(p uint64, val uint64) {
+	if val >= uint64(math.MaxUint16) {
+		fmt.Println("count 16 overflow")
+		os.Exit(1)
+	}
+
+	v := uint64((*d).data16[p])
+	r := v + val
+
+	(*d).data16[p] = uint16(r)
+}
+
+func (d *DistanceMatrix1Dg) increment32(p uint64, val uint64) {
+	if val >= uint64(math.MaxUint32) {
+		fmt.Println("count 32 overflow")
+		os.Exit(1)
+	}
+
+	v := uint64((*d).data32[p])
+	r := v + val
+
+	if r >= uint64(math.MaxUint32) {
+		fmt.Println("count 32 overflow")
+		os.Exit(1)
+	}
+
+	(*d).data32[p] = uint32(r)
+}
+
+func (d *DistanceMatrix1Dg) increment64(p uint64, val uint64) {
+	(*d).data64[p] += val
+}
+
+//
 // Set
 //
 
@@ -215,27 +260,21 @@ func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
 }
 
 func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
-	v := (*d).data16[p]
-	r := v + uint16(val)
-
 	if val >= uint64(math.MaxUint16) {
 		fmt.Println("count 16 overflow")
 		os.Exit(1)
 	}
 
-	(*d).data16[p] = r
+	(*d).data16[p] = uint16(val)
 }
 
 func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
-	v := (*d).data32[p]
-	r := v + uint32(val)
-
 	if val >= uint64(math.MaxUint32) {
 		fmt.Println("count 32 overflow")
 		os.Exit(1)
 	}
 
-	(*d).data32[p] = r
+	(*d).data32[p] = uint32(val)
 }
 
 func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
@@ -245,6 +284,18 @@ func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
 //
 // Add
 //
+
+func (d *DistanceMatrix1Dg) AddVcfMatrix(e *VCFDistanceMatrix) {
+	j := uint64(0)
+	v := uint64(0)
+	le := uint64(len(*e))
+	for i := uint64(1); i < le; i++ {
+		for j = i; j < le; j++ {
+			v = (*e)[i][j]
+			d.Increment(i, j, v)
+		}
+	}
+}
 
 func (d *DistanceMatrix1Dg) Add(e *DistanceMatrix1Dg) {
 	d.add(e)
@@ -501,4 +552,74 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 		fmt.Printf("loading matrix           :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Load(d)
 	}
+}
+
+//
+// Dump
+//
+
+//
+// TODO: MMAP
+//
+// https://stackoverflow.com/questions/9203526/mapping-an-array-to-a-file-via-mmap-in-go
+//
+// package main
+//
+// import (
+//     "fmt"
+//     "os"
+//     "syscall"
+//     "unsafe"
+// )
+//
+// func main() {
+//     const n = 1e3
+//     t := int(unsafe.Sizeof(0)) * n
+//
+//     map_file, err := os.Create("/tmp/test.dat")
+//     if err != nil {
+//         fmt.Println(err)
+//         os.Exit(1)
+//     }
+//     _, err = map_file.Seek(int64(t-1), 0)
+//     if err != nil {
+//         fmt.Println(err)
+//         os.Exit(1)
+//     }
+//     _, err = map_file.Write([]byte(" "))
+//     if err != nil {
+//         fmt.Println(err)
+//         os.Exit(1)
+//     }
+//
+//     mmap, err := syscall.Mmap(int(map_file.Fd()), 0, int(t), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
+//     if err != nil {
+//         fmt.Println(err)
+//         os.Exit(1)
+//     }
+//     map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
+func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial int64) {
+	serial = int64(0)
+
+	if d.CounterBits == 16 {
+		serial = dumper.Write16(&d.data16)
+	} else if d.CounterBits == 32 {
+		serial = dumper.Write32(&d.data32)
+	} else if d.CounterBits == 64 {
+		serial = dumper.Write64(&d.data64)
+	}
+
+	return
+}
+
+func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (hasData bool, serial int64) {
+	if d.CounterBits == 16 {
+		hasData, serial = dumper.Read16(&d.data16)
+	} else if d.CounterBits == 32 {
+		hasData, serial = dumper.Read32(&d.data32)
+	} else if d.CounterBits == 64 {
+		hasData, serial = dumper.Read64(&d.data64)
+	}
+
+	return
 }

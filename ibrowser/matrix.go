@@ -1,22 +1,22 @@
-package matrix
+package ibrowser
 
 import (
 	"math"
 )
 
-type DistanceTable = DistanceRow64
+type DistanceRow16 = []uint16
+type DistanceRow32 = []uint32
+type DistanceRow64 = []uint64
 
-// type DistanceMatrix = DistanceMatrix1D64
-
-// var NewDistanceMatrix = NewDistanceMatrix1D64
-
-type DistanceMatrix = DistanceMatrix1Dg
+type IBDistanceTable = DistanceRow64
+type IBDistanceMatrix = DistanceMatrix1Dg
 
 var NewDistanceMatrix = NewDistanceMatrix1Dg
 
 type DistanceMatrix1D_T interface {
 	// Exported Methods
 	Add(*DistanceMatrix1D_T)
+	AddVcfMatrix(*VCFDistanceMatrix)
 	AddAtomic(*DistanceMatrix1D_T)
 	Clean()
 	Check() bool

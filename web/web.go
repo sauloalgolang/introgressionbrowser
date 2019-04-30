@@ -127,3 +127,30 @@ func Template(w http.ResponseWriter, r *http.Request) {
 
 	endpoints.Respond(w, resp)
 }
+
+//
+//TODO
+//
+
+//
+// Query parameters
+//
+// https://stackoverflow.com/questions/45378566/gorilla-mux-optional-query-values
+//
+// router.Path("/articles/{id:[0-9]+}").
+//     Queries("key", "{[0-9]*?}").
+//     HandlerFunc(YourHandler).
+//     Name("YourHandler")
+// router.Path("/articles/{id:[0-9]+}").HandlerFunc(YourHandler)
+//
+// router.Path("/articles/{id:[0-9]+}").Queries("key", "{key}").HandlerFunc(YourHandler).Name("YourHandler")
+//     router.Path("/articles/{id:[0-9]+}").HandlerFunc(YourHandler)
+//
+// id := mux.Vars(r)["id"]
+//     key := r.FormValue("key")
+
+//     u, err := router.Get("YourHandler").URL("id", id, "key", key)
+//     if err != nil {
+//         http.Error(w, err.Error(), 500)
+//         return
+//     }

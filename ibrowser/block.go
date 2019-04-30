@@ -3,6 +3,7 @@ package ibrowser
 import (
 	"fmt"
 	"math"
+	"os"
 )
 
 //
@@ -82,6 +83,14 @@ func (ibb *IBBlock) String() string {
 		" BlockNumber:      ", ibb.BlockNumber, "\n",
 		" Serial:           ", ibb.Serial, "\n",
 	)
+}
+
+func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
+	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
+	ibb.NumSNPS++
+	ibb.MinPosition = Min64(ibb.MinPosition, position)
+	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
+	ibb.Matrix.AddVcfMatrix(distance)
 }
 
 func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
@@ -306,5 +315,38 @@ func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compr
 		)
 
 		ibb.Matrix.Load(baseName, format, compression)
+	}
+}
+
+//
+// Dump
+//
+
+func (ibb *IBBlock) Dump(dumper *MultiArrayFile, isSave bool) {
+	serial := int64(0)
+	hasData := false
+	matrix, hasMatrix := ibb.GetMatrix()
+
+	if !hasMatrix {
+		fmt.Println("failed getting matrix")
+		os.Exit(1)
+	}
+
+	if isSave {
+		serial = matrix.Dump(dumper)
+		ibb.SetSerial(serial)
+
+	} else {
+		hasData, serial = matrix.UnDump(dumper)
+
+		if !hasData {
+			fmt.Println("Tried to read beyond the file")
+			os.Exit(1)
+		}
+
+		if !ibb.CheckSerial(serial) {
+			fmt.Println("Mismatch in order of files")
+			os.Exit(1)
+		}
 	}
 }

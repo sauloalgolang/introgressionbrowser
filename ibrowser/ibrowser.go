@@ -144,7 +144,7 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 		ib.NumSNPS++
 
-		ib.Block.Add(0, reg.Distance)
+		ib.Block.AddVcfMatrix(0, reg.Distance)
 	}
 	mutex.Unlock()
 }
@@ -576,7 +576,8 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 	defer dumperg.Close()
 	// defer dumperc.Close()
 
-	ib.dumperMatrix(dumperg, isSave, ib.Block)
+	ib.Block.Dump(dumperg, isSave)
+	// ib.dumperMatrix(dumperg, isSave, ib.Block)
 
 	// fmt.Println("ib.ChromosomesNames", ib.ChromosomesNames)
 
@@ -584,7 +585,8 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.Chromosomes[chromosomeName.Name]
 
-		ib.dumperMatrix(dumperg, isSave, chromosome.Block)
+		// ib.dumperMatrix(dumperg, isSave, chromosome.Block)
+		chromosome.Block.Dump(dumperg, isSave)
 
 		// outPrefix+"_chromosomes_"+chromosomeName.Name+".bin"
 		chromosomeFileName := ib.GenMatrixDumpFileName(outPrefix, chromosomeName.Name, false, false)
@@ -593,51 +595,10 @@ func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
 
 		for _, block := range chromosome.Blocks {
 			// ib.dumperMatrix(dumperc, isSave, block)
-			ib.dumperMatrix(dumperl, isSave, block)
+			// ib.dumperMatrix(dumperl, isSave, block)
+			block.Dump(dumperl, isSave)
 		}
 
 		dumperl.Close()
-	}
-}
-
-func (ib *IBrowser) dumperMatrix(dumper *MultiArrayFile, isSave bool, block *IBBlock) {
-	serial := int64(0)
-	hasData := false
-	data, hasMatrix := block.GetMatrix()
-
-	if !hasMatrix {
-		fmt.Println("failed getting matrix")
-		os.Exit(1)
-	}
-
-	if isSave {
-		if ib.CounterBits == 16 {
-			serial = dumper.Write16(data.GetTable16())
-		} else if ib.CounterBits == 32 {
-			serial = dumper.Write32(data.GetTable32())
-		} else if ib.CounterBits == 64 {
-			serial = dumper.Write64(data.GetTable64())
-		}
-
-		block.SetSerial(serial)
-
-	} else {
-		if ib.CounterBits == 16 {
-			hasData, serial = dumper.Read16(data.GetTable16())
-		} else if ib.CounterBits == 32 {
-			hasData, serial = dumper.Read32(data.GetTable32())
-		} else if ib.CounterBits == 64 {
-			hasData, serial = dumper.Read64(data.GetTable64())
-		}
-
-		if !hasData {
-			fmt.Println("Tried to read beyond the file")
-			os.Exit(1)
-		}
-
-		if !block.CheckSerial(serial) {
-			fmt.Println("Mismatch in order of files")
-			os.Exit(1)
-		}
 	}
 }

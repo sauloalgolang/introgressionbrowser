@@ -10,7 +10,7 @@ np.set_printoptions(edgeitems=3)
 np.core.arrayprint._line_width = 80
 
 fname = "res/output_360_merged_2.50.vcf.gz_summary.bin"
-fname = "res/output_360_merged_2.50.vcf.gz_chromosomes.bin"
+# fname = "res/output_360_merged_2.50.vcf.gz_chromosomes.bin"
 
 def readIbrowserBinary(infile):
     dt0 = np.dtype([

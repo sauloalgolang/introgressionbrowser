@@ -28,7 +28,7 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackPar
 	} else {
 		fmt.Println(" creating")
 
-		addToNames := func(SampleNames *interfaces.VCFSamples, register *interfaces.VCFRegister) {
+		addToNames := func(SampleNames *VCFSamples, register *VCFRegister) {
 			fmt.Println("adding chromosome ", register.Chromosome)
 			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}

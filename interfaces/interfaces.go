@@ -2,7 +2,19 @@ package interfaces
 
 import (
 	"fmt"
+	"io"
 )
+
+//
+// vcf
+//
+
+type VCFMaskedReaderType func(io.Reader, CallBackParameters)
+type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)
+
+//
+// Callbacks
+//
 
 type CallBackParameters struct {
 	ContinueOnError bool

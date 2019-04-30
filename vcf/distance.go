@@ -12,6 +12,37 @@ type GT struct {
 	IsDiploid bool
 }
 
+type DistanceTable = []uint64
+type DistanceRow = []uint64
+type DistanceMatrix []DistanceRow
+
+func NewDistanceMatrix(numSampleNames uint64) *DistanceMatrix {
+	res := make(DistanceMatrix, numSampleNames, numSampleNames)
+
+	for i := uint64(0); i < numSampleNames; i++ {
+		res[i] = make(DistanceRow, numSampleNames, numSampleNames)
+	}
+
+	return &res
+}
+
+func (d *DistanceMatrix) Clean() {
+	j := uint64(0)
+	le := uint64(len(*d))
+	for i := uint64(0); i < le; i++ {
+		for j = i; j < le; j++ {
+			(*d)[i][j] = 0
+		}
+	}
+}
+
+func (d *DistanceMatrix) Set(p1 uint64, p2 uint64, val uint64) {
+	if p1 > p2 {
+		p1, p2 = p2, p1
+	}
+	(*d)[p1][p2] = val
+}
+
 var DistanceTableValuesHetLow = DistanceTable{
 	3, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7

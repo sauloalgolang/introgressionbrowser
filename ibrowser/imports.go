@@ -2,32 +2,41 @@ package ibrowser
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
-	"github.com/sauloalgolang/introgressionbrowser/matrix"
 	"github.com/sauloalgolang/introgressionbrowser/save"
 	"github.com/sauloalgolang/introgressionbrowser/tools"
+	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
-type IBDistanceMatrix = interfaces.DistanceMatrix
-type IBDistanceTable = interfaces.DistanceTable
-type MultiArrayFile = save.MultiArrayFile
-
-var NewDistanceMatrix = matrix.NewDistanceMatrix
-
+// tools
 var Min64 = tools.Min64
 var Max64 = tools.Max64
+var SliceIndex = tools.SliceIndex
+
+// save
 var NewSaverCompressed = save.NewSaverCompressed
 var NewMultiArrayFile = save.NewMultiArrayFile
 
-var SliceIndex = tools.SliceIndex
+type MultiArrayFile = save.MultiArrayFile
+
+// interfaces
+type Parameters = interfaces.Parameters
+
+// type DistanceRow16 = imports.DistanceRow16
+// type DistanceRow32 = imports.DistanceRow32
+// type DistanceRow64 = imports.DistanceRow64
+
+// type IBDistanceTable = imports.IBDistanceTable
+// type IBDistanceMatrix = imports.IBDistanceMatrix
+
+// var NewDistanceMatrix = imports.NewDistanceMatrix
 
 //
 // Types
 //
 
-// type VCFReaderType = interfaces.VCFReaderType
-type VCFSamples = interfaces.VCFSamples
-type VCFRegister = interfaces.VCFRegister
-type Parameters = interfaces.Parameters
+type VCFSamples = vcf.VCFSamples
+type VCFRegister = vcf.VCFRegister
+type VCFDistanceMatrix = vcf.DistanceMatrix
 
 type NamePosPair struct {
 	Name string

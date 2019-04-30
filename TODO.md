@@ -4,6 +4,8 @@ TODO LIST
 TODO
 ----
 
+- [ ] Use mmap
+- [ ] Use query parameters
 - [ ] Add ibrowser merger
 - [ ] Use logging
 - [ ] Let user choose distance matrix to use

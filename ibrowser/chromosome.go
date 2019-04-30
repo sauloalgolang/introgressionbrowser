@@ -200,8 +200,8 @@ func (ibc *IBChromosome) Add(reg *VCFRegister) (uint64, bool, uint64) {
 
 	block, isNew, numBlocksAdded := ibc.normalizeBlocks(blockNum)
 
-	block.Add(position, distance)
-	ibc.Block.Add(position, distance)
+	block.AddVcfMatrix(position, distance)
+	ibc.Block.AddVcfMatrix(position, distance)
 	ibc.NumSNPS++
 	ibc.MinPosition = Min64(ibc.MinPosition, block.MinPosition)
 	ibc.MaxPosition = Max64(ibc.MaxPosition, block.MaxPosition)
