@@ -163,6 +163,7 @@ clean:
 	rm -v $(OUTFILE)*.yaml   || true
 	rm -v $(OUTFILE)*.bson   || true
 	rm -v $(OUTFILE)*.bin    || true
+	rm -v $(OUTFILE)*.idx    || true
 	rm -v $(OUTFILE)*.gob    || true
 	rm -v $(OUTFILE)*.gz     || true
 	rm -v $(OUTFILE)*.snappy || true
