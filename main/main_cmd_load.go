@@ -11,7 +11,7 @@ import (
 
 type LoadCommand struct {
 	Infile          LoadArgsOptions `long:"indb" description:"Input database prefix" positional-args:"true" positional-arg-name:"Input Database Prefix" hidden:"true"`
-	Soft            bool            `long:"softLoad" description:"Do not load matrices"`
+	IsNotSoft       bool            `long:"notSoftLoad" description:"Force load matrices"`
 	ProfileOptions  ProfileOptions
 	SaveLoadOptions SaveLoadOptions
 }
@@ -43,8 +43,8 @@ func (x *LoadCommand) Execute(args []string) error {
 	log.Println("Openning", sourceFile)
 
 	ibrowser := ibrowser.NewIBrowser(parameters)
-
-	ibrowser.Load(sourceFile, x.SaveLoadOptions.Format, x.SaveLoadOptions.Compression, x.Soft)
+	isSoft := !x.IsNotSoft
+	ibrowser.Load(sourceFile, x.SaveLoadOptions.Format, x.SaveLoadOptions.Compression, isSoft)
 
 	if !x.SaveLoadOptions.NoCheck {
 		checkRes := ibrowser.Check()

@@ -25,11 +25,11 @@ type IBrowser struct {
 	Samples        VCFSamples
 	NumSamples     uint64
 	BlockSize      uint64
+	CounterBits    uint64
 	KeepEmptyBlock bool
 	NumRegisters   uint64
 	NumSNPS        uint64
 	NumBlocks      uint64
-	CounterBits    int
 	RegisterSize   uint64
 	Parameters     Parameters
 	//
@@ -443,14 +443,16 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 // Save
 //
 func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
-	ib.saveLoad(true, outPrefix, format, compression, false)
+	isSave := true
+	isSoft := false
+	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
 //
 // Load
 //
 
-func (ib *IBrowser) EasyLoadPrefix(outPrefix string, soft bool) {
+func (ib *IBrowser) EasyLoadPrefix(outPrefix string, isSoft bool) {
 	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
 
 	if !found {
@@ -458,10 +460,11 @@ func (ib *IBrowser) EasyLoadPrefix(outPrefix string, soft bool) {
 		os.Exit(1)
 	}
 
-	ib.saveLoad(false, outPrefix, format, compression, soft)
+	isSave := false
+	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
-func (ib *IBrowser) EasyLoadFile(outFile string, soft bool) {
+func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
 	found, format, compression, outPrefix := save.GuessFormat(outFile)
 
 	if !found {
@@ -469,76 +472,76 @@ func (ib *IBrowser) EasyLoadFile(outFile string, soft bool) {
 		os.Exit(1)
 	}
 
-	ib.saveLoad(false, outPrefix, format, compression, soft)
+	isSave := false
+	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
-func (ib *IBrowser) Load(outPrefix string, format string, compression string, soft bool) {
-	ib.saveLoad(false, outPrefix, format, compression, soft)
+func (ib *IBrowser) Load(outPrefix string, format string, compression string, isSoft bool) {
+	isSave := false
+	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
 //
 // SaveLoad
 //
 
-func (ib *IBrowser) saveLoad(isSave bool, outPrefix string, format string, compression string, soft bool) {
+func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format string, compression string) {
 	baseName, _ := ib.GenFilename(outPrefix, format, compression)
 	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
 		fmt.Println("saving global ibrowser status")
-		ib.dumper(isSave, outPrefix)
+		ib.Dump(outPrefix, isSave, isSoft)
 		saver.Save(ib)
 	} else {
 		fmt.Println("loading global ibrowser status")
 		saver.Load(ib)
 		sort.Sort(ib.ChromosomesNames)
-		if !soft {
-			ib.dumper(isSave, outPrefix)
-		}
+		ib.Dump(outPrefix, isSave, isSoft)
 	}
 
 	// ib.saveLoadBlock(isSave, baseName, format, compression)
 	// ib.saveLoadChromosomes(isSave, baseName, format, compression)
 }
 
-func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
-	newPrefix := outPrefix + "_block"
+// func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
+// 	newPrefix := outPrefix + "_block"
 
-	if isSave {
-		fmt.Println("saving global ibrowser block")
-		ib.Block.Save(newPrefix, format, compression)
-	} else {
-		fmt.Println("loading global ibrowser block")
-		ib.Block = NewIBBlock(
-			"_whole_genome",
-			0,
-			ib.BlockSize,
-			ib.CounterBits,
-			ib.NumSamples,
-			0,
-			0,
-		)
-		ib.Block.Load(newPrefix, format, compression)
-	}
-}
+// 	if isSave {
+// 		fmt.Println("saving global ibrowser block")
+// 		ib.Block.Save(newPrefix, format, compression)
+// 	} else {
+// 		fmt.Println("loading global ibrowser block")
+// 		ib.Block = NewIBBlock(
+// 			"_whole_genome",
+// 			0,
+// 			ib.BlockSize,
+// 			ib.CounterBits,
+// 			ib.NumSamples,
+// 			0,
+// 			0,
+// 		)
+// 		ib.Block.Load(newPrefix, format, compression)
+// 	}
+// }
 
-func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
-	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
-		chromosomeName := ib.ChromosomesNames[chromosomePos]
+// func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
+// 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
+// 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 
-		if isSave {
-			fmt.Println("saving chromosome        : ", chromosomeName)
-			chromosome := ib.Chromosomes[chromosomeName.Name]
-			chromosome.Save(outPrefix, format, compression)
+// 		if isSave {
+// 			fmt.Println("saving chromosome        : ", chromosomeName)
+// 			chromosome := ib.Chromosomes[chromosomeName.Name]
+// 			chromosome.Save(outPrefix, format, compression)
 
-		} else {
-			fmt.Println("loading chromosome       : ", chromosomeName)
-			ib.Chromosomes[chromosomeName.Name] = NewIBChromosome(chromosomeName.Name, chromosomeName.Pos, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
-			chromosome := ib.Chromosomes[chromosomeName.Name]
-			chromosome.Load(outPrefix, format, compression)
-		}
-	}
-}
+// 		} else {
+// 			fmt.Println("loading chromosome       : ", chromosomeName)
+// 			ib.Chromosomes[chromosomeName.Name] = NewIBChromosome(chromosomeName.Name, chromosomeName.Pos, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
+// 			chromosome := ib.Chromosomes[chromosomeName.Name]
+// 			chromosome.Load(outPrefix, format, compression)
+// 		}
+// 	}
+// }
 
 //
 // Dumper
@@ -556,49 +559,36 @@ func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string, chromosomeName strin
 	return
 }
 
-func (ib *IBrowser) dumper(isSave bool, outPrefix string) {
-	mode := ""
+func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
+	isSummary := true
+	isChromosomes := false
+	emptyChromosomeName := ""
+	summaryFileName := ib.GenMatrixDumpFileName(outPrefix,
+		emptyChromosomeName,
+		isSummary,
+		isChromosomes)
 
-	if isSave {
-		mode = "w"
-	} else {
-		mode = "r"
-	}
-
-	summaryFileName := ib.GenMatrixDumpFileName(outPrefix, "", true, false)
-	// summaryChromFileName := ib.GenMatrixDumpFileName(outPrefix, "", true, true)
-
-	dumperg := NewMultiArrayFile(summaryFileName, mode)
-	// dumperc := NewMultiArrayFile(summaryChromFileName, mode)
+	dumperg := NewMultiArrayFile(summaryFileName, isSave, isSoft)
+	defer dumperg.Close()
 
 	ib.RegisterSize = dumperg.CalculateRegisterSize(ib.CounterBits, ib.Block.Matrix.Size)
 
-	defer dumperg.Close()
-	// defer dumperc.Close()
-
-	ib.Block.Dump(dumperg, isSave)
-	// ib.dumperMatrix(dumperg, isSave, ib.Block)
-
-	// fmt.Println("ib.ChromosomesNames", ib.ChromosomesNames)
+	if isSave {
+		ib.Block.Dump(dumperg)
+	} else {
+		ib.Block.UnDump(dumperg)
+	}
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.Chromosomes[chromosomeName.Name]
 
-		// ib.dumperMatrix(dumperg, isSave, chromosome.Block)
-		chromosome.Block.Dump(dumperg, isSave)
-
-		// outPrefix+"_chromosomes_"+chromosomeName.Name+".bin"
-		chromosomeFileName := ib.GenMatrixDumpFileName(outPrefix, chromosomeName.Name, false, false)
-		dumperl := NewMultiArrayFile(chromosomeFileName, mode)
-		// dumperl.SetSerial(dumperc.GetSerial())
-
-		for _, block := range chromosome.Blocks {
-			// ib.dumperMatrix(dumperc, isSave, block)
-			// ib.dumperMatrix(dumperl, isSave, block)
-			block.Dump(dumperl, isSave)
+		if isSave {
+			chromosome.Block.Dump(dumperg)
+		} else {
+			chromosome.Block.UnDump(dumperg)
 		}
 
-		dumperl.Close()
+		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}
 }

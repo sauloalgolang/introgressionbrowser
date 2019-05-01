@@ -21,8 +21,8 @@ type DistanceMatrix1Dg struct {
 	Size           uint64
 	BlockPosition  uint64
 	BlockNumber    uint64
-	Serial         int64
-	CounterBits    int
+	Serial         uint64
+	CounterBits    uint64
 	data16         DistanceRow16
 	data32         DistanceRow32
 	data64         DistanceRow64
@@ -54,12 +54,12 @@ func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, dimension u
 	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 64, dimension, blockPosition, blockNumber)
 }
 
-func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
+func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	size := dimension * (dimension - 1) / 2
 
 	fmt.Println("    NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
 		" Block Size: ", blockSize,
-		" Bits:", numBits,
+		" Bits:", counterBits,
 		" Dimension:", dimension,
 		" Size:", size,
 		" Block Position: ", blockPosition,
@@ -71,10 +71,10 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, numBits int, 
 		BlockSize:      blockSize,
 		Dimension:      dimension,
 		Size:           size,
-		CounterBits:    numBits,
+		CounterBits:    counterBits,
 		BlockPosition:  blockPosition,
 		BlockNumber:    blockNumber,
-		Serial:         -1,
+		Serial:         0,
 	}
 
 	if d.CounterBits == 16 {
@@ -198,6 +198,18 @@ func (d *DistanceMatrix1Dg) clean64() {
 // Increment
 //
 
+func (d *DistanceMatrix1Dg) IncrementWithVcfMatrix(e *VCFDistanceMatrix) {
+	j := uint64(0)
+	v := uint64(0)
+	le := uint64(len(*e))
+	for i := uint64(1); i < le; i++ {
+		for j = i; j < le; j++ {
+			v = (*e)[i][j]
+			d.Increment(i, j, v)
+		}
+	}
+}
+
 func (d *DistanceMatrix1Dg) Increment(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 
@@ -282,36 +294,19 @@ func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
 }
 
 //
-// Add
+// Merge
 //
-
-func (d *DistanceMatrix1Dg) AddVcfMatrix(e *VCFDistanceMatrix) {
-	j := uint64(0)
-	v := uint64(0)
-	le := uint64(len(*e))
-	for i := uint64(1); i < le; i++ {
-		for j = i; j < le; j++ {
-			v = (*e)[i][j]
-			d.Increment(i, j, v)
-		}
-	}
-}
-
-func (d *DistanceMatrix1Dg) Add(e *DistanceMatrix1Dg) {
-	d.add(e)
-}
-
-func (d *DistanceMatrix1Dg) add(e *DistanceMatrix1Dg) {
+func (d *DistanceMatrix1Dg) Merge(e *DistanceMatrix1Dg) {
 	if d.CounterBits == 16 {
-		d.add16(e)
+		d.merge16(e)
 	} else if d.CounterBits == 32 {
-		d.add32(e)
+		d.merge32(e)
 	} else if d.CounterBits == 64 {
-		d.add64(e)
+		d.merge64(e)
 	}
 }
 
-func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
+func (d *DistanceMatrix1Dg) merge16(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt16)
 	for i := range (*d).data16 {
 		if uint64((*d).data16[i])+uint64((*e).data16[i]) >= mi {
@@ -322,7 +317,7 @@ func (d *DistanceMatrix1Dg) add16(e *DistanceMatrix1Dg) {
 	}
 }
 
-func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg) {
+func (d *DistanceMatrix1Dg) merge32(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt32)
 	for i := range (*d).data32 {
 		vdi := uint64((*d).data32[i])
@@ -335,7 +330,7 @@ func (d *DistanceMatrix1Dg) add32(e *DistanceMatrix1Dg) {
 	}
 }
 
-func (d *DistanceMatrix1Dg) add64(e *DistanceMatrix1Dg) {
+func (d *DistanceMatrix1Dg) merge64(e *DistanceMatrix1Dg) {
 	for i := range (*d).data64 {
 		(*d).data64[i] += (*e).data64[i]
 	}
@@ -533,6 +528,7 @@ func (d *DistanceMatrix1Dg) Check() (res bool) {
 //
 // Save and Load
 //
+
 func (d *DistanceMatrix1Dg) Save(outPrefix string, format string, compression string) {
 	d.saveLoad(true, outPrefix, format, compression)
 }
@@ -558,48 +554,8 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 // Dump
 //
 
-//
-// TODO: MMAP
-//
-// https://stackoverflow.com/questions/9203526/mapping-an-array-to-a-file-via-mmap-in-go
-//
-// package main
-//
-// import (
-//     "fmt"
-//     "os"
-//     "syscall"
-//     "unsafe"
-// )
-//
-// func main() {
-//     const n = 1e3
-//     t := int(unsafe.Sizeof(0)) * n
-//
-//     map_file, err := os.Create("/tmp/test.dat")
-//     if err != nil {
-//         fmt.Println(err)
-//         os.Exit(1)
-//     }
-//     _, err = map_file.Seek(int64(t-1), 0)
-//     if err != nil {
-//         fmt.Println(err)
-//         os.Exit(1)
-//     }
-//     _, err = map_file.Write([]byte(" "))
-//     if err != nil {
-//         fmt.Println(err)
-//         os.Exit(1)
-//     }
-//
-//     mmap, err := syscall.Mmap(int(map_file.Fd()), 0, int(t), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
-//     if err != nil {
-//         fmt.Println(err)
-//         os.Exit(1)
-//     }
-//     map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
-func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial int64) {
-	serial = int64(0)
+func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial uint64) {
+	serial = uint64(0)
 
 	if d.CounterBits == 16 {
 		serial = dumper.Write16(&d.data16)
@@ -612,7 +568,7 @@ func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial int64) {
 	return
 }
 
-func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (hasData bool, serial int64) {
+func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
 	if d.CounterBits == 16 {
 		hasData, serial = dumper.Read16(&d.data16)
 	} else if d.CounterBits == 32 {

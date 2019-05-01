@@ -16,7 +16,7 @@ type SaveCommand struct {
 	BlockSize         uint64          `long:"blockSize" description:"Block size" default:"100000"`
 	Chromosomes       string          `long:"chromosomes" description:"Comma separated list of chromomomes to read" default:""`
 	NoContinueOnError bool            `long:"continueOnError" description:"Continue reading the file on parsing error"`
-	CounterBits       int             `long:"counterBits" description:"Number of bits" default:"32"`
+	CounterBits       uint64          `long:"counterBits" description:"Number of bits" default:"32"`
 	NoKeepEmptyBlock  bool            `long:"keepEmptyBlocks" description:"Keep empty blocks"`
 	MaxSnpPerBlock    uint64          `long:"maxSnpPerBlock" description:"Maximum number of SNPs per block" default:"18446744073709551615"`
 	MinSnpPerBlock    uint64          `long:"minSnpPerBlock" description:"Minimum number of SNPs per block" default:"10"`

@@ -588,7 +588,7 @@ type DatabaseInfo struct {
 	NumRegisters     uint64
 	NumSNPS          uint64
 	NumBlocks        uint64
-	CounterBits      int
+	CounterBits      uint64
 	ChromosomesNames []string
 	ib               *IBrowser
 }
@@ -691,7 +691,7 @@ type BlockInfo struct {
 	NumSamples    uint64
 	BlockPosition uint64
 	BlockNumber   uint64
-	Serial        int64
+	Serial        uint64
 	block         *IBBlock
 	chromosome    *IBChromosome
 	ib            *IBrowser
@@ -739,7 +739,7 @@ type MatrixInfo struct {
 	Size          uint64
 	BlockPosition uint64
 	BlockNumber   uint64
-	Serial        int64
+	Serial        uint64
 	matrix        *IBMatrix
 	block         *IBBlock
 	chromosome    *IBChromosome

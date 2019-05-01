@@ -18,7 +18,7 @@ type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)
 
 type CallBackParameters struct {
 	ContinueOnError bool
-	NumBits         int
+	NumBits         uint64
 	NumThreads      int
 }
 
@@ -27,7 +27,7 @@ type Parameters struct {
 	Chromosomes            string
 	Compression            string
 	ContinueOnError        bool
-	CounterBits            int
+	CounterBits            uint64
 	DebugFirstOnly         bool
 	DebugMaxRegisterThread int64
 	DebugMaxRegisterChrom  int64

@@ -16,22 +16,23 @@ type IBBlock struct {
 	ChromosomeName   string
 	ChromosomeNumber int
 	BlockSize        uint64
-	CounterBits      int
+	CounterBits      uint64
 	MinPosition      uint64
 	MaxPosition      uint64
 	NumSNPS          uint64
 	NumSamples       uint64
 	BlockPosition    uint64
 	BlockNumber      uint64
-	Serial           int64
+	Serial           uint64
 	Matrix           *IBDistanceMatrix
+	hasSerial        bool
 }
 
 func NewIBBlock(
 	chromosomeName string,
 	chromosomeNumber int,
 	blockSize uint64,
-	counterBits int,
+	counterBits uint64,
 	numSamples uint64,
 	blockPosition uint64,
 	blockNumber uint64,
@@ -55,7 +56,8 @@ func NewIBBlock(
 		NumSamples:       numSamples,
 		BlockPosition:    blockPosition,
 		BlockNumber:      blockNumber,
-		Serial:           -1,
+		Serial:           0,
+		hasSerial:        false,
 		Matrix: NewDistanceMatrix(
 			chromosomeName,
 			blockSize,
@@ -90,7 +92,7 @@ func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
 	ibb.NumSNPS++
 	ibb.MinPosition = Min64(ibb.MinPosition, position)
 	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
-	ibb.Matrix.AddVcfMatrix(distance)
+	ibb.Matrix.IncrementWithVcfMatrix(distance)
 }
 
 func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
@@ -98,7 +100,7 @@ func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
 	ibb.NumSNPS++
 	ibb.MinPosition = Min64(ibb.MinPosition, position)
 	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
-	ibb.Matrix.Add(distance)
+	ibb.Matrix.Merge(distance)
 }
 
 func (ibb *IBBlock) GetMatrix() (*IBDistanceMatrix, bool) {
@@ -148,7 +150,7 @@ func (ibb *IBBlock) Sum(other *IBBlock) {
 		panic("no matrix")
 	}
 
-	ibb.Matrix.Add(matrix)
+	ibb.Matrix.Merge(matrix)
 }
 
 func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
@@ -193,12 +195,12 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 // Serial
 //
 
-func (ibb *IBBlock) SetSerial(serial int64) {
+func (ibb *IBBlock) SetSerial(serial uint64) {
 	ibb.Serial = serial
 	ibb.Matrix.Serial = serial
 }
 
-func (ibb *IBBlock) CheckSerial(serial int64) bool {
+func (ibb *IBBlock) CheckSerial(serial uint64) bool {
 	eq1 := ibb.Serial == serial
 
 	if !eq1 {
@@ -322,9 +324,8 @@ func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compr
 // Dump
 //
 
-func (ibb *IBBlock) Dump(dumper *MultiArrayFile, isSave bool) {
-	serial := int64(0)
-	hasData := false
+func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
+	serial = uint64(0)
 	matrix, hasMatrix := ibb.GetMatrix()
 
 	if !hasMatrix {
@@ -332,21 +333,31 @@ func (ibb *IBBlock) Dump(dumper *MultiArrayFile, isSave bool) {
 		os.Exit(1)
 	}
 
-	if isSave {
-		serial = matrix.Dump(dumper)
-		ibb.SetSerial(serial)
+	serial = matrix.Dump(dumper)
+	ibb.SetSerial(serial)
 
-	} else {
-		hasData, serial = matrix.UnDump(dumper)
+	return
+}
 
-		if !hasData {
-			fmt.Println("Tried to read beyond the file")
-			os.Exit(1)
-		}
+func (ibb *IBBlock) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
+	matrix, hasMatrix := ibb.GetMatrix()
 
-		if !ibb.CheckSerial(serial) {
-			fmt.Println("Mismatch in order of files")
-			os.Exit(1)
-		}
+	if !hasMatrix {
+		fmt.Println("failed getting matrix")
+		os.Exit(1)
 	}
+
+	serial, hasData = matrix.UnDump(dumper)
+
+	if !hasData {
+		fmt.Println("Tried to read beyond the file")
+		os.Exit(1)
+	}
+
+	if !ibb.CheckSerial(serial) {
+		fmt.Println("Mismatch in order of files")
+		os.Exit(1)
+	}
+
+	return
 }

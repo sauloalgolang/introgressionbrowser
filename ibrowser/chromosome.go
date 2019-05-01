@@ -18,12 +18,13 @@ type IBChromosome struct {
 	ChromosomeName   string
 	ChromosomeNumber int
 	BlockSize        uint64
-	CounterBits      int
+	CounterBits      uint64
 	NumSamples       uint64
 	MinPosition      uint64
 	MaxPosition      uint64
 	NumBlocks        uint64
 	NumSNPS          uint64
+	RegisterSize     uint64
 	KeepEmptyBlock   bool
 	BlockNames       map[uint64]uint64
 	Block            *IBBlock
@@ -46,7 +47,7 @@ func (ibc *IBChromosome) String() string {
 	)
 }
 
-func NewIBChromosome(chromosomeName string, chromosomeNumber int, blockSize uint64, counterBits int, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
+func NewIBChromosome(chromosomeName string, chromosomeNumber int, blockSize uint64, counterBits uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
 	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
 		" blockSize: ", blockSize,
@@ -425,6 +426,31 @@ func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format st
 			ibc.Blocks = append(ibc.Blocks, block)
 
 			block.Load(newPrefix, format, compression)
+		}
+	}
+}
+
+//
+// Dump
+//
+func (ibc *IBChromosome) GenMatrixDumpFileName(outPrefix string) (filename string) {
+	filename = outPrefix + "_chromosomes_" + ibc.ChromosomeName + ".bin"
+	return
+}
+
+func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) {
+	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
+
+	dumperl := NewMultiArrayFile(chromosomeFileName, isSave, isSoft)
+	defer dumperl.Close()
+
+	ibc.RegisterSize = dumperl.CalculateRegisterSize(ibc.CounterBits, ibc.Block.Matrix.Size)
+
+	for _, block := range ibc.Blocks {
+		if isSave {
+			block.Dump(dumperl)
+		} else {
+			block.UnDump(dumperl)
 		}
 	}
 }
