@@ -12,6 +12,7 @@ import (
 //
 //
 
+// IBBlock holds the information of a block
 type IBBlock struct {
 	ChromosomeName   string
 	ChromosomeNumber int
@@ -28,6 +29,7 @@ type IBBlock struct {
 	hasSerial        bool
 }
 
+// NewIBBlock generates a new instance of a block
 func NewIBBlock(
 	chromosomeName string,
 	chromosomeNumber int,
@@ -87,6 +89,7 @@ func (ibb *IBBlock) String() string {
 	)
 }
 
+// AddVcfMatrix add a vcf matrix to the blocks
 func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
 	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
@@ -95,6 +98,7 @@ func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
 	ibb.Matrix.IncrementWithVcfMatrix(distance)
 }
 
+// Add add another ibmatrix to the blocks
 func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
 	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
@@ -103,11 +107,13 @@ func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
 	ibb.Matrix.Merge(distance)
 }
 
+// GetMatrix gets the summary matrix
 func (ibb *IBBlock) GetMatrix() (*IBDistanceMatrix, bool) {
 	return ibb.Matrix, true
 }
 
-func (ibb *IBBlock) GetMatrixData() (*IBDistanceTable, bool) {
+// GetMatrixTable gets the table from the summary matrix
+func (ibb *IBBlock) GetMatrixTable() (*IBDistanceTable, bool) {
 	matrix, hasMatrix := ibb.GetMatrix()
 
 	if !hasMatrix {
@@ -123,6 +129,7 @@ func (ibb *IBBlock) GetMatrixData() (*IBDistanceTable, bool) {
 	return table, true
 }
 
+// GetColumn returns a give column from the table
 func (ibb *IBBlock) GetColumn(referenceNumber int) (*IBDistanceTable, bool) {
 	matrix, hasMatrix := ibb.GetMatrix()
 
@@ -139,6 +146,7 @@ func (ibb *IBBlock) GetColumn(referenceNumber int) (*IBDistanceTable, bool) {
 	return col, hasCol
 }
 
+// Sum returns the sum between another block and this block
 func (ibb *IBBlock) Sum(other *IBBlock) {
 	ibb.NumSNPS += other.NumSNPS
 	ibb.MinPosition = Min64(ibb.MinPosition, other.MinPosition)
@@ -153,6 +161,7 @@ func (ibb *IBBlock) Sum(other *IBBlock) {
 	ibb.Matrix.Merge(matrix)
 }
 
+// IsEqual returns wether this block is equal to the other block
 func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 	res = true
 
@@ -195,11 +204,13 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 // Serial
 //
 
+// SetSerial sets the serial number of this block
 func (ibb *IBBlock) SetSerial(serial uint64) {
 	ibb.Serial = serial
 	ibb.Matrix.Serial = serial
 }
 
+// CheckSerial checks wether the serial numbers match
 func (ibb *IBBlock) CheckSerial(serial uint64) bool {
 	eq1 := ibb.Serial == serial
 
@@ -224,6 +235,7 @@ func (ibb *IBBlock) CheckSerial(serial uint64) bool {
 // Check
 //
 
+// Check checks the self consistency of the data
 func (ibb *IBBlock) Check() (res bool) {
 	res = true
 
@@ -265,6 +277,7 @@ func (ibb *IBBlock) Check() (res bool) {
 // Filename
 //
 
+// GenFilename generates the filename to save this block
 func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + fmt.Sprintf("%012d", ibb.BlockNumber)
 
@@ -279,6 +292,7 @@ func (ibb *IBBlock) GenFilename(outPrefix string, format string, compression str
 // Save
 //
 
+// Save saves this block to file
 func (ibb *IBBlock) Save(outPrefix string, format string, compression string) {
 	ibb.saveLoad(true, outPrefix, format, compression)
 }
@@ -287,6 +301,7 @@ func (ibb *IBBlock) Save(outPrefix string, format string, compression string) {
 // Load
 //
 
+// Load loads this command from file
 func (ibb *IBBlock) Load(outPrefix string, format string, compression string) {
 	ibb.saveLoad(false, outPrefix, format, compression)
 }
@@ -324,6 +339,7 @@ func (ibb *IBBlock) saveLoad(isSave bool, outPrefix string, format string, compr
 // Dump
 //
 
+// Dump dumps the matrix table to a binary file
 func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
 	serial = uint64(0)
 	matrix, hasMatrix := ibb.GetMatrix()
@@ -339,6 +355,7 @@ func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
 	return
 }
 
+// UnDump reads the matrix table from a binary file
 func (ibb *IBBlock) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
 	matrix, hasMatrix := ibb.GetMatrix()
 
