@@ -135,7 +135,7 @@ func (d *DbDb) getDatabaseSummaryBlockMatrixData(fileName string) (*DatabaseInfo
 		return nil, nil, nil, nil, nil, hasMatrix
 	}
 
-	table, hasTable := block.GetMatrixData()
+	table, hasTable := block.GetMatrixTable()
 
 	if !hasTable {
 		return nil, nil, nil, nil, nil, hasTable
@@ -504,7 +504,7 @@ func (d *DbDb) referenceName2referenceNumber(fileName string, referenceName stri
 		return
 	}
 
-	referenceNumber, ok = ib.GetSampleId(referenceName)
+	referenceNumber, ok = ib.GetSampleID(referenceName)
 
 	return
 }

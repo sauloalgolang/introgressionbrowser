@@ -4,20 +4,30 @@ import (
 	"math"
 )
 
+// DistanceRow16 1d array of uint16
 type DistanceRow16 = []uint16
+
+// DistanceRow32 1d array of uint32
 type DistanceRow32 = []uint32
+
+// DistanceRow64 1d array of uint64
 type DistanceRow64 = []uint64
 
+// IBDistanceTable is the default distance table for ibrowser
 type IBDistanceTable = DistanceRow64
+
+// IBDistanceMatrix is the default distance matrix for ibrowser
 type IBDistanceMatrix = DistanceMatrix1Dg
 
+// NewDistanceMatrix creates a new instance of the default distance matrix
 var NewDistanceMatrix = NewDistanceMatrix1Dg
 
-type DistanceMatrix1D_T interface {
+// DistanceMatrix1DType is the interface for a distance matrix
+type DistanceMatrix1DType interface {
 	// Exported Methods
-	Add(*DistanceMatrix1D_T)
+	Add(*DistanceMatrix1DType)
 	AddVcfMatrix(*VCFDistanceMatrix)
-	AddAtomic(*DistanceMatrix1D_T)
+	AddAtomic(*DistanceMatrix1DType)
 	Clean()
 	Check() bool
 	Set(uint64, uint64, uint64)
