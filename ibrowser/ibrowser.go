@@ -21,6 +21,7 @@ var mutex = &sync.Mutex{}
 //
 //
 
+// IBrowser representa the whole ibrowser database
 type IBrowser struct {
 	Samples        VCFSamples
 	NumSamples     uint64
@@ -45,6 +46,7 @@ type IBrowser struct {
 	// TODO: per sample stats
 }
 
+// NewIBrowser generates a new instance of IBrowser
 func NewIBrowser(parameters Parameters) *IBrowser {
 	blockSize := parameters.BlockSize
 	counterBits := parameters.CounterBits
@@ -80,6 +82,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 	return &ib
 }
 
+// SetSamples set the sample names
 func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	numSamples := len(*samples)
 	ib.Samples = make(VCFSamples, numSamples, numSamples)
@@ -93,16 +96,17 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	}
 }
 
+// GetOrCreateChromosome gets or creates a new chromosome if it does not already exists
 func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string, chromosomeNumber int) *IBChromosome {
 	if chromosome, ok := ib.GetChromosome(chromosomeName); ok {
 		// fmt.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome
-	} else {
-		// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
-		return ib.AddChromosome(chromosomeName, chromosomeNumber)
 	}
+	// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
+	return ib.AddChromosome(chromosomeName, chromosomeNumber)
 }
 
+// AddChromosome adds a new chromosome
 func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *IBChromosome {
 	if chromosome, hasChromosome := ib.GetChromosome(chromosomeName); hasChromosome {
 		fmt.Println("Failed to add chromosome", chromosomeName, ". Already exists", &chromosome)
@@ -118,6 +122,7 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 	return ib.Chromosomes[chromosomeName]
 }
 
+// RegisterCallBack is the callback function to receive a VCF register
 func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 	if atomic.LoadUint64(&ib.NumSamples) == 0 {
 		ib.SetSamples(samples)
@@ -149,6 +154,7 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 	mutex.Unlock()
 }
 
+// Check checks for self consistency in the data
 func (ib *IBrowser) Check() (res bool) {
 	fmt.Println("Starting self check")
 
@@ -223,34 +229,40 @@ func (ib *IBrowser) selfCheck() (res bool) {
 // Getters
 //
 
+// GetSamples returns the names of the samples
 func (ib *IBrowser) GetSamples() VCFSamples {
 	return ib.Samples
 }
 
+// HasSample checks whether a sample exists
 func (ib *IBrowser) HasSample(sampleName string) bool {
 	samples := ib.GetSamples()
 	_, ok := SliceIndex(len(samples), func(i int) bool { return samples[i] == sampleName })
 	return ok
 }
 
-func (ib *IBrowser) GetSampleId(sampleName string) (int, bool) {
+// GetSampleID returns the sample ID for a given sample name
+func (ib *IBrowser) GetSampleID(sampleName string) (int, bool) {
 	samples := ib.GetSamples()
 	ind, ok := SliceIndex(len(samples), func(i int) bool { return samples[i] == sampleName })
 	return ind, ok
 }
 
-func (ib *IBrowser) GetSampleName(sampleId int) (string, bool) {
+// GetSampleName returns the sample name for a given sample ID
+func (ib *IBrowser) GetSampleName(sampleID int) (string, bool) {
 	samples := ib.GetSamples()
-	if sampleId >= len(samples) {
+	if sampleID >= len(samples) {
 		return "", false
 	}
-	return samples[sampleId], true
+	return samples[sampleID], true
 }
 
+// GetSummaryBlock returns the summary block
 func (ib *IBrowser) GetSummaryBlock() (*IBBlock, bool) {
 	return ib.Block, true
 }
 
+// GetSummaryBlockMatrix returns the summary block matrix
 func (ib *IBrowser) GetSummaryBlockMatrix() (*IBBlock, *IBDistanceMatrix, bool) {
 	block, hasBlock := ib.GetSummaryBlock()
 
@@ -267,7 +279,8 @@ func (ib *IBrowser) GetSummaryBlockMatrix() (*IBBlock, *IBDistanceMatrix, bool) 
 	return block, matrix, true
 }
 
-func (ib *IBrowser) GetSummaryBlockMatrixData() (*IBBlock, *IBDistanceMatrix, *IBDistanceTable, bool) {
+// GetSummaryBlockMatrixTable returns the summary block matrix table
+func (ib *IBrowser) GetSummaryBlockMatrixTable() (*IBBlock, *IBDistanceMatrix, *IBDistanceTable, bool) {
 	block, matrix, hasMatrix := ib.GetSummaryBlockMatrix()
 
 	if !hasMatrix {
@@ -283,6 +296,7 @@ func (ib *IBrowser) GetSummaryBlockMatrixData() (*IBBlock, *IBDistanceMatrix, *I
 	return block, matrix, table, true
 }
 
+// GetChromosomeNames returns the name of the chromosomes
 func (ib *IBrowser) GetChromosomeNames() (chromosomes []string) {
 	numChromosomes := len(ib.ChromosomesNames)
 	chromosomes = make([]string, numChromosomes, numChromosomes)
@@ -295,6 +309,7 @@ func (ib *IBrowser) GetChromosomeNames() (chromosomes []string) {
 	return
 }
 
+// GetChromosomes returns the chromosome instances
 func (ib *IBrowser) GetChromosomes() (chromosomes []*IBChromosome) {
 	numChromosomes := len(ib.ChromosomesNames)
 	chromosomes = make([]*IBChromosome, numChromosomes, numChromosomes)
@@ -307,16 +322,17 @@ func (ib *IBrowser) GetChromosomes() (chromosomes []*IBChromosome) {
 	return
 }
 
+// GetChromosome returns a given chromosome by its name
 func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
 	if chromosome, ok := ib.Chromosomes[chromosomeName]; ok {
 		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome, ok
-	} else {
-		// fmt.Println("GetChromosome", chromosomeName, "DOES NOT exists")
-		return nil, ok
 	}
+	// fmt.Println("GetChromosome", chromosomeName, "DOES NOT exists")
+	return nil, false
 }
 
+// GetChromosomeSummaryBlock returns the summary block of a given chromosome
 func (ib *IBrowser) GetChromosomeSummaryBlock(chromosomeName string) (*IBChromosome, *IBBlock, bool) {
 	chrom, hasChrom := ib.GetChromosome(chromosomeName)
 
@@ -333,6 +349,7 @@ func (ib *IBrowser) GetChromosomeSummaryBlock(chromosomeName string) (*IBChromos
 	return chrom, block, true
 }
 
+// getChromosomeSummaryBlockMatrix returns the summary block matrix of a given chromosome
 func (ib *IBrowser) getChromosomeSummaryBlockMatrix(chromosomeName string) (*IBChromosome, *IBBlock, *IBDistanceMatrix, bool) {
 	chrom, block, hasChrom := ib.GetChromosomeSummaryBlock(chromosomeName)
 
@@ -345,6 +362,7 @@ func (ib *IBrowser) getChromosomeSummaryBlockMatrix(chromosomeName string) (*IBC
 	return chrom, block, matrix, true
 }
 
+// getChromosomeSummaryBlockMatrixTable returns the summary block matrix table of a given chromosome
 func (ib *IBrowser) getChromosomeSummaryBlockMatrixTable(chromosomeName string) (*IBChromosome, *IBBlock, *IBDistanceMatrix, *IBDistanceTable, bool) {
 	chrom, block, matrix, hasChrom := ib.getChromosomeSummaryBlockMatrix(chromosomeName)
 
@@ -361,6 +379,7 @@ func (ib *IBrowser) getChromosomeSummaryBlockMatrixTable(chromosomeName string) 
 	return chrom, block, matrix, table, true
 }
 
+// GetChromosomeBlocks returns all blocks of a chromosome
 func (ib *IBrowser) GetChromosomeBlocks(chromosomeName string) (*IBChromosome, []*IBBlock, bool) {
 	chrom, hasChrom := ib.GetChromosome(chromosomeName)
 
@@ -377,6 +396,7 @@ func (ib *IBrowser) GetChromosomeBlocks(chromosomeName string) (*IBChromosome, [
 	return chrom, blocks, true
 }
 
+// GetChromosomeBlock returns a block from a chromosome given the chromosome name and block number
 func (ib *IBrowser) GetChromosomeBlock(chromosomeName string, blockNum uint64) (*IBChromosome, *IBBlock, bool) {
 	chrom, hasChrom := ib.GetChromosome(chromosomeName)
 
@@ -429,6 +449,7 @@ func (ib *IBrowser) getChromosomeBlockMatrixTable(chromosomeName string, blockNu
 // Filename
 //
 
+// GenFilename returns the filename of this project when saved
 func (ib *IBrowser) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix
 
@@ -442,6 +463,8 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 //
 // Save
 //
+
+// Save saves this project to file
 func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 	isSave := true
 	isSoft := false
@@ -452,6 +475,7 @@ func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 // Load
 //
 
+// EasyLoadPrefix loads a project from file by its prefix and guesses the file format
 func (ib *IBrowser) EasyLoadPrefix(outPrefix string, isSoft bool) {
 	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
 
@@ -464,6 +488,7 @@ func (ib *IBrowser) EasyLoadPrefix(outPrefix string, isSoft bool) {
 	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
+// EasyLoadFile loads a project from file by its full name and guesses the file format
 func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
 	found, format, compression, outPrefix := save.GuessFormat(outFile)
 
@@ -476,6 +501,7 @@ func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
 	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
 }
 
+// Load loads a project from file
 func (ib *IBrowser) Load(outPrefix string, format string, compression string, isSoft bool) {
 	isSave := false
 	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
@@ -546,6 +572,8 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 //
 // Dumper
 //
+
+// GenMatrixDumpFileName generates the filename of a dump file
 func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string, chromosomeName string, isSummary bool, isChromosomes bool) (filename string) {
 	if isSummary {
 		if isChromosomes {
@@ -559,6 +587,7 @@ func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string, chromosomeName strin
 	return
 }
 
+// Dump dumps matrices to file
 func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 	isSummary := true
 	isChromosomes := false
