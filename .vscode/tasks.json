@@ -1,0 +1,47 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "make ibrowser",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "quick_test",
+            "type": "shell",
+            "command": "make quick_test",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "large_test",
+            "type": "shell",
+            "command": "make large_test",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "make test",
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "get",
+            "type": "shell",
+            "command": "make get",
+            "problemMatcher": [
+                "$go"
+            ]
+        }
+    ]
+}

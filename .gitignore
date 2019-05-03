@@ -1,5 +1,6 @@
 *.wasm
 *.prof
+ibrowser.code-workspace
 res/
 bin/
 data/

@@ -14,6 +14,7 @@ import "runtime/debug"
 //
 //
 
+// IBChromosome represents a chromosome
 type IBChromosome struct {
 	ChromosomeName   string
 	ChromosomeNumber int
@@ -47,6 +48,7 @@ func (ibc *IBChromosome) String() string {
 	)
 }
 
+// NewIBChromosome creates a new IBChromosome instance
 func NewIBChromosome(chromosomeName string, chromosomeNumber int, blockSize uint64, counterBits uint64, numSamples uint64, keepEmptyBlock bool) *IBChromosome {
 	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
@@ -74,6 +76,7 @@ func NewIBChromosome(chromosomeName string, chromosomeNumber int, blockSize uint
 	return &ibc
 }
 
+// AppendBlock appends a block to IBChromosome
 func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	// fmt.Println("IBChromosome :: AppendBlock :: blockNum: ", blockNum)
 
@@ -103,26 +106,28 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	return block
 }
 
+// HasBlock checks whether requested block number exists
 func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
 	if _, ok := ibc.BlockNames[blockNum]; ok {
 		if ok {
 			return true
-		} else {
-			return false
 		}
-	} else {
 		return false
 	}
+	return false
 }
 
+// GetSummaryBlock returns the summar block
 func (ibc *IBChromosome) GetSummaryBlock() (*IBBlock, bool) {
 	return ibc.Block, true
 }
 
+// GetBlocks returns all blocks
 func (ibc *IBChromosome) GetBlocks() ([]*IBBlock, bool) {
 	return ibc.Blocks, true
 }
 
+// GetBlock returns one block
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 	if blockPos, ok := ibc.BlockNames[blockNum]; ok {
 		if blockPos >= uint64(len(ibc.Blocks)) {
@@ -134,11 +139,11 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 		}
 
 		return ibc.Blocks[blockPos], ok
-	} else {
-		return nil, ok
 	}
+	return nil, false
 }
 
+// GetColumn returns the column for a given reference in all blocks
 func (ibc *IBChromosome) GetColumn(referenceNumber int) (*[]*IBDistanceTable, bool) {
 	cols := make([]*IBDistanceTable, ibc.NumBlocks)
 	for bc, block := range ibc.Blocks {
@@ -152,8 +157,6 @@ func (ibc *IBChromosome) GetColumn(referenceNumber int) (*[]*IBDistanceTable, bo
 }
 
 func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint64) {
-	// fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum)
-
 	block, hasBlock := ibc.GetBlock(blockNum)
 	isNew := false
 	numBlocksAdded := uint64(0)
@@ -186,14 +189,13 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 
 		return block, isNew, numBlocksAdded
 
-	} else {
-		isNew = false
-		return block, isNew, numBlocksAdded
 	}
 
-	return &IBBlock{}, false, numBlocksAdded
+	isNew = false
+	return block, isNew, numBlocksAdded
 }
 
+// Add adds a new SNP
 func (ibc *IBChromosome) Add(reg *VCFRegister) (uint64, bool, uint64) {
 	position := reg.Position
 	distance := reg.Distance
@@ -214,6 +216,7 @@ func (ibc *IBChromosome) Add(reg *VCFRegister) (uint64, bool, uint64) {
 // Check
 //
 
+// Check checks for self consistency
 func (ibc *IBChromosome) Check() (res bool) {
 	res = true
 
@@ -309,6 +312,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 	return res
 }
 
+// GetSumBlocks returns a single block with the sum of all blocks
 func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 	sumBlock = NewIBBlock(
 		ibc.ChromosomeName,
@@ -331,6 +335,7 @@ func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 // Filename
 //
 
+// GenFilename returns the filename for the output file of this project
 func (ibc *IBChromosome) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "." + ibc.ChromosomeName
 
@@ -345,6 +350,7 @@ func (ibc *IBChromosome) GenFilename(outPrefix string, format string, compressio
 // Save
 //
 
+// Save saves this project
 func (ibc *IBChromosome) Save(outPrefix string, format string, compression string) {
 	ibc.saveLoad(true, outPrefix, format, compression)
 }
@@ -352,6 +358,8 @@ func (ibc *IBChromosome) Save(outPrefix string, format string, compression strin
 //
 // Load
 //
+
+// Load loads a project
 func (ibc *IBChromosome) Load(outPrefix string, format string, compression string) {
 	ibc.saveLoad(false, outPrefix, format, compression)
 }
@@ -433,11 +441,14 @@ func (ibc *IBChromosome) saveLoadBlocks(isSave bool, outPrefix string, format st
 //
 // Dump
 //
+
+// GenMatrixDumpFileName returns the filename of the dump of this project
 func (ibc *IBChromosome) GenMatrixDumpFileName(outPrefix string) (filename string) {
 	filename = outPrefix + "_chromosomes_" + ibc.ChromosomeName + ".bin"
 	return
 }
 
+// DumpBlocks dumps all blocks of this chromosome
 func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) {
 	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
 
