@@ -14,6 +14,7 @@ import "github.com/sauloalgolang/introgressionbrowser/save"
 //
 //
 
+// DistanceMatrix1Dg is the definitions of a 1d matrix
 type DistanceMatrix1Dg struct {
 	ChromosomeName string
 	BlockSize      uint64
@@ -42,18 +43,22 @@ func (d *DistanceMatrix1Dg) String() string {
 	)
 }
 
+// NewDistanceMatrix1Dg16 creates a new instance of 1d matrix using 16 bit numbers
 func NewDistanceMatrix1Dg16(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 16, dimension, blockPosition, blockNumber)
 }
 
+// NewDistanceMatrix1Dg32 creates a new instance of 1d matrix using 32 bit numbers
 func NewDistanceMatrix1Dg32(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 32, dimension, blockPosition, blockNumber)
 }
 
+// NewDistanceMatrix1Dg64 creates a new instance of 1d matrix using 64 bit numbers
 func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	return NewDistanceMatrix1Dg(chromosomeName, blockSize, 64, dimension, blockPosition, blockNumber)
 }
 
+// NewDistanceMatrix1Dg creates a new instance of 1d matrix using counterBits bit numbers
 func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
 	size := dimension * (dimension - 1) / 2
 
@@ -103,26 +108,30 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits u
 // GetTable
 //
 
+// GetTable returns data table
 func (d *DistanceMatrix1Dg) GetTable() (*DistanceRow64, bool) {
 	if d.CounterBits == 64 {
 		return &d.data64, true
-	} else {
-		data := make(DistanceRow64, d.Size, d.Size)
-		if d.CounterBits == 16 {
-			for i := range (*d).data16 {
-				data[i] = uint64((*d).data16[i])
-			}
-			return &d.data64, true
-		} else if d.CounterBits == 32 {
-			for i := range (*d).data32 {
-				data[i] = uint64((*d).data32[i])
-			}
-			return &d.data64, true
-		}
 	}
+
+	data := make(DistanceRow64, d.Size, d.Size)
+
+	if d.CounterBits == 16 {
+		for i := range (*d).data16 {
+			data[i] = uint64((*d).data16[i])
+		}
+		return &d.data64, true
+	} else if d.CounterBits == 32 {
+		for i := range (*d).data32 {
+			data[i] = uint64((*d).data32[i])
+		}
+		return &d.data64, true
+	}
+
 	return nil, false
 }
 
+// GetTable16 return data table using 16 bits
 func (d *DistanceMatrix1Dg) GetTable16() *DistanceRow16 {
 	if d.CounterBits != 16 {
 		fmt.Println("calling GetTable16 when numbits not 16")
@@ -132,6 +141,7 @@ func (d *DistanceMatrix1Dg) GetTable16() *DistanceRow16 {
 	return &d.data16
 }
 
+// GetTable32 return data table using 32 bits
 func (d *DistanceMatrix1Dg) GetTable32() *DistanceRow32 {
 	if d.CounterBits != 32 {
 		fmt.Println("calling GetTable32 when numbits not 32")
@@ -141,6 +151,7 @@ func (d *DistanceMatrix1Dg) GetTable32() *DistanceRow32 {
 	return &d.data32
 }
 
+// GetTable64 return data table using 64 bits
 func (d *DistanceMatrix1Dg) GetTable64() *DistanceRow64 {
 	if d.CounterBits != 64 {
 		fmt.Println("calling GetTable64 when numbits not 64")
@@ -152,6 +163,8 @@ func (d *DistanceMatrix1Dg) GetTable64() *DistanceRow64 {
 
 //
 // Get Column
+
+// GetColumn gets a single column from the matrix
 func (d *DistanceMatrix1Dg) GetColumn(columNumber int) (*DistanceRow64, bool) {
 	dr := make(DistanceRow64, d.Dimension, d.Dimension)
 
@@ -166,6 +179,7 @@ func (d *DistanceMatrix1Dg) GetColumn(columNumber int) (*DistanceRow64, bool) {
 // Clean
 //
 
+// Clean zeroes the matrix
 func (d *DistanceMatrix1Dg) Clean() {
 	if d.CounterBits == 16 {
 		d.clean16()
@@ -176,18 +190,21 @@ func (d *DistanceMatrix1Dg) Clean() {
 	}
 }
 
+// Clean16 zeroes the 16 bit matrix
 func (d *DistanceMatrix1Dg) clean16() {
 	for i := range (*d).data16 {
 		(*d).data16[i] = uint16(0)
 	}
 }
 
+// Clean32 zeroes the 32 bit matrix
 func (d *DistanceMatrix1Dg) clean32() {
 	for i := range (*d).data32 {
 		(*d).data32[i] = uint32(0)
 	}
 }
 
+// Clean64 zeroes the 64 bit matrix
 func (d *DistanceMatrix1Dg) clean64() {
 	for i := range (*d).data64 {
 		(*d).data64[i] = uint64(0)
@@ -198,6 +215,7 @@ func (d *DistanceMatrix1Dg) clean64() {
 // Increment
 //
 
+// IncrementWithVcfMatrix increments the table using a vcf matrix
 func (d *DistanceMatrix1Dg) IncrementWithVcfMatrix(e *VCFDistanceMatrix) {
 	j := uint64(0)
 	v := uint64(0)
@@ -210,6 +228,7 @@ func (d *DistanceMatrix1Dg) IncrementWithVcfMatrix(e *VCFDistanceMatrix) {
 	}
 }
 
+// Increment increments the table using another table
 func (d *DistanceMatrix1Dg) Increment(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 
@@ -222,6 +241,7 @@ func (d *DistanceMatrix1Dg) Increment(p1 uint64, p2 uint64, val uint64) {
 	}
 }
 
+// Increment16 increments the 16 bits table using a vcf matrix
 func (d *DistanceMatrix1Dg) increment16(p uint64, val uint64) {
 	if val >= uint64(math.MaxUint16) {
 		fmt.Println("count 16 overflow")
@@ -234,6 +254,7 @@ func (d *DistanceMatrix1Dg) increment16(p uint64, val uint64) {
 	(*d).data16[p] = uint16(r)
 }
 
+// Increment32 increments the 32 bits table using a vcf matrix
 func (d *DistanceMatrix1Dg) increment32(p uint64, val uint64) {
 	if val >= uint64(math.MaxUint32) {
 		fmt.Println("count 32 overflow")
@@ -251,6 +272,7 @@ func (d *DistanceMatrix1Dg) increment32(p uint64, val uint64) {
 	(*d).data32[p] = uint32(r)
 }
 
+// Increment64 increments the 64 bits table using a vcf matrix
 func (d *DistanceMatrix1Dg) increment64(p uint64, val uint64) {
 	(*d).data64[p] += val
 }
@@ -259,6 +281,7 @@ func (d *DistanceMatrix1Dg) increment64(p uint64, val uint64) {
 // Set
 //
 
+// Set sets the value for matrix position p1,p2
 func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
 	p := d.ijToK(p1, p2)
 
@@ -271,6 +294,7 @@ func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
 	}
 }
 
+// Set16 sets the value for matrix position p1,p2 of 16 bit matrix
 func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
 	if val >= uint64(math.MaxUint16) {
 		fmt.Println("count 16 overflow")
@@ -280,6 +304,7 @@ func (d *DistanceMatrix1Dg) set16(p uint64, val uint64) {
 	(*d).data16[p] = uint16(val)
 }
 
+// Set32 sets the value for matrix position p1,p2 of 32 bit matrix
 func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
 	if val >= uint64(math.MaxUint32) {
 		fmt.Println("count 32 overflow")
@@ -289,6 +314,7 @@ func (d *DistanceMatrix1Dg) set32(p uint64, val uint64) {
 	(*d).data32[p] = uint32(val)
 }
 
+// Set64 sets the value for matrix position p1,p2 of 64 bit matrix
 func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
 	(*d).data64[p] = val
 }
@@ -296,6 +322,8 @@ func (d *DistanceMatrix1Dg) set64(p uint64, val uint64) {
 //
 // Merge
 //
+
+// Merge merges two distance matrices
 func (d *DistanceMatrix1Dg) Merge(e *DistanceMatrix1Dg) {
 	if d.CounterBits == 16 {
 		d.merge16(e)
@@ -306,6 +334,7 @@ func (d *DistanceMatrix1Dg) Merge(e *DistanceMatrix1Dg) {
 	}
 }
 
+// merge16 merges a distance matrices on the 16 bit table
 func (d *DistanceMatrix1Dg) merge16(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt16)
 	for i := range (*d).data16 {
@@ -317,6 +346,7 @@ func (d *DistanceMatrix1Dg) merge16(e *DistanceMatrix1Dg) {
 	}
 }
 
+// merge32 merges a distance matrices on the 32 bit table
 func (d *DistanceMatrix1Dg) merge32(e *DistanceMatrix1Dg) {
 	mi := uint64(math.MaxInt32)
 	for i := range (*d).data32 {
@@ -330,6 +360,7 @@ func (d *DistanceMatrix1Dg) merge32(e *DistanceMatrix1Dg) {
 	}
 }
 
+// merge64 merges a distance matrices on the 64 bit table
 func (d *DistanceMatrix1Dg) merge64(e *DistanceMatrix1Dg) {
 	for i := range (*d).data64 {
 		(*d).data64[i] += (*e).data64[i]
@@ -340,6 +371,7 @@ func (d *DistanceMatrix1Dg) merge64(e *DistanceMatrix1Dg) {
 // IsEqual
 //
 
+// IsEqual checks whether two tables are equal
 func (d *DistanceMatrix1Dg) IsEqual(e *DistanceMatrix1Dg) (res bool) {
 	res = true
 
@@ -478,6 +510,7 @@ func (d *DistanceMatrix1Dg) isEqual64(e *DistanceMatrix1Dg) (res bool) {
 // Get
 //
 
+// GetPos returns the value at a given position in the table
 func (d *DistanceMatrix1Dg) GetPos(p1 uint64, p2 uint64) uint64 {
 	p := d.ijToK(p1, p2)
 
@@ -494,6 +527,7 @@ func (d *DistanceMatrix1Dg) GetPos(p1 uint64, p2 uint64) uint64 {
 	return 0
 }
 
+// GenFilename generates the filename to save this matrix to file
 func (d *DistanceMatrix1Dg) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
 	baseName = outPrefix + "_matrix"
 
@@ -519,6 +553,8 @@ func (d *DistanceMatrix1Dg) kToIJ(k uint64) (uint64, uint64) {
 //
 // Check
 //
+
+// Check checks the self consistency of the data
 func (d *DistanceMatrix1Dg) Check() (res bool) {
 	res = true
 
@@ -529,10 +565,12 @@ func (d *DistanceMatrix1Dg) Check() (res bool) {
 // Save and Load
 //
 
+// Save saves this matrix to file
 func (d *DistanceMatrix1Dg) Save(outPrefix string, format string, compression string) {
 	d.saveLoad(true, outPrefix, format, compression)
 }
 
+// Load loads a matrix from file
 func (d *DistanceMatrix1Dg) Load(outPrefix string, format string, compression string) {
 	d.saveLoad(false, outPrefix, format, compression)
 }
@@ -554,6 +592,7 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 // Dump
 //
 
+// Dump dumps the table to binary file
 func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial uint64) {
 	serial = uint64(0)
 
@@ -568,6 +607,7 @@ func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial uint64) {
 	return
 }
 
+// UnDump loads the table from a binary file
 func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
 	if d.CounterBits == 16 {
 		hasData, serial = dumper.Read16(&d.data16)
