@@ -23,12 +23,11 @@ type IBChromosome struct {
 	NumSamples       uint64
 	MinPosition      uint64
 	MaxPosition      uint64
-	NumBlocks        uint64
 	NumSNPS          uint64
 	RegisterSize     uint64
 	KeepEmptyBlock   bool
 	// BlockNames       map[uint64]uint64
-	blockManager     *BlockManager
+	BlockManager     *BlockManager
 	rootBlockManager *BlockManager
 }
 
@@ -41,7 +40,7 @@ func (ibc *IBChromosome) String() string {
 		" NumSamples:       ", ibc.NumSamples, "\n",
 		" MinPosition:      ", ibc.MinPosition, "\n",
 		" MaxPosition:      ", ibc.MaxPosition, "\n",
-		" NumBlocks:        ", ibc.NumBlocks, "\n",
+		" NumBlocks:        ", ibc.NumBlocks(), "\n",
 		" NumSNPS:          ", ibc.NumSNPS, "\n",
 		" KeepEmptyBlock:   ", ibc.KeepEmptyBlock, "\n",
 		// " BlockNames:       ", ibc.BlockNames, "\n",
@@ -74,12 +73,11 @@ func NewIBChromosome(
 		NumSamples:       numSamples,
 		MinPosition:      math.MaxUint64,
 		MaxPosition:      0,
-		NumBlocks:        0,
 		NumSNPS:          0,
 		KeepEmptyBlock:   keepEmptyBlock,
 		// BlockNames:       make(map[uint64]uint64, 100),
+		BlockManager:     NewBlockManager(chromosomeName),
 		rootBlockManager: rootBlockManager,
-		blockManager:     NewBlockManager(chromosomeName),
 	}
 
 	rootBlockManager.NewBlock(
@@ -104,28 +102,12 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 		os.Exit(1)
 	}
 
-	// blockPos := uint64(len(ibc.blockManager.Blocks))
-
-	// block = ibc.blockManager.NewBlock(
-	// 	ibc.ChromosomeName,
-	// 	ibc.ChromosomeNumber,
-	// 	ibc.BlockSize,
-	// 	ibc.CounterBits,
-	// 	ibc.NumSamples,
-	// 	blockPos,
-	// 	blockNum,
-	// )
-
-	// ibc.BlockNames[blockNum] = blockPos
-
-	// ibc.NumBlocks = uint64(len(ibc.BlockNames))
-
 	return block
 }
 
 // HasBlock checks whether requested block number exists
 func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
-	if _, ok := ibc.blockManager.GetBlockByNum(blockNum); ok {
+	if _, ok := ibc.BlockManager.GetBlockByNum(blockNum); ok {
 		return true
 	}
 	return false
@@ -139,18 +121,28 @@ func (ibc *IBChromosome) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
 
 // GetBlocks returns all blocks
 func (ibc *IBChromosome) GetBlocks() ([]*IBBlock, bool) {
-	return ibc.blockManager.Blocks, true
+	return ibc.BlockManager.Blocks, true
+}
+
+// NumBlocks returns the number of blocks
+func (ibc *IBChromosome) NumBlocks() (int64) {
+	return ibc.BlockManager.NumBlocks
+}
+
+// BlockNumbers returns the block numbers
+func (ibc *IBChromosome) BlockNumbers() (map[uint64]int64) {
+	return ibc.BlockManager.BlockNumbers
 }
 
 // GetBlock returns one block
 func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
-	if block, ok := ibc.blockManager.GetBlockByNum(blockNum); ok {
+	if block, ok := ibc.BlockManager.GetBlockByNum(blockNum); ok {
 		return block, ok
 	}
 
-	fmt.Println(&ibc, "No such block num :: block num:", blockNum, "NumBlocks:", ibc.blockManager.NumBlocks)
-	fmt.Println(&ibc, "BlockNumbers", ibc.blockManager.BlockNumbers)
-	fmt.Println(&ibc, "Blocks", ibc.blockManager.Blocks)
+	fmt.Println(&ibc, "No such block num :: block num:", blockNum, "NumBlocks:", ibc.NumBlocks())
+	fmt.Println(&ibc, "BlockNumbers", ibc.BlockManager.BlockNumbers)
+	fmt.Println(&ibc, "Blocks", ibc.BlockManager.Blocks)
 	debug.PrintStack()
 	os.Exit(1)
 
@@ -159,8 +151,8 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 
 // GetColumn returns the column for a given reference in all blocks
 func (ibc *IBChromosome) GetColumn(referenceNumber int) (*[]*IBDistanceTable, bool) {
-	cols := make([]*IBDistanceTable, ibc.NumBlocks)
-	for bc, block := range ibc.blockManager.Blocks {
+	cols := make([]*IBDistanceTable, ibc.NumBlocks())
+	for bc, block := range ibc.BlockManager.Blocks {
 		col, nc := block.GetColumn(referenceNumber)
 		if !nc {
 			return nil, nc
@@ -182,7 +174,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 
 		if ibc.KeepEmptyBlock {
 			lastBlockPos := uint64(0)
-			NumBlocks := uint64(len(ibc.blockManager.Blocks))
+			NumBlocks := uint64(ibc.NumBlocks())
 
 			if NumBlocks == 0 {
 				lastBlockPos = 0
@@ -246,7 +238,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 		return res
 	}
 
-	for _, block := range ibc.blockManager.Blocks {
+	for _, block := range ibc.BlockManager.Blocks {
 		res = res && block.Check()
 
 		if !res {
@@ -348,26 +340,11 @@ func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 		0,
 	)
 
-	for _, block := range ibc.blockManager.Blocks {
+	for _, block := range ibc.BlockManager.Blocks {
 		sumBlock.Sum(block)
 	}
 
 	return sumBlock
-}
-
-//
-// Filename
-//
-
-// GenFilename returns the filename for the output file of this project
-func (ibc *IBChromosome) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
-	baseName = outPrefix + "." + ibc.ChromosomeName
-
-	saver := NewSaverCompressed(baseName, format, compression)
-
-	fileName = saver.GenFilename()
-
-	return baseName, fileName
 }
 
 //
@@ -385,8 +362,8 @@ func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) 
 	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
 
 	if isSave {
-		ibc.blockManager.Save(chromosomeFileName)
+		ibc.BlockManager.Save(chromosomeFileName)
 	} else {
-		ibc.blockManager.Load(chromosomeFileName)
+		ibc.BlockManager.Load(chromosomeFileName)
 	}
 }

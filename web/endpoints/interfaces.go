@@ -709,7 +709,6 @@ func NewChromosomeInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome
 		Number:       chromosome.ChromosomeNumber,
 		MinPosition:  chromosome.MinPosition,
 		MaxPosition:  chromosome.MaxPosition,
-		NumBlocks:    chromosome.NumBlocks,
 		NumSNPS:      chromosome.NumSNPS,
 		chromosome:   chromosome,
 		ib:           ib,

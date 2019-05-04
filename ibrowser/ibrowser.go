@@ -536,49 +536,7 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 		sort.Sort(ib.ChromosomesNames)
 		ib.Dump(outPrefix, isSave, isSoft)
 	}
-
-	// ib.saveLoadBlock(isSave, baseName, format, compression)
-	// ib.saveLoadChromosomes(isSave, baseName, format, compression)
 }
-
-// func (ib *IBrowser) saveLoadBlock(isSave bool, outPrefix string, format string, compression string) {
-// 	newPrefix := outPrefix + "_block"
-
-// 	if isSave {
-// 		fmt.Println("saving global ibrowser block")
-// 		ib.Block.Save(newPrefix, format, compression)
-// 	} else {
-// 		fmt.Println("loading global ibrowser block")
-// 		ib.Block = NewIBBlock(
-// 			"_whole_genome",
-// 			0,
-// 			ib.BlockSize,
-// 			ib.CounterBits,
-// 			ib.NumSamples,
-// 			0,
-// 			0,
-// 		)
-// 		ib.Block.Load(newPrefix, format, compression)
-// 	}
-// }
-
-// func (ib *IBrowser) saveLoadChromosomes(isSave bool, outPrefix string, format string, compression string) {
-// 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
-// 		chromosomeName := ib.ChromosomesNames[chromosomePos]
-
-// 		if isSave {
-// 			fmt.Println("saving chromosome        : ", chromosomeName)
-// 			chromosome := ib.Chromosomes[chromosomeName.Name]
-// 			chromosome.Save(outPrefix, format, compression)
-
-// 		} else {
-// 			fmt.Println("loading chromosome       : ", chromosomeName)
-// 			ib.Chromosomes[chromosomeName.Name] = NewIBChromosome(chromosomeName.Name, chromosomeName.Pos, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
-// 			chromosome := ib.Chromosomes[chromosomeName.Name]
-// 			chromosome.Load(outPrefix, format, compression)
-// 		}
-// 	}
-// }
 
 //
 // Dumper
@@ -590,6 +548,7 @@ func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string) (filename string) {
 	return
 }
 
+// GenMatrixChromosomeDumpFileName generates the filename of a dump file for a chromosome
 func (ib *IBrowser) GenMatrixChromosomeDumpFileName(outPrefix string, chromosomeName string) (filename string) {
 	filename = outPrefix + "_chromosomes_" + chromosomeName + ".bin"
 	return

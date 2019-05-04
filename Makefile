@@ -106,17 +106,17 @@ version:
 	@echo "LDFLAGS $(LDFLAGS)"
 
 bin/ibrowser: version */*.go
-	cd main/ && GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
+	GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o $@ ./main
 	md5sum $@
 	bin/ibrowser version
 
 bin/ibrowser.exe: version */*.go
-	cd main/ && GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o ../$@ .
+	GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -v -p 4 -o $@ ./main
 	@#bin/ibrowser.exe version
 	md5sum $@
 
 bin/ibrowser.wasm: ibrowser */*.go
-	cd main/ && GOOS=js GOARCH=wasm go build -ldflags="$(LDFLAGS) -s -w" -v -p 4 -o ../$@ .
+	GOOS=js GOARCH=wasm go build -ldflags="$(LDFLAGS) -s -w" -v -p 4 -o $@ ./main
 	md5sum $@
 
 bin/httpserver: opt/httpserver/httpserver.go

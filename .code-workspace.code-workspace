@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.autoSave": "afterDelay",
+		"editor.formatOnPaste": true,
+		"go.formatTool": "gofmt",
+		"go.inferGopath": true,
+		"go.gopath": "/home/saulo/dev/gowasm/ibrowser"
+	}
+}
