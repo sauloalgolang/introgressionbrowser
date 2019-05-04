@@ -40,6 +40,7 @@ type IBrowser struct {
 	//
 	lastChrom    string
 	lastPosition uint64
+	blockManager *BlockManager
 	//
 	// Header string
 	//
@@ -78,7 +79,9 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		Chromosomes:      make(map[string]*IBChromosome, 100),
 		//
 		// block: NewIBBlock("_whole_genome", blockSize, counterBits, 0, 0, 0),
+		blockManager: NewBlockManager("_whole_genome"),
 	}
+
 	return &ib
 }
 
@@ -88,7 +91,7 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	ib.Samples = make(VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.Block = NewIBBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
+	ib.Block = ib.blockManager.NewBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -113,7 +116,15 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 		os.Exit(1)
 	}
 
-	ib.Chromosomes[chromosomeName] = NewIBChromosome(chromosomeName, chromosomeNumber, ib.BlockSize, ib.CounterBits, ib.NumSamples, ib.KeepEmptyBlock)
+	ib.Chromosomes[chromosomeName] = NewIBChromosome(
+		chromosomeName,
+		chromosomeNumber,
+		ib.BlockSize,
+		ib.CounterBits,
+		ib.NumSamples,
+		ib.KeepEmptyBlock,
+		ib.blockManager,
+	)
 
 	ib.ChromosomesNames = append(ib.ChromosomesNames, NamePosPair{chromosomeName, chromosomeNumber})
 
@@ -574,49 +585,29 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 //
 
 // GenMatrixDumpFileName generates the filename of a dump file
-func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string, chromosomeName string, isSummary bool, isChromosomes bool) (filename string) {
-	if isSummary {
-		if isChromosomes {
-			filename = outPrefix + "_chromosomes.bin"
-		} else {
-			filename = outPrefix + "_summary.bin"
-		}
-	} else {
-		filename = outPrefix + "_chromosomes_" + chromosomeName + ".bin"
-	}
+func (ib *IBrowser) GenMatrixDumpFileName(outPrefix string) (filename string) {
+	filename = outPrefix + "_summary.bin"
+	return
+}
+
+func (ib *IBrowser) GenMatrixChromosomeDumpFileName(outPrefix string, chromosomeName string) (filename string) {
+	filename = outPrefix + "_chromosomes_" + chromosomeName + ".bin"
 	return
 }
 
 // Dump dumps matrices to file
 func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
-	isSummary := true
-	isChromosomes := false
-	emptyChromosomeName := ""
-	summaryFileName := ib.GenMatrixDumpFileName(outPrefix,
-		emptyChromosomeName,
-		isSummary,
-		isChromosomes)
-
-	dumperg := NewMultiArrayFile(summaryFileName, isSave, isSoft)
-	defer dumperg.Close()
-
-	ib.RegisterSize = dumperg.CalculateRegisterSize(ib.CounterBits, ib.Block.Matrix.Size)
+	summaryFileName := ib.GenMatrixDumpFileName(outPrefix)
 
 	if isSave {
-		ib.Block.Dump(dumperg)
+		ib.blockManager.Save(summaryFileName)
 	} else {
-		ib.Block.UnDump(dumperg)
+		ib.blockManager.Load(summaryFileName)
 	}
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.Chromosomes[chromosomeName.Name]
-
-		if isSave {
-			chromosome.Block.Dump(dumperg)
-		} else {
-			chromosome.Block.UnDump(dumperg)
-		}
 
 		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}

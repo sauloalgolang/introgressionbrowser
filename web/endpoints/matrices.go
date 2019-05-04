@@ -9,6 +9,7 @@ import (
 	// "strconv"
 )
 
+// Matrices returns all matrices
 func Matrices(w http.ResponseWriter, r *http.Request) {
 	// params := mux.Vars(r)
 	// id, err := strconv.Atoi(params["id"])
@@ -24,6 +25,7 @@ func Matrices(w http.ResponseWriter, r *http.Request) {
 	// Respond(w, resp)
 }
 
+// Matrix returns a single matrix
 func Matrix(w http.ResponseWriter, r *http.Request) {
 	// params := mux.Vars(r)
 	// id, err := strconv.Atoi(params["id"])

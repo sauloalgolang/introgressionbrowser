@@ -14,6 +14,7 @@ import (
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix", endpoints.BlockMatrix).Methods("GET")             //.HeadersRegexp("Content-Type", "application/json")
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/block/{blockNum:[0-9]+}/matrix/table", endpoints.BlocksMatrixTable).Methods("GET") //.HeadersRegexp("Content-Type", "application/json")
 
+// Blocks handle calls for blocks
 func Blocks(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Blocks %#v", r)
 
@@ -67,6 +68,7 @@ func getBlock(w http.ResponseWriter, r *http.Request) (database string, chromoso
 	return
 }
 
+// Block handles calls for block
 func Block(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Block %#v", r)
 
@@ -76,9 +78,9 @@ func Block(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, b_ok := databases.GetBlock(database, chromosome, blockNum)
+	block, bOk := databases.GetBlock(database, chromosome, blockNum)
 
-	if !b_ok {
+	if !bOk {
 		msg = fmt.Sprintf("No such blockNum: %d in chromosome: %s in database %s", blockNum, chromosome, database)
 
 		resp := Message(false, "fail")
@@ -93,6 +95,7 @@ func Block(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// BlockMatrix handles calls for block matrix
 func BlockMatrix(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("BlockMatrix %#v", r)
 
@@ -102,9 +105,9 @@ func BlockMatrix(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matrix, b_ok := databases.GetBlockMatrix(database, chromosome, blockNum)
+	matrix, bOk := databases.GetBlockMatrix(database, chromosome, blockNum)
 
-	if !b_ok {
+	if !bOk {
 		msg = fmt.Sprintf("No such blockNum: %d in chromosome: %s in database %s", blockNum, chromosome, database)
 
 		resp := Message(false, "fail")
@@ -119,6 +122,7 @@ func BlockMatrix(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// BlocksMatrixTable handles calls for block matrix table
 func BlocksMatrixTable(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("BlocksMatrixTable %#v", r)
 
@@ -128,9 +132,9 @@ func BlocksMatrixTable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	table, b_ok := databases.GetBlockMatrixTable(database, chromosome, blockNum)
+	table, bOk := databases.GetBlockMatrixTable(database, chromosome, blockNum)
 
-	if !b_ok {
+	if !bOk {
 		msg = fmt.Sprintf("No such blockNum: %d in chromosome: %s in database %s", blockNum, chromosome, database)
 
 		resp := Message(false, "fail")

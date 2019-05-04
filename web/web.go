@@ -15,11 +15,19 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/web/endpoints"
 )
 
-const API_ENDPOINT = "/api"
-const DATA_ENDPOINT = "/data"
-const DATABASE_ENDPOINT = "/databases"
-const PLOTS_ENDPOINT = "/plots"
+// APIEndpoints is the web api endpoint
+const APIEndpoints = "/api"
 
+// DataEndpoint is the web data endpoint
+const DataEndpoint = "/data"
+
+// DatabaseEndpoint is the web database endpoint
+const DatabaseEndpoint = "/databases"
+
+// PlotsEndpoint is the web plots endpoint
+const PlotsEndpoint = "/plots"
+
+// NewWeb starts a new webserver
 func NewWeb(databaseDir string, httpDir string, host string, port int, verbosityLevel log.Level) {
 	router := mux.NewRouter()
 
@@ -28,12 +36,12 @@ func NewWeb(databaseDir string, httpDir string, host string, port int, verbosity
 
 	log.Warn("open your browser at http://" + host + ":" + strconv.Itoa(port))
 
-	api := router.PathPrefix(API_ENDPOINT).Subrouter()
+	api := router.PathPrefix(APIEndpoints).Subrouter()
 	api.StrictSlash(false)
-	router.HandleFunc(API_ENDPOINT+"/", Template).Methods("GET").Name("apiSlash")
+	router.HandleFunc(APIEndpoints+"/", template).Methods("GET").Name("apiSlash")
 
 	newData(databaseDir, router)
-	newApi(databaseDir, api, verbosityLevel)
+	newAPI(databaseDir, api, verbosityLevel)
 	newRoot(httpDir, router)
 
 	srv := &http.Server{
@@ -56,30 +64,30 @@ func newRoot(dir string, router *mux.Router) {
 }
 
 func newData(dir string, router *mux.Router) {
-	router.PathPrefix(DATA_ENDPOINT + "/").Handler(http.StripPrefix(DATA_ENDPOINT+"/", http.FileServer(http.Dir(dir)))).Name("dataSlash")
-	router.PathPrefix(DATA_ENDPOINT).Handler(http.StripPrefix(DATA_ENDPOINT, http.FileServer(http.Dir(dir)))).Name("data")
+	router.PathPrefix(DataEndpoint + "/").Handler(http.StripPrefix(DataEndpoint+"/", http.FileServer(http.Dir(dir)))).Name("dataSlash")
+	router.PathPrefix(DataEndpoint).Handler(http.StripPrefix(DataEndpoint, http.FileServer(http.Dir(dir)))).Name("data")
 }
 
-func newApi(dir string, router *mux.Router, verbosityLevel log.Level) {
+func newAPI(dir string, router *mux.Router, verbosityLevel log.Level) {
 	//.HeadersRegexp("Content-Type", "application/json")
-	router.HandleFunc("", Template).Methods("GET").Name("api")
+	router.HandleFunc("", template).Methods("GET").Name("api")
 	router.HandleFunc("/update", endpoints.Update).Methods("POST").Name("update")
-	router.HandleFunc(DATABASE_ENDPOINT, endpoints.Databases).Methods("GET").Name("databases")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}", endpoints.Database).Methods("GET").Name("database")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary", endpoints.DatabaseSummary).Methods("GET").Name("databaseSummary")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix", endpoints.DatabaseSummaryMatrix).Methods("GET").Name("databaseSummaryMatrix")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix/table", endpoints.DatabaseSummaryMatrixTable).Methods("GET").Name("databaseSummaryMatrixTable")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome", endpoints.Chromosomes).Methods("GET").Name("databaseChromosomes")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}", endpoints.Chromosome).Methods("GET").Name("databaseChromosome")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/summary", endpoints.ChromosomeSummary).Methods("GET").Name("databaseChromosomeSummary")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/summary/matrix", endpoints.ChromosomeSummaryMatrix).Methods("GET").Name("databaseChromosomeSummaryMatrix")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/summary/matrix/table", endpoints.ChromosomeSummaryMatrixTable).Methods("GET").Name("databaseChromosomeSummaryTable")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/block", endpoints.Blocks).Methods("GET").Name("databaseChromosomeBlocks")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}", endpoints.Block).Methods("GET").Name("databaseChromosomeBlock")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix", endpoints.BlockMatrix).Methods("GET").Name("databaseChromosomeBlockMatrix")
-	router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix/table", endpoints.BlocksMatrixTable).Methods("GET").Name("databaseChromosomeBlockMatrixTable")
+	router.HandleFunc(DatabaseEndpoint, endpoints.Databases).Methods("GET").Name("databases")
+	router.HandleFunc(DatabaseEndpoint+"/{database}", endpoints.Database).Methods("GET").Name("database")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/summary", endpoints.DatabaseSummary).Methods("GET").Name("databaseSummary")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/summary/matrix", endpoints.DatabaseSummaryMatrix).Methods("GET").Name("databaseSummaryMatrix")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/summary/matrix/table", endpoints.DatabaseSummaryMatrixTable).Methods("GET").Name("databaseSummaryMatrixTable")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosome", endpoints.Chromosomes).Methods("GET").Name("databaseChromosomes")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}", endpoints.Chromosome).Methods("GET").Name("databaseChromosome")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/summary", endpoints.ChromosomeSummary).Methods("GET").Name("databaseChromosomeSummary")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/summary/matrix", endpoints.ChromosomeSummaryMatrix).Methods("GET").Name("databaseChromosomeSummaryMatrix")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/summary/matrix/table", endpoints.ChromosomeSummaryMatrixTable).Methods("GET").Name("databaseChromosomeSummaryTable")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/block", endpoints.Blocks).Methods("GET").Name("databaseChromosomeBlocks")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}", endpoints.Block).Methods("GET").Name("databaseChromosomeBlock")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix", endpoints.BlockMatrix).Methods("GET").Name("databaseChromosomeBlockMatrix")
+	router.HandleFunc(DatabaseEndpoint+"/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix/table", endpoints.BlocksMatrixTable).Methods("GET").Name("databaseChromosomeBlockMatrixTable")
 
-	router.HandleFunc(PLOTS_ENDPOINT+"/{database}/{chromosome}/{referenceName}", endpoints.Plots).Methods("GET").Name("plots")
+	router.HandleFunc(PlotsEndpoint+"/{database}/{chromosome}/{referenceName}", endpoints.Plots).Methods("GET").Name("plots")
 
 	route := router.Get("data")
 
@@ -87,40 +95,40 @@ func newApi(dir string, router *mux.Router, verbosityLevel log.Level) {
 		log.Panic("No data router")
 	}
 
-	tmpl, t_err := route.GetPathTemplate()
-	if t_err != nil {
+	tmpl, tErr := route.GetPathTemplate()
+	if tErr != nil {
 		log.Panic("No data router template")
 	}
 
 	tmpl = strings.TrimSuffix(tmpl, "/")
 
-	endpoints.DATA_ENDPOINT = tmpl
-	endpoints.DATABASE_DIR = strings.TrimSuffix(dir, "/")
-	endpoints.VERBOSITY = verbosityLevel
+	endpoints.DataEndpoint = tmpl
+	endpoints.DatabaseDir = strings.TrimSuffix(dir, "/")
+	endpoints.Verbosity = verbosityLevel
 
 	endpoints.ListDatabases()
 }
 
-func Template(w http.ResponseWriter, r *http.Request) {
+func template(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Template %#v", r)
 
 	resp := endpoints.Message(true, "success")
 
 	tmp := map[string]interface{}{
-		API_ENDPOINT + DATABASE_ENDPOINT + "":                                                                           []string{""},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}":                                                                endpoints.DatabaseInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/summary":                                                        endpoints.BlockInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/summary/matrix":                                                 endpoints.MatrixInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/summary/matrix/table":                                           endpoints.TableInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosome":                                                     []endpoints.ChromosomeInfo{endpoints.ChromosomeInfo{}},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}":                                       endpoints.ChromosomeInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/summary":                               endpoints.BlockInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/summary/matrix":                        endpoints.MatrixInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/summary/matrix/table":                  endpoints.TableInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/block":                                 []endpoints.BlockInfo{endpoints.BlockInfo{}},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}":              endpoints.BlockInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix":       endpoints.MatrixInfo{},
-		API_ENDPOINT + DATABASE_ENDPOINT + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix/table": endpoints.TableInfo{},
+		APIEndpoints + DatabaseEndpoint + "":                                                                           []string{""},
+		APIEndpoints + DatabaseEndpoint + "/{database}":                                                                endpoints.DatabaseInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/summary":                                                        endpoints.BlockInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/summary/matrix":                                                 endpoints.MatrixInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/summary/matrix/table":                                           endpoints.TableInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosome":                                                     []endpoints.ChromosomeInfo{endpoints.ChromosomeInfo{}},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}":                                       endpoints.ChromosomeInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/summary":                               endpoints.BlockInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/summary/matrix":                        endpoints.MatrixInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/summary/matrix/table":                  endpoints.TableInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/block":                                 []endpoints.BlockInfo{endpoints.BlockInfo{}},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}":              endpoints.BlockInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix":       endpoints.MatrixInfo{},
+		APIEndpoints + DatabaseEndpoint + "/{database}/chromosomes/{chromosome}/blocks/{blockNum:[0-9]+}/matrix/table": endpoints.TableInfo{},
 	}
 
 	resp["data"] = tmp

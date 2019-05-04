@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// Update updates the list of databases
 func Update(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Update %#v", r)
 

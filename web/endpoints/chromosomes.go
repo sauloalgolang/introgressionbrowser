@@ -12,6 +12,7 @@ import (
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/summary/matrix", endpoints.ChromosomeSummaryMatrix).Methods("GET")                 //.HeadersRegexp("Content-Type", "application/json")
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/chromosome/{chromosome}/summary/table", endpoints.ChromosomeSummaryMatrixTable).Methods("GET")             //.HeadersRegexp("Content-Type", "application/json")
 
+// Chromosomes handles calls to chromosomes
 func Chromosomes(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Chromosomes %#v", r)
 
@@ -33,6 +34,7 @@ func Chromosomes(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// Chromosome handles calls to chromosome
 func Chromosome(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Chromosome %#v", r)
 
@@ -55,6 +57,7 @@ func Chromosome(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// ChromosomeSummary handles calls to get the summary statistics of a chromosome
 func ChromosomeSummary(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("ChromosomeSummary %#v", r)
 
@@ -77,6 +80,7 @@ func ChromosomeSummary(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// ChromosomeSummaryMatrix handles calls to get the summary matrix of a chromosome
 func ChromosomeSummaryMatrix(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("ChromosomeSummaryMatrix %#v", r)
 
@@ -99,6 +103,7 @@ func ChromosomeSummaryMatrix(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// ChromosomeSummaryMatrixTable handles calls to get the summary matrix table of a chromosome
 func ChromosomeSummaryMatrixTable(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("ChromosomeSummaryMatrixTable %#v", r)
 

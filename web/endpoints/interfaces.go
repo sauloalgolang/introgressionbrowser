@@ -1,7 +1,6 @@
 package endpoints
 
 import (
-	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -15,29 +14,55 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
-var DATABASE_DIR = "database/"
-var DATA_ENDPOINT = "dataep/"
-var VERBOSITY = log.WarnLevel
+// DatabaseDir is the folder to search for database
+var DatabaseDir = "database/"
+
+// DataEndpoint is the folder where data should be found
+var DataEndpoint = "dataep/"
+
+// Verbosity is the verbosity level
+var Verbosity = log.WarnLevel
+
+// SliceIndex is the function to search for the index of a value in a list
 var SliceIndex = tools.SliceIndex
 
-type Parameters = ibrowser.Parameters
-type IBrowser = ibrowser.IBrowser
-type IBChromosome = ibrowser.IBChromosome
-type IBBlock = ibrowser.IBBlock
-type IBMatrix = ibrowser.IBDistanceMatrix
-type IBDistanceTable = ibrowser.IBDistanceTable
-
+// GuessPrefixFormat is the function to guess the format of the file given a file prefix
 var GuessPrefixFormat = save.GuessPrefixFormat
+
+// GuessFormat is the function to guess the format of the file given a file name
 var GuessFormat = save.GuessFormat
+
+// NewIBrowser is the function to create a new ibrowser instance
 var NewIBrowser = ibrowser.NewIBrowser
+
+// Parameters are the command line parameter
+type Parameters = ibrowser.Parameters
+
+// IBrowser is the ibrowser main struct
+type IBrowser = ibrowser.IBrowser
+
+// IBChromosome is the ibrowser chromosome struct
+type IBChromosome = ibrowser.IBChromosome
+
+// IBBlock is the ibrowser block struct
+type IBBlock = ibrowser.IBBlock
+
+// IBMatrix is the ibrowser matrix struct
+type IBMatrix = ibrowser.IBDistanceMatrix
+
+// IBDistanceTable is the ibrowser matrix table struct
+type IBDistanceTable = ibrowser.IBDistanceTable
 
 //
 // DbDb
 //
+
+// DbDb is the struct holding all databases
 type DbDb struct {
 	Databases map[string]*DatabaseInfo
 }
 
+// NewDbDb creates a new DbDb instance
 func NewDbDb() (db *DbDb) {
 	db = &DbDb{
 		Databases: make(map[string]*DatabaseInfo, 0),
@@ -45,6 +70,7 @@ func NewDbDb() (db *DbDb) {
 	return db
 }
 
+// Register registers a new database
 func (d *DbDb) Register(fileName string, path string) (err error) {
 	err = nil
 
@@ -52,28 +78,27 @@ func (d *DbDb) Register(fileName string, path string) (err error) {
 		log.Debugf("Registering db :: filename: '%s' path: '%s' - Exists", fileName, path)
 		return err
 
-	} else {
-		log.Infof("Registering db :: filename: '%s' path: '%s' - loading\n", fileName, path)
-
-		defer func() {
-			// recover from panic if one occured. Set err to nil otherwise.
-			if recover() != nil {
-				log.Warningf("Registering db :: filename: '%s' path: '%s' - Error registering", fileName, path)
-				err = errors.New(fmt.Sprintf("Error registering :: fileName '%s' path '%s'", fileName, path))
-				// return err
-				return
-			}
-		}()
-
-		ib := NewIBrowser(Parameters{})
-		ib.EasyLoadFile(path, true)
-
-		dbi := NewDatabaseInfo(fileName, path, ib)
-
-		d.Databases[fileName] = dbi
-
-		return err
 	}
+
+	log.Infof("Registering db :: filename: '%s' path: '%s' - loading\n", fileName, path)
+
+	defer func() {
+		// recover from panic if one occured. Set err to nil otherwise.
+		if recover() != nil {
+			log.Warningf("Registering db :: filename: '%s' path: '%s' - Error registering", fileName, path)
+			err = fmt.Errorf("Error registering :: fileName '%s' path '%s'", fileName, path)
+			return
+		}
+	}()
+
+	ib := NewIBrowser(Parameters{})
+	ib.EasyLoadFile(path, true)
+
+	dbi := NewDatabaseInfo(fileName, path, ib)
+
+	d.Databases[fileName] = dbi
+
+	return err
 }
 
 //
@@ -308,7 +333,9 @@ func (d *DbDb) getChromosomeBlockMatrixTable(fileName string, chromosome string,
 //
 
 //
-// Database
+// Databases
+
+// GetDatabases returns a list of all databases
 func (d *DbDb) GetDatabases() (files []*DatabaseInfo) {
 	files = make([]*DatabaseInfo, 0, len(d.Databases))
 
@@ -319,16 +346,19 @@ func (d *DbDb) GetDatabases() (files []*DatabaseInfo) {
 	return files
 }
 
+// GetDatabase returns a database
 func (d *DbDb) GetDatabase(fileName string) (*DatabaseInfo, bool) {
 	if dbi, ok := d.Databases[fileName]; ok {
 		return dbi, ok
-	} else {
-		return nil, ok
 	}
+
+	return nil, false
 }
 
 //
 // Database summary block
+
+// GetDatabaseSummaryBlock returns the summary block of a database
 func (d *DbDb) GetDatabaseSummaryBlock(fileName string) (*BlockInfo, bool) {
 	dbi, ib, block, ok := d.getDatabaseSummaryBlock(fileName)
 
@@ -341,6 +371,7 @@ func (d *DbDb) GetDatabaseSummaryBlock(fileName string) (*BlockInfo, bool) {
 	return bi, true
 }
 
+// GetDatabaseSummaryBlockMatrix returns the summary block matrix of a database
 func (d *DbDb) GetDatabaseSummaryBlockMatrix(fileName string) (*MatrixInfo, bool) {
 	dbi, ib, block, matrix, ok := d.getDatabaseSummaryBlockMatrix(fileName)
 
@@ -353,6 +384,7 @@ func (d *DbDb) GetDatabaseSummaryBlockMatrix(fileName string) (*MatrixInfo, bool
 	return mi, true
 }
 
+// GetDatabaseSummaryBlockMatrixTable returns the summary block matrix table of a database
 func (d *DbDb) GetDatabaseSummaryBlockMatrixTable(fileName string) (*TableInfo, bool) {
 	dbi, ib, block, matrix, table, ok := d.getDatabaseSummaryBlockMatrixData(fileName)
 
@@ -367,6 +399,8 @@ func (d *DbDb) GetDatabaseSummaryBlockMatrixTable(fileName string) (*TableInfo, 
 
 //
 // Chromosomes
+
+// GetChromosomes returns a list of the choromosomes of a database
 func (d *DbDb) GetChromosomes(fileName string) ([]*ChromosomeInfo, bool) {
 	dbi, ib, chromosomes, ok := d.getChromosomes(fileName)
 
@@ -385,6 +419,7 @@ func (d *DbDb) GetChromosomes(fileName string) ([]*ChromosomeInfo, bool) {
 	return chromosomesi, true
 }
 
+// GetChromosome returns a chromosome of a database
 func (d *DbDb) GetChromosome(fileName string, chromosome string) (*ChromosomeInfo, bool) {
 	dbi, ib, chrom, hasChrom := d.getChromosome(fileName, chromosome)
 
@@ -397,6 +432,7 @@ func (d *DbDb) GetChromosome(fileName string, chromosome string) (*ChromosomeInf
 	return ci, true
 }
 
+// GetChromosomeSummaryBlock returns a chromosome summary block of a database
 func (d *DbDb) GetChromosomeSummaryBlock(fileName string, chromosome string) (*BlockInfo, bool) {
 	dbi, ib, chrom, block, ok := d.getChromosomeSummaryBlock(fileName, chromosome)
 
@@ -409,6 +445,7 @@ func (d *DbDb) GetChromosomeSummaryBlock(fileName string, chromosome string) (*B
 	return bl, true
 }
 
+// GetChromosomeSummaryBlockMatrix returns a chromosome summary block matrix of a database
 func (d *DbDb) GetChromosomeSummaryBlockMatrix(fileName string, chromosome string) (*MatrixInfo, bool) {
 	dbi, ib, chrom, block, matrix, ok := d.getChromosomeSummaryBlockMatrix(fileName, chromosome)
 
@@ -421,6 +458,7 @@ func (d *DbDb) GetChromosomeSummaryBlockMatrix(fileName string, chromosome strin
 	return bl, true
 }
 
+// GetChromosomeSummaryBlockMatrixTable returns a chromosome summary block matrix table of a database
 func (d *DbDb) GetChromosomeSummaryBlockMatrixTable(fileName string, chromosome string) (*TableInfo, bool) {
 	dbi, ib, chrom, block, matrix, table, ok := d.getChromosomeSummaryBlockMatrixTable(fileName, chromosome)
 
@@ -435,6 +473,8 @@ func (d *DbDb) GetChromosomeSummaryBlockMatrixTable(fileName string, chromosome 
 
 //
 // Blocks
+
+// GetBlocks returns a list of blocks for a chromosome in a database
 func (d *DbDb) GetBlocks(fileName string, chromosome string) ([]*BlockInfo, bool) {
 	dbi, ib, chrom, blocks, hasChrom := d.getChromosomeBlocks(fileName, chromosome)
 
@@ -452,6 +492,7 @@ func (d *DbDb) GetBlocks(fileName string, chromosome string) ([]*BlockInfo, bool
 	return blocksi, true
 }
 
+// GetBlock returns a block for a chromosome in a database
 func (d *DbDb) GetBlock(fileName string, chromosome string, blockNum uint64) (*BlockInfo, bool) {
 	dbi, ib, chrom, block, hasBlock := d.getChromosomeBlock(fileName, chromosome, blockNum)
 
@@ -464,6 +505,7 @@ func (d *DbDb) GetBlock(fileName string, chromosome string, blockNum uint64) (*B
 	return bi, true
 }
 
+// GetBlockMatrix returns a block matrix for a chromosome in a database
 func (d *DbDb) GetBlockMatrix(fileName string, chromosome string, blockNum uint64) (*MatrixInfo, bool) {
 	dbi, ib, chrom, block, matrix, ok := d.getChromosomeBlockMatrix(fileName, chromosome, blockNum)
 
@@ -476,6 +518,7 @@ func (d *DbDb) GetBlockMatrix(fileName string, chromosome string, blockNum uint6
 	return mi, true
 }
 
+// GetBlockMatrixTable returns a block matrix table for a chromosome in a database
 func (d *DbDb) GetBlockMatrixTable(fileName string, chromosome string, blockNum uint64) (*TableInfo, bool) {
 	dbi, ib, chrom, block, matrix, table, ok := d.getChromosomeBlockMatrixTable(fileName, chromosome, blockNum)
 
@@ -524,8 +567,9 @@ func (d *DbDb) referenceNumber2referenceName(fileName string, referenceNumber in
 	return
 }
 
+// GetPlotTable returns a table ready to be plotted
 func (d *DbDb) GetPlotTable(fileName string, chromosome string, referenceName string) (*PlotInfo, bool) {
-	referenceNumber, has_rfn := d.referenceName2referenceNumber(fileName, referenceName)
+	referenceNumber, hasRfn := d.referenceName2referenceNumber(fileName, referenceName)
 
 	fmt.Printf("GetPlotTable :: fileName %s chromosome %s referenceName %s referenceNumber %d\n",
 		fileName,
@@ -533,7 +577,7 @@ func (d *DbDb) GetPlotTable(fileName string, chromosome string, referenceName st
 		referenceName,
 		referenceNumber)
 
-	if !has_rfn {
+	if !hasRfn {
 		return nil, false
 	}
 
@@ -554,10 +598,12 @@ func (d *DbDb) GetPlotTable(fileName string, chromosome string, referenceName st
 	return pi, true
 }
 
+// PlotInfo contains the information to generate a plot
 type PlotInfo struct {
 	DistanceTable *[]*IBDistanceTable
 }
 
+// NewPlotInfo generates a new instance of PlotInfo
 func NewPlotInfo(d *[]*IBDistanceTable) (pi *PlotInfo) {
 	pi = &PlotInfo{
 		DistanceTable: d,
@@ -577,6 +623,7 @@ func NewPlotInfo(d *[]*IBDistanceTable) (pi *PlotInfo) {
 // DatabaseInfo
 //
 
+// DatabaseInfo contains the information of a database
 type DatabaseInfo struct {
 	DatabaseName     string
 	FilePath         string
@@ -593,6 +640,7 @@ type DatabaseInfo struct {
 	ib               *IBrowser
 }
 
+// NewDatabaseInfo creates a new DatabaseInfo instance
 func NewDatabaseInfo(databaseName string, filePath string, ib *IBrowser) (di *DatabaseInfo) {
 	di = &DatabaseInfo{
 		DatabaseName:   databaseName,
@@ -639,6 +687,7 @@ func (d DatabaseInfo) String() (res string) {
 // ChromosomeInfo
 //
 
+// ChromosomeInfo contains the information of a chromosome
 type ChromosomeInfo struct {
 	DatabaseName string
 	Name         string
@@ -652,6 +701,7 @@ type ChromosomeInfo struct {
 	dbi          *DatabaseInfo
 }
 
+// NewChromosomeInfo creates a new ChromosomeInfo instance
 func NewChromosomeInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome) (c *ChromosomeInfo) {
 	c = &ChromosomeInfo{
 		DatabaseName: dbi.DatabaseName,
@@ -683,6 +733,7 @@ func (c ChromosomeInfo) String() (res string) {
 // BlockInfo
 //
 
+// BlockInfo contains the information of a block
 type BlockInfo struct {
 	DatabaseName  string
 	MinPosition   uint64
@@ -698,6 +749,7 @@ type BlockInfo struct {
 	dbi           *DatabaseInfo
 }
 
+// NewBlockInfo creates a new BlockInfo instance
 func NewBlockInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, block *IBBlock) (m *BlockInfo) {
 	m = &BlockInfo{
 		DatabaseName:  dbi.DatabaseName,
@@ -733,6 +785,7 @@ func (b BlockInfo) String() (res string) {
 // MatrixInfo
 //
 
+// MatrixInfo contains the information of a block matrix
 type MatrixInfo struct {
 	DatabaseName  string
 	Dimension     uint64
@@ -747,6 +800,7 @@ type MatrixInfo struct {
 	dbi           *DatabaseInfo
 }
 
+// NewMatrixInfo creates a new MatrixInfo instance
 func NewMatrixInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, block *IBBlock, matrix *IBMatrix) (m *MatrixInfo) {
 	m = &MatrixInfo{
 		DatabaseName:  dbi.DatabaseName,
@@ -777,6 +831,7 @@ func (m MatrixInfo) String() (res string) {
 // TableInfo
 //
 
+// TableInfo contains the information of a block matrix table
 type TableInfo struct {
 	DatabaseName     string
 	FileName         string
@@ -790,26 +845,26 @@ type TableInfo struct {
 	dbi              *DatabaseInfo
 }
 
+// NewTableInfo creates a new TableInfo instance
 func NewTableInfo(dbi *DatabaseInfo, ib *IBrowser, chromosome *IBChromosome, block *IBBlock, matrix *IBMatrix, table *IBDistanceTable, isSummary bool) (m *TableInfo) {
-	isChromosomes := false
-	chromosomeName := ""
-
+	fileName := ""
+	
 	if chromosome == nil {
-		isChromosomes = false
+		fileName = ib.GenMatrixDumpFileName(dbi.FilePath)
 	} else {
-		chromosomeName = chromosome.ChromosomeName
-		isChromosomes = true
+		fileName = ib.GenMatrixChromosomeDumpFileName(dbi.FilePath, chromosome.ChromosomeName)
 	}
+
+	if DatabaseDir[len(DatabaseDir)-1] == '/' {
+		fileName = strings.TrimPrefix(fileName, DatabaseDir)
+	} else {
+		fileName = strings.TrimPrefix(fileName, DatabaseDir+"/")
+	}
+	fileName = strings.Join([]string{strings.TrimSuffix(DataEndpoint, "/"), fileName}, "/")
+
 
 	RegisterPosition := ib.RegisterSize * uint64(matrix.Serial)
 
-	fileName := ib.GenMatrixDumpFileName(dbi.FilePath, chromosomeName, isSummary, isChromosomes)
-	if DATABASE_DIR[len(DATABASE_DIR)-1] == '/' {
-		fileName = strings.TrimPrefix(fileName, DATABASE_DIR)
-	} else {
-		fileName = strings.TrimPrefix(fileName, DATABASE_DIR+"/")
-	}
-	fileName = strings.Join([]string{strings.TrimSuffix(DATA_ENDPOINT, "/"), fileName}, "/")
 
 	m = &TableInfo{
 		DatabaseName:     dbi.DatabaseName,
@@ -839,10 +894,11 @@ func (t TableInfo) String() (res string) {
 // List new databases
 //
 
+// ListDatabases list all databases in a folder
 func ListDatabases() {
 	log.Tracef("ListDatabases")
 
-	err := filepath.Walk(DATABASE_DIR, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(DatabaseDir, func(path string, info os.FileInfo, err error) error {
 		found, _, _, prefix := GuessFormat(path)
 
 		if found {
@@ -857,15 +913,15 @@ func ListDatabases() {
 			if fi.Mode().IsRegular() {
 				log.Tracef("ListDatabases :: path '%s' is file", path)
 
-				fn := strings.TrimPrefix(prefix, DATABASE_DIR+"/")
+				fn := strings.TrimPrefix(prefix, DatabaseDir+"/")
 				parts := filepath.SplitList(fn)
 				fn = strings.Join(parts, " - ")
 
 				log.Tracef("ListDatabases :: path '%s' prefix '%s'", path, fn)
 
-				reg_err := databases.Register(fn, path)
+				regErr := databases.Register(fn, path)
 
-				if reg_err == nil {
+				if regErr == nil {
 					log.Tracef("ListDatabases :: path '%s' prefix '%s' - success registering", path, fn)
 				} else {
 					log.Tracef("ListDatabases :: path '%s' prefix '%s' - failed registering", path, fn)

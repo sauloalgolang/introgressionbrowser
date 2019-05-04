@@ -6,6 +6,107 @@ import (
 	"os"
 )
 
+
+// BlockManager holds information about blocks in a give domain
+type BlockManager struct {
+	Blocks       []*IBBlock
+	NumBlocks    int64
+	domain       string
+	BlockNames   map[string]int
+	BlockNumbers map[uint64]int
+}
+
+// NewBlockManager creates a new BlockManager
+func NewBlockManager(domain string) (bm *BlockManager){
+	bm = &BlockManager{
+		Blocks:       make([]*IBBlock, 0, 0),
+		BlockNames:   make(map[string]int, 0),
+		BlockNumbers: make(map[uint64]int, 0),
+		NumBlocks:    0,
+		domain:       domain,
+	}
+
+	return bm
+}
+
+// NewBlock Registers a new blocks
+func (bm *BlockManager) NewBlock(
+		chromosomeName   string,
+		chromosomeNumber int,
+		blockSize        uint64,
+		counterBits      uint64,
+		numSamples       uint64,
+		blockPosition    uint64,
+		blockNumber      uint64,
+	) (nb *IBBlock) {
+	
+	bm.BlockNames[chromosomeName] = len(bm.Blocks)
+	bm.BlockNumbers[blockNumber ] = len(bm.Blocks)
+
+	nb = NewIBBlock(chromosomeName,
+		chromosomeNumber,
+		blockSize,
+		counterBits,
+		numSamples,
+		blockPosition,
+		blockNumber,
+	)
+
+	bm.Blocks = append(bm.Blocks, nb)
+	bm.NumBlocks = int64(len(bm.Blocks))
+
+	return nb
+}
+
+// GetBlockByName returns block given its name
+func (bm *BlockManager) GetBlockByName(name string) (block *IBBlock, ok bool){
+	if pos, hasName := bm.BlockNames[name]; hasName {
+		block = bm.Blocks[pos]
+		return block, true
+	}
+	return nil, false
+}
+
+// GetBlockByNum returns block given its block number
+func (bm *BlockManager) GetBlockByNum(blockNum uint64) (block *IBBlock, ok bool){
+	if pos, hasNum := bm.BlockNumbers[blockNum]; hasNum {
+		block = bm.Blocks[pos]
+		return block, true
+	}
+	return nil, false
+}
+
+// GetBlockByPosition returns block given its position
+func (bm *BlockManager) GetBlockByPosition(pos uint64) (block *IBBlock, ok bool){
+	block = bm.Blocks[pos]
+	return block, true
+}
+
+// Save to file
+func (bm *BlockManager) Save(outPrefix string) {
+		// dumperl := NewMultiArrayFile(chromosomeFileName, isSave, isSoft)
+	// defer dumperl.Close()
+
+	// ibc.RegisterSize = dumperl.CalculateRegisterSize(ibc.CounterBits, ibc.Block.Matrix.Size)
+
+	// for _, block := range ibc.blockManager.Blocks {
+	// 	if isSave {
+	// 		block.Dump(dumperl)
+	// 	} else {
+	// 		block.UnDump(dumperl)
+	// 	}
+	// }
+
+	// 	dumperg := NewMultiArrayFile(summaryFileName, isSave, isSoft)
+	// defer dumperg.Close()
+
+	// ib.RegisterSize = dumperg.CalculateRegisterSize(ib.CounterBits, ib.Block.Matrix.Size)
+}
+
+// Load from file
+func (bm *BlockManager) Load(outPrefix string) {
+}
+
 //
 //
 // BLOCK SECTION

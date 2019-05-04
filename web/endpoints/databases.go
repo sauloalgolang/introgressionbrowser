@@ -16,6 +16,7 @@ import (
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix", endpoints.DatabaseSummaryMatrix).Methods("GET")                                           //.HeadersRegexp("Content-Type", "application/json")
 // router.HandleFunc(DATABASE_ENDPOINT+"/{database}/summary/matrix/table", endpoints.DatabaseSummaryMatrixTable).Methods("GET")                                //.HeadersRegexp("Content-Type", "application/json")
 
+// Databases handle requests to list databases
 func Databases(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Databases %#v", r)
 
@@ -26,6 +27,7 @@ func Databases(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// Database handles requests to show database
 func Database(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Database %#v", r)
 
@@ -47,6 +49,7 @@ func Database(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// DatabaseSummary handles requests to show database summary statistics
 func DatabaseSummary(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("DatabaseSummary %#v", r)
 
@@ -68,6 +71,7 @@ func DatabaseSummary(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// DatabaseSummaryMatrix handles requests to show database summary matrix
 func DatabaseSummaryMatrix(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("DatabaseBlockMatrix %#v", r)
 
@@ -89,6 +93,7 @@ func DatabaseSummaryMatrix(w http.ResponseWriter, r *http.Request) {
 	Respond(w, resp)
 }
 
+// DatabaseSummaryMatrixTable handles requests to show database summary matrix table
 func DatabaseSummaryMatrixTable(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("DatabaseBlockMatrix %#v", r)
 

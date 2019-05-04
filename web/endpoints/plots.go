@@ -30,6 +30,7 @@ func plotsParams(w http.ResponseWriter, r *http.Request) (database string, chrom
 	return
 }
 
+// Plots handle plots requests
 func Plots(w http.ResponseWriter, r *http.Request) {
 	log.Tracef("Plots %#v", r)
 
@@ -39,9 +40,9 @@ func Plots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	table, p_ok := databases.GetPlotTable(database, chromosome, referenceName)
+	table, pOk := databases.GetPlotTable(database, chromosome, referenceName)
 
-	if !p_ok {
+	if !pOk {
 		msg = fmt.Sprintf("error getting plot for database %s chromosome %s reference %s", database, chromosome, referenceName)
 		resp := Message(false, "fail")
 		resp["data"] = msg
