@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// ProcessVcfRaw process vcf manually
 func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback RegisterCallBack, chromosomeNames []string) {
 	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
@@ -107,9 +108,10 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			if foundChromosome { // already found, therefore finished
 				fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
 				return
-			} else { // not found yet, therefore continue
-				continue
 			}
+			
+			// not found yet, therefore continue
+			continue
 		} else {
 			if !foundChromosome {
 				fmt.Println("Found first chromosome from list:", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")

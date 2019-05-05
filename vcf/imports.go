@@ -54,7 +54,7 @@ type RegisterGenotype struct {
 	Genotype GenotypeVal
 }
 
-// SamplesGT list of genotypes for each sample
+// SamplesGenotype list of genotypes for each sample
 type SamplesGenotype = []RegisterGenotype
 
 // RegisterRaw holds a vcf register
