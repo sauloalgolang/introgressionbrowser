@@ -10,8 +10,11 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "env": {},
-            "args": []
+            "env": {
+                "GO111MODULE": "on",
+                "GOPATH": "/home/saulo/dev/gowasm/ibrowser"
+            },
+            "args": [],
         }
-    ]
+    ],
 }

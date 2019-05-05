@@ -9,6 +9,7 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/ibrowser"
 )
 
+// LoadCommand commandline load parameters
 type LoadCommand struct {
 	Infile          LoadArgsOptions `long:"indb" description:"Input database prefix" positional-args:"true" positional-arg-name:"Input Database Prefix" hidden:"true"`
 	IsNotSoft       bool            `long:"notSoftLoad" description:"Force load matrices"`
@@ -16,12 +17,15 @@ type LoadCommand struct {
 	SaveLoadOptions SaveLoadOptions
 }
 
+// LoadArgsOptions commandline load parameters - options
 type LoadArgsOptions struct {
 	DbPrefix string `long:"indb" description:"Input database prefix" required:"true" positional-arg-name:"Input Database Prefix"`
 }
 
+// LoadCommand instance
 var loadCommand LoadCommand
 
+// Execute runs the processing of the commandline parameters
 func (x *LoadCommand) Execute(args []string) error {
 	fmt.Printf("Load\n")
 

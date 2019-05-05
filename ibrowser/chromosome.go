@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-import "runtime/debug"
+// import "runtime/debug"
 
 //
 //
@@ -87,7 +87,6 @@ func NewIBChromosome(
 		counterBits,
 		numSamples,
 		0,
-		0,
 	)
 
 	return &ibc
@@ -102,6 +101,16 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 		os.Exit(1)
 	}
 
+	block = 
+	ibc.BlockManager.NewBlock(
+		ibc.ChromosomeName,
+		ibc.ChromosomeNumber,
+		ibc.BlockSize,
+		ibc.CounterBits,
+		ibc.NumSamples,
+		blockNum,
+	)	
+
 	return block
 }
 
@@ -115,7 +124,11 @@ func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
 
 // GetSummaryBlock returns the summar block
 func (ibc *IBChromosome) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
-	block, hasBlock = ibc.rootBlockManager.GetBlockByName("_"+ibc.ChromosomeName+"_block")
+	block, hasBlock = ibc.rootBlockManager.GetBlockByName(ibc.ChromosomeName)
+	if !hasBlock {
+		fmt.Println(ibc.rootBlockManager)
+		panic("!GetSummaryBlock")
+	}
 	return block, hasBlock
 }
 
@@ -125,12 +138,12 @@ func (ibc *IBChromosome) GetBlocks() ([]*IBBlock, bool) {
 }
 
 // NumBlocks returns the number of blocks
-func (ibc *IBChromosome) NumBlocks() (int64) {
+func (ibc *IBChromosome) NumBlocks() (uint64) {
 	return ibc.BlockManager.NumBlocks
 }
 
 // BlockNumbers returns the block numbers
-func (ibc *IBChromosome) BlockNumbers() (map[uint64]int64) {
+func (ibc *IBChromosome) BlockNumbers() (map[uint64]uint64) {
 	return ibc.BlockManager.BlockNumbers
 }
 
@@ -140,11 +153,7 @@ func (ibc *IBChromosome) GetBlock(blockNum uint64) (*IBBlock, bool) {
 		return block, ok
 	}
 
-	fmt.Println(&ibc, "No such block num :: block num:", blockNum, "NumBlocks:", ibc.NumBlocks())
-	fmt.Println(&ibc, "BlockNumbers", ibc.BlockManager.BlockNumbers)
-	fmt.Println(&ibc, "Blocks", ibc.BlockManager.Blocks)
-	debug.PrintStack()
-	os.Exit(1)
+	// debug.PrintStack()
 
 	return nil, false
 }

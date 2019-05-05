@@ -20,19 +20,22 @@ import (
 //
 //
 
+// ChromosomeCallbackRegister struct holding callback to be used for a list of chromosomes
 type ChromosomeCallbackRegister struct {
-	registerCallBack VCFCallBack
+	registerCallBack RegisterCallBack
 	chromosomeNames  []string
 	wg               *SizedWaitGroup
 	// wg             *sync.WaitGroup
 }
 
+// ChromosomeCallback callback to be used to read chromosomes
 func (cc *ChromosomeCallbackRegister) ChromosomeCallback(r io.Reader, callBackParameters CallBackParameters) {
 	defer cc.wg.Done()
 
 	cc.ChromosomeCallbackSingleThreaded(r, callBackParameters)
 }
 
+// ChromosomeCallbackSingleThreaded callback to be used to read chromosomes
 func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Reader, callBackParameters CallBackParameters) {
 	bufreader := bufio.NewReader(r)
 
@@ -46,13 +49,16 @@ func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Read
 // File checker
 //
 //
-type VcfFormat struct {
+
+// Format description of the vcf formats
+type Format struct {
 	isTar bool
 	isGz  bool
 }
 
-func CheckVcfFormat(sourceFile string) VcfFormat {
-	vf := VcfFormat{
+// CheckFormat identifies the file format
+func CheckFormat(sourceFile string) Format {
+	vf := Format{
 		isTar: false,
 		isGz:  false,
 	}
@@ -85,15 +91,15 @@ func CheckVcfFormat(sourceFile string) VcfFormat {
 //
 //
 
-// func OpenVcfFile(sourceFile string, continueOnError bool, numThreads int, registerCallBack interfaces.VCFMaskedReaderChromosomeType) {
-func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, registerCallBack VCFCallBack) {
-	fmt.Println("OpenVcfFile :: ",
+// OpenFile opens file, call callback when a register is found
+func OpenFile(sourceFile string, callBackParameters CallBackParameters, registerCallBack RegisterCallBack) {
+	fmt.Println("OpenFile :: ",
 		"sourceFile", sourceFile,
 		"numBits", callBackParameters.NumBits,
 		"continueOnError", callBackParameters.ContinueOnError,
 		"numThreads", callBackParameters.NumThreads)
 
-	vcfFormat := CheckVcfFormat(sourceFile)
+	vcfFormat := CheckFormat(sourceFile)
 
 	chromosomeNames := GatherChromosomeNames(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters)
 
@@ -118,7 +124,7 @@ func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, regis
 			chromosomeNames:  chromosomeGroup,
 		}
 
-		OpenFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallbackSingleThreaded)
+		OpenAnyFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallbackSingleThreaded)
 
 		fmt.Println("Finished reading file")
 
@@ -143,7 +149,7 @@ func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, regis
 			// wg.Add(1)
 			wg.Add()
 
-			go OpenFile(
+			go OpenAnyFile(
 				sourceFile,
 				vcfFormat.isTar,
 				vcfFormat.isGz,
@@ -151,7 +157,7 @@ func OpenVcfFile(sourceFile string, callBackParameters CallBackParameters, regis
 				ccr.ChromosomeCallback,
 			)
 
-			if ONLYFIRST {
+			if OnlyFirst {
 				fmt.Println("Only sending first")
 				break
 			}

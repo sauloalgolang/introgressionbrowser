@@ -4,9 +4,9 @@ package ibrowser
 type BlockManager struct {
 	Domain       string
 	Blocks       []*IBBlock
-	NumBlocks    int64
-	BlockNames   map[string]int64
-	BlockNumbers map[uint64]int64
+	NumBlocks    uint64
+	BlockNames   map[string]uint64
+	BlockNumbers map[uint64]uint64
 }
 
 // NewBlockManager creates a new BlockManager
@@ -14,8 +14,8 @@ func NewBlockManager(domain string) (bm *BlockManager) {
 	bm = &BlockManager{
 		Domain:       domain,
 		Blocks:       make([]*IBBlock, 0, 0),
-		BlockNames:   make(map[string]int64, 0),
-		BlockNumbers: make(map[uint64]int64, 0),
+		BlockNames:   make(map[string]uint64, 0),
+		BlockNumbers: make(map[uint64]uint64, 0),
 		NumBlocks:    0,
 	}
 
@@ -29,24 +29,24 @@ func (bm *BlockManager) NewBlock(
 	blockSize uint64,
 	counterBits uint64,
 	numSamples uint64,
-	blockPosition uint64,
 	blockNumber uint64,
 ) (nb *IBBlock) {
 
-	bm.BlockNames[chromosomeName] = int64(len(bm.Blocks))
-	bm.BlockNumbers[blockNumber] = int64(len(bm.Blocks))
+	blockPosition := uint64(len(bm.Blocks))
+	bm.BlockNames[chromosomeName] = blockPosition
+	bm.BlockNumbers[blockNumber] = blockPosition
 
 	nb = NewIBBlock(chromosomeName,
 		chromosomeNumber,
 		blockSize,
 		counterBits,
 		numSamples,
-		blockPosition,
 		blockNumber,
+		blockPosition,
 	)
 
 	bm.Blocks = append(bm.Blocks, nb)
-	bm.NumBlocks = int64(len(bm.Blocks))
+	bm.NumBlocks = uint64(len(bm.Blocks))
 
 	return nb
 }

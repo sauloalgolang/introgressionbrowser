@@ -12,9 +12,13 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/interfaces"
 )
 
+// CallBackParameters - alias to interfaces.CallBackParameters
 type CallBackParameters = interfaces.CallBackParameters
+
+// Parameters - alias to interfaces.Parameters
 type Parameters = interfaces.Parameters
 
+// Options holds all commandline options
 type Options struct {
 }
 

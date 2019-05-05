@@ -8,6 +8,7 @@ import (
 // Generic Interfaces
 //
 
+// GenericWriter interface for writers
 type GenericWriter interface {
 	Close() error
 	Flush() error
@@ -15,13 +16,18 @@ type GenericWriter interface {
 	Write([]byte) (int, error)
 }
 
+// GenericReader interface for readers
 type GenericReader interface {
 	Read([]byte) (int, error)
 }
 
+// GenericNewWriter alias for a generic writer
 type GenericNewWriter = func(io.Writer) GenericWriter
+
+// GenericNewReader alias for a generic reader
 type GenericNewReader = func(io.Reader) GenericReader
 
+// CompressorInterface holds a writer and a reader for compressor
 type CompressorInterface struct {
 	NewWriter GenericNewWriter
 	NewReader GenericNewReader

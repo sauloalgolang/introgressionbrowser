@@ -12,6 +12,7 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/save"
 )
 
+// SaveLoadOptions holds the sahred parameters for the commandline save and load commands
 type SaveLoadOptions struct {
 	NoCheck     bool   `long:"check" description:"Check for self consistency"`
 	Compression string `long:"compression" description:"Compression format: none, snappy, gzip" choice:"none" choice:"snappy" choice:"gzip" default:"none"`
@@ -28,15 +29,16 @@ func (s SaveLoadOptions) String() (res string) {
 	return res
 }
 
+// ProfileOptions holds the sahred parameters for the commandline profile options
 type ProfileOptions struct {
-	CpuProfile     string `long:"cpuProfile" description:"Write cpu profile to file" default:""`
+	CPUProfile     string `long:"CPUProfile" description:"Write cpu profile to file" default:""`
 	MemProfile     string `long:"memProfile" description:"Write memory profile to file" default:""`
 	cpuFileHandler *os.File
 }
 
 func (p ProfileOptions) String() (res string) {
 	res += fmt.Sprintf("Profile:\n")
-	res += fmt.Sprintf(" CpuProfile             : %s\n", p.CpuProfile)
+	res += fmt.Sprintf(" CPUProfile             : %s\n", p.CPUProfile)
 	res += fmt.Sprintf(" MemProfile             : %s\n", p.MemProfile)
 	return res
 }
@@ -44,7 +46,7 @@ func (p ProfileOptions) String() (res string) {
 func processSaveLoad(opts SaveLoadOptions) {
 	if _, ok := save.Formats[opts.Format]; !ok {
 		fmt.Println("Unknown format: ", opts.Format, ". valid formats are:")
-		for k, _ := range save.Formats {
+		for k := range save.Formats {
 			fmt.Println(" ", k)
 		}
 		os.Exit(1)
@@ -52,17 +54,17 @@ func processSaveLoad(opts SaveLoadOptions) {
 
 	if _, ok := save.Compressors[opts.Compression]; !ok {
 		fmt.Println("Unknown compression: ", opts.Compression, ". valid formats are:")
-		for k, _ := range save.Compressors {
+		for k := range save.Compressors {
 			fmt.Println(" ", k)
 		}
 		os.Exit(1)
 	}
 }
 
-func profileCpuStart(opts ProfileOptions) {
-	if opts.CpuProfile != "" {
+func profileCPUStart(opts ProfileOptions) {
+	if opts.CPUProfile != "" {
 		err := *new(error)
-		opts.cpuFileHandler, err = os.Create(opts.CpuProfile)
+		opts.cpuFileHandler, err = os.Create(opts.CPUProfile)
 		if err != nil {
 			log.Fatal("could not create CPU profile", err)
 		}
@@ -72,8 +74,8 @@ func profileCpuStart(opts ProfileOptions) {
 	}
 }
 
-func profileCpuEnd(opts ProfileOptions) {
-	if opts.CpuProfile != "" {
+func profileCPUEnd(opts ProfileOptions) {
+	if opts.CPUProfile != "" {
 		pprof.StopCPUProfile()
 		opts.cpuFileHandler.Close()
 	}
@@ -100,11 +102,11 @@ func profileMemEnd(opts ProfileOptions) {
 }
 
 func processProfile(opts ProfileOptions) func() {
-	profileCpuStart(opts)
+	profileCPUStart(opts)
 	profileMemStart(opts)
 
 	return func() {
-		profileCpuEnd(opts)
+		profileCPUEnd(opts)
 		profileMemEnd(opts)
 	}
 }

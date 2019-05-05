@@ -11,11 +11,12 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/web"
 )
 
+// WebCommand holds the parameter for the commandline web command
 type WebCommand struct {
 	Host        string `long:"host" description:"Hostname" default:"127.0.0.1"`
 	Port        int    `long:"port" description:"Port" default:"8000"`
 	DatabaseDir string `long:"DatabaseDir" description:"Databases folder" default:"res/"`
-	HttpDir     string `long:"HttpDir" description:"Web page folder to be served folder" default:"http/"`
+	HTTPDir     string `long:"HTTPDir" description:"Web page folder to be served folder" default:"http/"`
 	Verbose     []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
 	verbosity   int
 }
@@ -24,32 +25,33 @@ func (w WebCommand) String() (res string) {
 	res += fmt.Sprintf(" Host                   : %s\n", w.Host)
 	res += fmt.Sprintf(" Port                   : %d\n", w.Port)
 	res += fmt.Sprintf(" DatabaseDir            : %s\n", w.DatabaseDir)
-	res += fmt.Sprintf(" HttpDir                : %s\n", w.HttpDir)
+	res += fmt.Sprintf(" HTTPDir                : %s\n", w.HTTPDir)
 	return res
 }
 
 var webCommand WebCommand
 
-func (x *WebCommand) Execute(args []string) error {
-	x.verbosity = len(x.Verbose)
+// Execute runs the processing of the commandline parameters
+func (w *WebCommand) Execute(args []string) error {
+	w.verbosity = len(w.Verbose)
 
 	var verbosityLevel log.Level
-	switch x.verbosity {
+	switch w.verbosity {
 	case 0:
-		log.Println("LOG LEVEL ", x.verbosity, "Info")
+		log.Println("LOG LEVEL ", w.verbosity, "Info")
 		verbosityLevel = log.InfoLevel
 	case 1:
-		log.Println("LOG LEVEL ", x.verbosity, "Debug")
+		log.Println("LOG LEVEL ", w.verbosity, "Debug")
 		verbosityLevel = log.DebugLevel
 	case 2:
-		log.Println("LOG LEVEL ", x.verbosity, "Trace")
+		log.Println("LOG LEVEL ", w.verbosity, "Trace")
 		verbosityLevel = log.TraceLevel
 	default:
-		if x.verbosity > 2 {
-			log.Println("LOG LEVEL ", x.verbosity, "Trace")
+		if w.verbosity > 2 {
+			log.Println("LOG LEVEL ", w.verbosity, "Trace")
 			verbosityLevel = log.TraceLevel
 		} else {
-			log.Println("LOG LEVEL ", x.verbosity, "Warn")
+			log.Println("LOG LEVEL ", w.verbosity, "Warn")
 			verbosityLevel = log.WarnLevel
 			// log.SetLevel(log.ErrorLevel)
 			// log.SetLevel(log.FatalLevel)
@@ -61,18 +63,18 @@ func (x *WebCommand) Execute(args []string) error {
 	// Only log the warning severity or above.
 
 	log.Info("Web")
-	log.Info("\n", x)
+	log.Info("\n", w)
 
-	fi, err := os.Stat(x.DatabaseDir)
+	fi, err := os.Stat(w.DatabaseDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if !fi.Mode().IsDir() {
-		log.Fatal("input folder ", x.DatabaseDir, " is not a folder")
+		log.Fatal("input folder ", w.DatabaseDir, " is not a folder")
 	}
 
-	web.NewWeb(x.DatabaseDir, x.HttpDir, x.Host, x.Port, verbosityLevel)
+	web.NewWeb(w.DatabaseDir, w.HTTPDir, w.Host, w.Port, verbosityLevel)
 
 	return nil
 }

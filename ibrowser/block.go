@@ -36,14 +36,14 @@ func NewIBBlock(
 	blockSize uint64,
 	counterBits uint64,
 	numSamples uint64,
-	blockPosition uint64,
 	blockNumber uint64,
+	blockPosition uint64,
 ) *IBBlock {
 	fmt.Println("   NewIBBlock :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
 		" blockSize: ", blockSize,
-		" blockPosition: ", blockPosition,
 		" blockNumber: ", blockNumber,
+		" blockPosition: ", blockPosition,
 		" numSamples: ", numSamples,
 	)
 
@@ -56,8 +56,8 @@ func NewIBBlock(
 		MaxPosition:      0,
 		NumSNPS:          0,
 		NumSamples:       numSamples,
-		BlockPosition:    blockPosition,
 		BlockNumber:      blockNumber,
+		BlockPosition:    blockPosition,
 		Serial:           0,
 		hasSerial:        false,
 		Matrix: NewDistanceMatrix(

@@ -8,4 +8,5 @@ import (
 // Saver
 //
 
+// NewSaver alias to save.NewSaver
 var NewSaver = save.NewSaver

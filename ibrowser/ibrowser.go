@@ -91,7 +91,7 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	ib.Samples = make(VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.Block = ib.blockManager.NewBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0, 0)
+	ib.Block = ib.blockManager.NewBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)

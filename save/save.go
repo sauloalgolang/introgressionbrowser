@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Saver holds the informatio for saving to file
 type Saver struct {
 	Prefix              string
 	Format              string
@@ -16,10 +17,12 @@ type Saver struct {
 	Extension           string
 }
 
+// NewSaver creates new instance of Saver
 func NewSaver(prefix string, format string) *Saver {
 	return newSaver(prefix, format, "none", GetFormatExtension(format), GetCompressExtension("none"))
 }
 
+// NewSaverCompressed creates new instance of Saver with compression
 func NewSaverCompressed(prefix string, format string, compressor string) *Saver {
 	return newSaver(prefix, format, compressor, GetFormatExtension(format), GetCompressExtension(compressor))
 }
@@ -41,24 +44,29 @@ func newSaver(prefix string, format string, compressor string, formatExtension s
 // Setters
 //
 
+// SetFormat sets the current format
 func (s *Saver) SetFormat(format string) {
 	s.Format = format
 	s.FormatExtension = GetFormatExtension(format)
 }
 
+// SetCompressor sets the compressor
 func (s *Saver) SetCompressor(compressor string) {
 	s.Compressor = compressor
 	s.CompressorExtension = GetFormatExtension(compressor)
 }
 
+// SetFormatExtension override format extension
 func (s *Saver) SetFormatExtension(extension string) {
 	s.FormatExtension = extension
 }
 
+// SetCompressorExtension override compression extension
 func (s *Saver) SetCompressorExtension(extension string) {
 	s.CompressorExtension = extension
 }
 
+// SetExtension override the whole extension
 func (s *Saver) SetExtension(extension string) {
 	s.Extension = extension
 }
@@ -67,6 +75,7 @@ func (s *Saver) SetExtension(extension string) {
 // Getters
 //
 
+// GenFilename generates the final filename
 func (s *Saver) GenFilename() string {
 	outname := s.Prefix
 
@@ -86,6 +95,7 @@ func (s *Saver) GenFilename() string {
 	return outname
 }
 
+// Exists checks whether output file exists
 func (s *Saver) Exists() (bool, error) {
 	fileName := s.GenFilename()
 
@@ -113,6 +123,7 @@ func (s *Saver) Exists() (bool, error) {
 // Save
 //
 
+// Save saves to file
 func (s *Saver) Save(val interface{}) {
 	format := s.Format
 	compress := s.Compressor
@@ -200,6 +211,7 @@ func saveDataStreamCompressed(outfile string, marshaler MarshalerStreamerWriter,
 //
 //
 
+// Load loads from file
 func (s *Saver) Load(val interface{}) {
 	format := s.Format
 
@@ -237,6 +249,11 @@ func loadDataStream(outfile string, unmarshaler UnMarshalerStreamer, val interfa
 	unmarshaler(outfile, val)
 }
 
+//
+// Guess file format
+//
+
+// GuessFormat guesses the file format by its extension
 func GuessFormat(filename string) (found bool, format string, compression string, prefix string) {
 	found = false
 	format = ""
@@ -265,6 +282,7 @@ func GuessFormat(filename string) (found bool, format string, compression string
 	return found, format, compression, prefix
 }
 
+// GuessPrefixFormat guesses the file format given a file prefix
 func GuessPrefixFormat(prefix string) (found bool, format string, compression string, filename string) {
 	found = false
 	format = ""

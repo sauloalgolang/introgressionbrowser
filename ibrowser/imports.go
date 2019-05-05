@@ -48,10 +48,10 @@ type Parameters = interfaces.Parameters
 //
 
 // VCFSamples holds the sample names as read in the VCF file
-type VCFSamples = vcf.VCFSamples
+type VCFSamples = vcf.Samples
 
 // VCFRegister holds a single SNP position
-type VCFRegister = vcf.VCFRegister
+type VCFRegister = vcf.Register
 
 // VCFDistanceMatrix holds the distance matrix used to calculate distance between
 // SNP calls and holds the summary of all distances

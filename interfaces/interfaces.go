@@ -9,19 +9,24 @@ import (
 // vcf
 //
 
+// VCFMaskedReaderType is a function to be sent to VCF reader
 type VCFMaskedReaderType func(io.Reader, CallBackParameters)
+
+// VCFMaskedReaderChromosomeType is a function to be sent to VCF reader to gather chromosomes
 type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)
 
 //
 // Callbacks
 //
 
+// CallBackParameters are the parameters sent to VCF reader
 type CallBackParameters struct {
 	ContinueOnError bool
 	NumBits         uint64
 	NumThreads      int
 }
 
+// Parameters are the program parameters
 type Parameters struct {
 	BlockSize              uint64
 	Chromosomes            string

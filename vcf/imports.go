@@ -5,7 +5,7 @@ import (
 )
 
 import (
-	"github.com/brentp/vcfgo"
+	// "github.com/brentp/vcfgo"
 	"github.com/remeh/sizedwaitgroup"
 )
 
@@ -15,56 +15,74 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/tools"
 )
 
-var DEBUG bool = false
-var ONLYFIRST bool = false
-var BREAKAT_THREAD int64 = 0
-var BREAKAT_CHROM int64 = 0
+// Debug defines whether to debug or not
+var Debug = false
 
-//
-// tools
+// OnlyFirst defines to only read the first scaffold
+var OnlyFirst = false
+
+// BreakAtThread Number of row to read per thread
+var BreakAtThread = int64(0)
+
+// BreakAtChrom Number of rows to read per chroms
+var BreakAtChrom = int64(0)
+
+// SliceIndex alias to tools.SliceIndex
 var SliceIndex = tools.SliceIndex
 
-//
-// interfaces
+// CallBackParameters alias to interfaces.CallBackParameters
 type CallBackParameters = interfaces.CallBackParameters
 
-//
-// sized wait group
+// SizedWaitGroup alias to sizedwaitgroup.SizedWaitGroup
 type SizedWaitGroup = sizedwaitgroup.SizedWaitGroup
 
-//
-// openfile
-var OpenFile = openfile.OpenFile
+// OpenAnyFile alias to openfile.OpenFile
+var OpenAnyFile = openfile.OpenFile
 
 //
 // VCF
 //
 
-type VCFRegisterVcfGo = vcfgo.Variant
-type VCFSamples = []string
-type VCFGTVal []int
-type VCFGT struct {
-	GT VCFGTVal
-}
-type VCFSamplesGT = []VCFGT
+// Samples alias to []string - list of sample names
+type Samples = []string
 
-type VCFRegisterRaw struct {
+// GenotypeVal values from genotype call
+type GenotypeVal []int
+
+// RegisterGenotype struc holding the values from a genotype call
+type RegisterGenotype struct {
+	Genotype GenotypeVal
+}
+
+// SamplesGT list of genotypes for each sample
+type SamplesGenotype = []RegisterGenotype
+
+// RegisterRaw holds a vcf register
+type RegisterRaw struct {
 	LineNumber       int64
 	Chromosome       string
 	ChromosomeNumber int
 	Position         uint64
 	Alt              []string
-	Samples          VCFSamplesGT
+	Samples          SamplesGenotype
 	Distance         *DistanceMatrix
 	TempDistance     *DistanceMatrix
 }
 
-type VCFRegister = VCFRegisterRaw
+// Register alias to the default register
+type Register = RegisterRaw
 
-type VCFCallBack func(*VCFSamples, *VCFRegister)
-type VCFReaderType func(io.Reader, VCFCallBack, bool, []string)
-type VCFMaskedReaderType = interfaces.VCFMaskedReaderType
-type VCFMaskedReaderChromosomeType = interfaces.VCFMaskedReaderChromosomeType
+// MaskedReaderType alias to interfaces.MaskedReaderType
+type MaskedReaderType = interfaces.VCFMaskedReaderType
 
-// type VCFMaskedReaderType func(io.Reader, CallBackParameters)
-// type VCFMaskedReaderChromosomeType func(io.Reader, bool, []string)
+// MaskedReaderChromosomeType alias to interfaces.MaskedReaderChromosomeType
+type MaskedReaderChromosomeType = interfaces.VCFMaskedReaderChromosomeType
+
+// RegisterCallBack callback when finding a register
+type RegisterCallBack func(*Samples, *Register)
+
+// ReaderType type for a file reader
+type ReaderType func(io.Reader, RegisterCallBack, bool, []string)
+
+// type MaskedReaderType func(io.Reader, CallBackParameters)
+// type MaskedReaderChromosomeType func(io.Reader, bool, []string)

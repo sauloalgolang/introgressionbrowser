@@ -15,6 +15,7 @@ import (
 
 import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 
+// OpenFile opens a file
 func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters interfaces.CallBackParameters, callBack interfaces.VCFMaskedReaderType) {
 	f, err := os.Open(sourceFile)
 	if err != nil {

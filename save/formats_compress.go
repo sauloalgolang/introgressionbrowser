@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Compressors holds the available compressors
 var Compressors = map[string]CompressFormat{
 	"none": CompressFormat{
 		Compressor: "none",
@@ -23,7 +24,10 @@ var Compressors = map[string]CompressFormat{
 	},
 }
 
+// CompressorNames holds the compressor names
 var CompressorNames = []string{"none", "snappy", "gzip"}
+
+// DefaultCompressor holds the name of the default compressor
 var DefaultCompressor = "none"
 
 //
@@ -32,6 +36,7 @@ var DefaultCompressor = "none"
 //
 //
 
+// CompressFormat struct holding the information about a available compressor
 type CompressFormat struct {
 	Compressor string
 	Extension  string
@@ -44,12 +49,13 @@ type CompressFormat struct {
 //
 //
 
+// GetCompressInformation returns the information regarding a given compressor
 func GetCompressInformation(compressor string) *CompressFormat {
 	sf, ok := Compressors[compressor]
 
 	if !ok {
 		fmt.Println("Unknown compressor: ", compressor, ". valid compressor are:")
-		for k, _ := range Compressors {
+		for k := range Compressors {
 			fmt.Println(" ", k)
 		}
 		os.Exit(1)
@@ -58,26 +64,31 @@ func GetCompressInformation(compressor string) *CompressFormat {
 	return &sf
 }
 
+// GetCompressExtension returns the file extension for a given compressor
 func GetCompressExtension(compressor string) string {
 	sc := GetCompressInformation(compressor)
 	return sc.Extension
 }
 
+// GetCompressInterface returns the CompressorInterface for a given compressor
 func GetCompressInterface(compressor string) CompressorInterface {
 	sc := GetCompressInformation(compressor)
 	return sc.Interface
 }
 
+// GetCompressInterfaceReader returns the reader for a given compressor
 func GetCompressInterfaceReader(compressor string) GenericNewReader {
 	sc := GetCompressInterface(compressor)
 	return sc.NewReader
 }
 
+// GetCompressInterfaceWriter returns the writer for a given compressor
 func GetCompressInterfaceWriter(compressor string) GenericNewWriter {
 	sc := GetCompressInterface(compressor)
 	return sc.NewWriter
 }
 
+// GetCompressIsCompressed checks if a compressor compresses or not
 func GetCompressIsCompressed(compressor string) bool {
 	sf := GetCompressInformation(compressor)
 	return sf.Compressor != "none"

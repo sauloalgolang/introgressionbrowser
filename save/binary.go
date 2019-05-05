@@ -19,6 +19,7 @@ import (
 // MultiArrayFile
 //
 
+// MultiArrayFile holds and dumps arrays to binary file
 type MultiArrayFile struct {
 	fileName     string
 	endianness   binary.ByteOrder
@@ -36,6 +37,7 @@ type MultiArrayFile struct {
 	fileDta      *os.File
 }
 
+// RegisterLocation holds register location in a binary file
 type RegisterLocation struct {
 	Size           uint64
 	HeaderSize     uint64
@@ -45,6 +47,7 @@ type RegisterLocation struct {
 	EndPosition    uint64
 }
 
+// RegisterHeader holds the register header for a binary file
 type RegisterHeader struct {
 	HasData     bool
 	Serial      uint64
@@ -57,6 +60,7 @@ type RegisterHeader struct {
 // New
 //
 
+// NewMultiArrayFile creates a new MultiArrayFile instance
 func NewMultiArrayFile(fileName string, isSave bool, isSoft bool) *MultiArrayFile {
 	if isSave && isSoft {
 		log.Fatal("Cant save in soft mode")
@@ -157,14 +161,17 @@ func NewMultiArrayFile(fileName string, isSave bool, isSoft bool) *MultiArrayFil
 //     }
 //     map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
 
+// SetSerial sets serial number
 func (m *MultiArrayFile) SetSerial(serial uint64) {
 	m.serial = serial
 }
 
+// GetSerial gets serial number
 func (m *MultiArrayFile) GetSerial() (serial uint64) {
 	return m.serial
 }
 
+// CalculateRegisterHeaderSize returns the size of the file header
 func (m *MultiArrayFile) CalculateRegisterHeaderSize(counterBits uint64, size uint64) (res uint64) {
 	// res += 1 // hasData     bool
 	// res += 8 // serial      int64
@@ -176,6 +183,7 @@ func (m *MultiArrayFile) CalculateRegisterHeaderSize(counterBits uint64, size ui
 	return
 }
 
+// CalculateRegisterMatrixSize returns the size of the matrix in the file
 func (m *MultiArrayFile) CalculateRegisterMatrixSize(counterBits uint64, size uint64) (res uint64) {
 	dbytes := uint64(0)
 	switch counterBits {
@@ -196,6 +204,7 @@ func (m *MultiArrayFile) CalculateRegisterMatrixSize(counterBits uint64, size ui
 	return
 }
 
+// CalculateRegisterSize returns the size of a register
 func (m *MultiArrayFile) CalculateRegisterSize(counterBits uint64, size uint64) (res uint64) {
 	res += m.CalculateRegisterHeaderSize(counterBits, size)
 	res += m.CalculateRegisterMatrixSize(counterBits, size)
@@ -203,6 +212,7 @@ func (m *MultiArrayFile) CalculateRegisterSize(counterBits uint64, size uint64) 
 	return
 }
 
+// CalculateRegisterLocation returns the location of a given serial number in the binary file
 func (m *MultiArrayFile) CalculateRegisterLocation(counterBits uint64, size uint64, serial uint64) (res RegisterLocation) {
 	res = RegisterLocation{
 		HeaderSize: m.CalculateRegisterHeaderSize(counterBits, size),
@@ -224,6 +234,8 @@ func (m *MultiArrayFile) CalculateRegisterLocation(counterBits uint64, size uint
 //
 // MultiArrayFile :: Writer
 //
+
+// Write writes data to file
 func (m *MultiArrayFile) Write(data interface{}) (serial uint64) {
 	var dataLen uint64
 
@@ -299,6 +311,7 @@ func (m *MultiArrayFile) Write(data interface{}) (serial uint64) {
 	return
 }
 
+// Write16 writes a 16 bits array to file
 func (m *MultiArrayFile) Write16(data *[]uint16) (serial uint64) {
 	if m.counterBits == 0 {
 		m.counterBits = 16
@@ -309,6 +322,7 @@ func (m *MultiArrayFile) Write16(data *[]uint16) (serial uint64) {
 	return m.Write(data)
 }
 
+// Write32 writes a 32 bits array to file
 func (m *MultiArrayFile) Write32(data *[]uint32) (serial uint64) {
 	if m.counterBits == 0 {
 		m.counterBits = 32
@@ -319,6 +333,7 @@ func (m *MultiArrayFile) Write32(data *[]uint32) (serial uint64) {
 	return m.Write(data)
 }
 
+// Write64 writes a 64 bits array to file
 func (m *MultiArrayFile) Write64(data *[]uint64) (serial uint64) {
 	if m.counterBits == 0 {
 		m.counterBits = 64
@@ -332,6 +347,8 @@ func (m *MultiArrayFile) Write64(data *[]uint64) (serial uint64) {
 //
 // MultiArrayFile :: Reader
 //
+
+// Read reads a array from file
 func (m *MultiArrayFile) Read(data interface{}) (hasData bool, serial uint64) {
 	// if m.isSoft {
 	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
@@ -376,6 +393,7 @@ func (m *MultiArrayFile) Read(data interface{}) (hasData bool, serial uint64) {
 	return false, 0
 }
 
+// Read16 reads a 16 bits array from file
 func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial uint64) {
 	// if m.isSoft {
 	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
@@ -418,6 +436,7 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial uint64) {
 	return false, 0
 }
 
+// Read32 reads a 32 bits array from file
 func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial uint64) {
 	m.Read(data)
 	// if m.isSoft {
@@ -463,6 +482,7 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial uint64) {
 	return false, 0
 }
 
+// Read64 reads a 64 bits array from file
 func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial uint64) {
 	// if m.isSoft {
 	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
@@ -509,6 +529,7 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial uint64) {
 // Close
 //
 
+// Close closes the files
 func (m *MultiArrayFile) Close() {
 	defer m.fileIdx.Close()
 	defer m.fileDta.Close()

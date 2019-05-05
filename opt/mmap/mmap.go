@@ -9,6 +9,7 @@ import (
 	"github.com/edsrzf/mmap-go"
 )
 
+// Strings interface for a list of strings
 type Strings interface {
 	Get(i int) string
 	Len() int
@@ -79,14 +80,14 @@ func (strs *strings) Close() error {
 	return nil
 }
 
-func unsafe_Int64ToBytes(xs []int64) []byte {
+func unsafeInt64ToBytes(xs []int64) []byte {
 	var v int64
 	count := len(xs) * int(unsafe.Sizeof(v))
 	slice := reflect.SliceHeader{uintptr(unsafe.Pointer(&xs[0])), count, count}
 	return *(*[]byte)(unsafe.Pointer(&slice))
 }
 
-func unsafe_BytesToInt64(xs []byte) []int64 {
+func unsafeBytesToInt64(xs []byte) []int64 {
 	var v int64
 	count := len(xs) / int(unsafe.Sizeof(v))
 	slice := reflect.SliceHeader{uintptr(unsafe.Pointer(&xs[0])), count, count}
@@ -105,7 +106,7 @@ func (strs *strings) save(prefix string) error {
 	if err != nil {
 		return err
 	}
-	idx.Write(unsafe_Int64ToBytes(strs.index))
+	idx.Write(unsafeInt64ToBytes(strs.index))
 	idx.Close()
 
 	return nil
@@ -126,11 +127,12 @@ func (strs *strings) load(prefix string) error {
 	}
 
 	strs.data = []byte(strs.datafile.Data())
-	strs.index = unsafe_BytesToInt64(strs.indexfile.Data())
+	strs.index = unsafeBytesToInt64(strs.indexfile.Data())
 
 	return nil
 }
 
+// SaveTo saves string list to file
 func SaveTo(prefix string, xs []string) error {
 	t := 0
 	for _, x := range xs {
@@ -150,6 +152,7 @@ func SaveTo(prefix string, xs []string) error {
 	return strs.save(prefix)
 }
 
+// Load loads string list from file
 func Load(prefix string) (Strings, error) {
 	strs := &strings{}
 	return strs, strs.load(prefix)
@@ -166,7 +169,7 @@ func main() {
 	}
 	defer strs.Close()
 
-	for i := 0; i < strs.Len(); i += 1 {
+	for i := 0; i < strs.Len(); i++ {
 		fmt.Println(strs.Get(i))
 	}
 }

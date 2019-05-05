@@ -5,44 +5,16 @@ import (
 	"os"
 )
 
-type GT struct {
+// Genotype holds genotipical information
+type Genotype struct {
 	Position  uint64
-	Gt        *VCFGTVal
+	Gt        *GenotypeVal
 	Lgt       int
 	IsDiploid bool
 }
 
-type DistanceTable = []uint64
-type DistanceRow = []uint64
-type DistanceMatrix []DistanceRow
-
-func NewDistanceMatrix(numSampleNames uint64) *DistanceMatrix {
-	res := make(DistanceMatrix, numSampleNames, numSampleNames)
-
-	for i := uint64(0); i < numSampleNames; i++ {
-		res[i] = make(DistanceRow, numSampleNames, numSampleNames)
-	}
-
-	return &res
-}
-
-func (d *DistanceMatrix) Clean() {
-	j := uint64(0)
-	le := uint64(len(*d))
-	for i := uint64(0); i < le; i++ {
-		for j = i; j < le; j++ {
-			(*d)[i][j] = 0
-		}
-	}
-}
-
-func (d *DistanceMatrix) Set(p1 uint64, p2 uint64, val uint64) {
-	if p1 > p2 {
-		p1, p2 = p2, p1
-	}
-	(*d)[p1][p2] = val
-}
-
+// DistanceTableValuesHetLow alias to a distance table where heterozygous
+// have lower values than homozygous
 var DistanceTableValuesHetLow = DistanceTable{
 	3, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7
@@ -58,6 +30,8 @@ var DistanceTableValuesHetLow = DistanceTable{
 	//-------------------
 }
 
+// DistanceTableValuesHetEqual alias to a distance table where heterozygous
+// have the same value as homozygous
 var DistanceTableValuesHetEqual = DistanceTable{
 	2, 1, 1, 0, //  0  1  2  3
 	1, 2, 2, 1, //  4  5  6  7
@@ -73,9 +47,51 @@ var DistanceTableValuesHetEqual = DistanceTable{
 	//-------------------
 }
 
+// DistanceTableValues alias to the default distance table
 var DistanceTableValues = DistanceTableValuesHetLow
 
-func CalculateDistanceDiploid(a *VCFGTVal, b *VCFGTVal) uint64 {
+// DistanceTable alias to the default distance table
+type DistanceTable = []uint64
+
+// DistanceRow alias to the default ditance row in a distance matrix
+type DistanceRow = []uint64
+
+// DistanceMatrix distance matrix type
+type DistanceMatrix []DistanceRow
+
+
+// NewDistanceMatrix creates a new distance matrix
+func NewDistanceMatrix(numSampleNames uint64) *DistanceMatrix {
+	res := make(DistanceMatrix, numSampleNames, numSampleNames)
+
+	for i := uint64(0); i < numSampleNames; i++ {
+		res[i] = make(DistanceRow, numSampleNames, numSampleNames)
+	}
+
+	return &res
+}
+
+// Clean clears the distance matrix, zeroing it
+func (d *DistanceMatrix) Clean() {
+	j := uint64(0)
+	le := uint64(len(*d))
+	for i := uint64(0); i < le; i++ {
+		for j = i; j < le; j++ {
+			(*d)[i][j] = 0
+		}
+	}
+}
+
+// Set sets a specific cell value
+func (d *DistanceMatrix) Set(p1 uint64, p2 uint64, val uint64) {
+	if p1 > p2 {
+		p1, p2 = p2, p1
+	}
+	(*d)[p1][p2] = val
+}
+
+// CalculateDistanceDiploid calculates the distance between two diploid snp calls
+func CalculateDistanceDiploid(a *GenotypeVal, b *GenotypeVal) uint64 {
 	a0 := (*a)[0]
 	a1 := (*a)[1]
 	b0 := (*b)[0]
@@ -90,14 +106,15 @@ func CalculateDistanceDiploid(a *VCFGTVal, b *VCFGTVal) uint64 {
 	return d
 }
 
-func GetValids(samples VCFSamplesGT) (valids []GT, numValids int) {
+// GetValids returns a list of all valid snp calls
+func GetValids(samples SamplesGenotype) (valids []Genotype, numValids int) {
 	numSamples := uint64(len(samples))
 	numValids = 0
-	valids = make([]GT, numSamples, numSamples)
+	valids = make([]Genotype, numSamples, numSamples)
 
 	for samplePos := uint64(0); samplePos < numSamples; samplePos++ {
 		sample := samples[samplePos]
-		gt := &sample.GT
+		gt := &sample.Genotype
 		lgt := len(*gt)
 
 		if lgt == 0 { // wrong.
@@ -116,12 +133,12 @@ func GetValids(samples VCFSamplesGT) (valids []GT, numValids int) {
 			if (*gt)[0] == -1 {
 				continue
 			} else {
-				valids[numValids] = GT{samplePos, gt, lgt, true}
+				valids[numValids] = Genotype{samplePos, gt, lgt, true}
 				numValids++
 			}
 		} else { // weird
 			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "POLYPLOYD")
-			valids[numValids] = GT{samplePos, gt, lgt, false}
+			valids[numValids] = Genotype{samplePos, gt, lgt, false}
 			numValids++
 		}
 	}
@@ -129,7 +146,8 @@ func GetValids(samples VCFSamplesGT) (valids []GT, numValids int) {
 	return valids, numValids
 }
 
-func CalculateDistance(numSamples uint64, reg *VCFRegister) *DistanceMatrix {
+// CalculateDistance calculates the distance between two snp calls
+func CalculateDistance(numSamples uint64, reg *Register) *DistanceMatrix {
 	reg.TempDistance.Clean()
 
 	valids, numValids := GetValids(reg.Samples)

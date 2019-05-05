@@ -12,6 +12,7 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
 
+// SaveCommand commandline save parameters
 type SaveCommand struct {
 	BlockSize         uint64          `long:"blockSize" description:"Block size" default:"100000"`
 	Chromosomes       string          `long:"chromosomes" description:"Comma separated list of chromomomes to read" default:""`
@@ -28,10 +29,12 @@ type SaveCommand struct {
 	DebugOptions      DebugOptions
 }
 
+// SaveArgsOptions commandline save parameters - options
 type SaveArgsOptions struct {
 	VCF string `long:"infile" description:"Input VCF file" required:"true" positional-arg-name:"Input VCF file"`
 }
 
+// DebugOptions commandline debug options
 type DebugOptions struct {
 	Debug                  bool  `long:"debug" description:"Print debug information"`
 	DebugFirstOnly         bool  `long:"debugFirstOnly" description:"Read only fist chromosome from each thread"`
@@ -48,8 +51,10 @@ func (d DebugOptions) String() (res string) {
 	return res
 }
 
+// SaveCommand instance
 var saveCommand SaveCommand
 
+// Execute runs the processing of the commandline parameters
 func (x *SaveCommand) Execute(args []string) error {
 	fmt.Printf("Save\n")
 
@@ -97,7 +102,7 @@ func (x *SaveCommand) Execute(args []string) error {
 		NumThreads:      x.SaveLoadOptions.NumThreads,
 	}
 
-	vcf.OpenVcfFile(sourceFile, callBackParameters, ibrowser.RegisterCallBack)
+	vcf.OpenFile(sourceFile, callBackParameters, ibrowser.RegisterCallBack)
 
 	if !x.SaveLoadOptions.NoCheck {
 		checkRes := ibrowser.Check()
@@ -117,10 +122,10 @@ func (x *SaveCommand) Execute(args []string) error {
 }
 
 func processDebug(opts DebugOptions) {
-	vcf.DEBUG = opts.Debug
-	vcf.ONLYFIRST = opts.DebugFirstOnly
-	vcf.BREAKAT_THREAD = opts.DebugMaxRegisterThread
-	vcf.BREAKAT_CHROM = opts.DebugMaxRegisterChrom
+	vcf.Debug = opts.Debug
+	vcf.OnlyFirst = opts.DebugFirstOnly
+	vcf.BreakAtThread = opts.DebugMaxRegisterThread
+	vcf.BreakAtChrom = opts.DebugMaxRegisterChrom
 }
 
 func processSaveParameters(parameters *Parameters, saveCommand SaveCommand) {

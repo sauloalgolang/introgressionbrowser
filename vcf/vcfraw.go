@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback VCFCallBack, chromosomeNames []string) {
+func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback RegisterCallBack, chromosomeNames []string) {
 	fmt.Println("Opening file to read chromosome:", chromosomeNames)
 
 	contents := bufio.NewScanner(r)
@@ -20,7 +20,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 	SampleNames := make([]string, 0, 100)
 	numSampleNames := uint64(0)
 
-	register := VCFRegisterRaw{
+	register := RegisterRaw{
 		LineNumber:       0,
 		Chromosome:       "",
 		ChromosomeNumber: 0,
@@ -89,7 +89,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			if chrom != lastChromosomeName { // first time to see it
 				lastChromosomeName = chrom
 
-				register := VCFRegisterRaw{
+				register := RegisterRaw{
 					LineNumber:       lineNumber,
 					Chromosome:       chrom,
 					ChromosomeNumber: chromosomeNumber,
@@ -119,19 +119,19 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 		registerNumberChrom++
 
-		if BREAKAT_CHROM > 0 && registerNumberChrom >= BREAKAT_CHROM {
+		if BreakAtChrom > 0 && registerNumberChrom >= BreakAtChrom {
 			// fmt.Println(" BREAKING ", chrom, " at register ", registerNumberChrom)
 			continue
 		}
 
 		registerNumberThread++
 
-		if BREAKAT_THREAD > 0 && registerNumberThread >= BREAKAT_THREAD {
+		if BreakAtThread > 0 && registerNumberThread >= BreakAtThread {
 			fmt.Println(" BREAKING ", chromosomeNames, " at register ", registerNumberThread)
 			return
 		}
 
-		pos, pos_err := strconv.ParseUint(cols[1], 10, 64)
+		pos, posErr := strconv.ParseUint(cols[1], 10, 64)
 		alt := cols[4]
 		altCols := strings.Split(alt, ",")
 		info := cols[8]
@@ -145,11 +145,11 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			gtIndex, _ = SliceIndex(len(infoCols), func(i int) bool { return infoCols[i] == "GT" })
 		}
 
-		if pos_err != nil {
+		if posErr != nil {
 			if callBackParameters.ContinueOnError {
 				continue
 			} else {
-				fmt.Println(pos_err)
+				fmt.Println(posErr)
 				os.Exit(1)
 			}
 		}
@@ -165,7 +165,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 		samples := cols[9:]
 		numSamples := uint64(len(samples))
-		samplesGT := make([]VCFGT, numSamples, numSamples)
+		samplesGT := make([]RegisterGenotype, numSamples, numSamples)
 
 		if numSamples != numSampleNames {
 			if callBackParameters.ContinueOnError {
@@ -179,7 +179,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		for samplePos, sample := range samples {
 			sampleCols := strings.Split(sample, ";")
 			sampleGT := sampleCols[gtIndex]
-			sampleGTVal := make(VCFGTVal, 2, 2)
+			sampleGTVal := make(GenotypeVal, 2, 2)
 
 			if sampleGT[0] == '.' {
 				sampleGTVal[0] = -1
@@ -187,23 +187,23 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 			} else {
 				if len(sampleGT) == 3 {
-					sampleGT0, sampleGT0_err := strconv.Atoi(string(sampleGT[0]))
-					sampleGT1, sampleGT1_err := strconv.Atoi(string(sampleGT[2]))
+					sampleGT0, sampleGT0Err := strconv.Atoi(string(sampleGT[0]))
+					sampleGT1, sampleGT1Err := strconv.Atoi(string(sampleGT[2]))
 
-					if sampleGT0_err != nil {
+					if sampleGT0Err != nil {
 						if callBackParameters.ContinueOnError {
 							continue
 						} else {
-							fmt.Println(sampleGT0_err)
+							fmt.Println(sampleGT0Err)
 							os.Exit(1)
 						}
 					}
 
-					if sampleGT1_err != nil {
+					if sampleGT1Err != nil {
 						if callBackParameters.ContinueOnError {
 							continue
 						} else {
-							fmt.Println(sampleGT1_err)
+							fmt.Println(sampleGT1Err)
 							os.Exit(1)
 						}
 					}
@@ -212,7 +212,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 					sampleGTVal[1] = sampleGT1
 				}
 			}
-			samplesGT[samplePos].GT = sampleGTVal
+			samplesGT[samplePos].Genotype = sampleGTVal
 		}
 
 		//  0          1        2 3 4 5      6
@@ -250,7 +250,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 	if sendOnlyChromosomeNames { // return only chromosome names
 		// return final count
 
-		register := VCFRegisterRaw{
+		register := RegisterRaw{
 			LineNumber: lineNumber,
 			Chromosome: "",
 			Position:   0,

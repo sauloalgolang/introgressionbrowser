@@ -18,6 +18,7 @@ import (
 //
 //
 
+// GatherChromosomeNames Gets chromosome name from a file and saves in a index file. if index file exists, reads it directly
 func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackParameters interfaces.CallBackParameters) (chromosomeNames interfaces.ChromosomeNamesType) {
 	exists, _ := chromosomeNames.Exists(sourceFile)
 
@@ -28,7 +29,7 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackPar
 	} else {
 		fmt.Println(" creating")
 
-		addToNames := func(SampleNames *VCFSamples, register *VCFRegister) {
+		addToNames := func(SampleNames *Samples, register *Register) {
 			fmt.Println("adding chromosome ", register.Chromosome)
 			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}
@@ -48,6 +49,7 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackPar
 	return chromosomeNames
 }
 
+// SpreadChromosomes spreads the available chromosomes among the threads
 func SpreadChromosomes(chromosomeNames interfaces.ChromosomeNamesType, numThreads int) [][]string {
 	chromosomeGroups := make([][]string, numThreads, numThreads)
 	chromosomeGroupsSizes := make([]int64, numThreads, numThreads)
