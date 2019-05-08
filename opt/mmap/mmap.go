@@ -83,14 +83,22 @@ func (strs *strings) Close() error {
 func unsafeInt64ToBytes(xs []int64) []byte {
 	var v int64
 	count := len(xs) * int(unsafe.Sizeof(v))
-	slice := reflect.SliceHeader{uintptr(unsafe.Pointer(&xs[0])), count, count}
+	slice := reflect.SliceHeader{
+		Data:uintptr(unsafe.Pointer(&xs[0])),
+		Len: count,
+		Cap: count,
+	}
 	return *(*[]byte)(unsafe.Pointer(&slice))
 }
 
 func unsafeBytesToInt64(xs []byte) []int64 {
 	var v int64
 	count := len(xs) / int(unsafe.Sizeof(v))
-	slice := reflect.SliceHeader{uintptr(unsafe.Pointer(&xs[0])), count, count}
+	slice := reflect.SliceHeader{
+		Data: uintptr(unsafe.Pointer(&xs[0])),
+		Len: count,
+		Cap: count,
+	}
 	return *(*[]int64)(unsafe.Pointer(&slice))
 }
 

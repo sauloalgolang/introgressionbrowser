@@ -108,15 +108,11 @@ func (s *Saver) Exists() (bool, error) {
 	} else if os.IsNotExist(err) {
 		// path/to/whatever does *not* exist
 		return false, err
-
-	} else {
-		return false, err
-		// Schrodinger: file may or may not exist. See err for details.
-
-		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
 	}
 
 	return false, err
+	// Schrodinger: file may or may not exist. See err for details.
+	// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
 }
 
 //
@@ -147,8 +143,6 @@ func (s *Saver) Save(val interface{}) {
 		if isCompressed {
 			marshaler := GetFormatMarshalerStreamerWriter(format)
 			compressor := GetCompressInterfaceWriter(compress)
-			fmt.Println("marshaler ", marshaler)
-			fmt.Println("compressor", compressor)
 			saveDataStreamCompressed(outfile, marshaler, compressor, val)
 		} else {
 			marshaler := GetFormatMarshalerStreamer(format)

@@ -45,9 +45,9 @@ type DebugOptions struct {
 func (d DebugOptions) String() (res string) {
 	res += fmt.Sprintf("Debug:\n")
 	res += fmt.Sprintf(" Debug                  : %#v\n", d.Debug)
-	res += fmt.Sprintf(" DebugFirstOnly         : %#v\n", d.Debug)
-	res += fmt.Sprintf(" DebugMaxRegisterThread : %d\n", d.Debug)
-	res += fmt.Sprintf(" DebugMaxRegisterChrom  : %d\n", d.Debug)
+	res += fmt.Sprintf(" DebugFirstOnly         : %#v\n", d.DebugFirstOnly)
+	res += fmt.Sprintf(" DebugMaxRegisterThread : %d\n", d.DebugMaxRegisterThread)
+	res += fmt.Sprintf(" DebugMaxRegisterChrom  : %d\n", d.DebugMaxRegisterChrom)
 	return res
 }
 

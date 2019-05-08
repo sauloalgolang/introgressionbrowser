@@ -390,7 +390,7 @@ func (m *MultiArrayFile) Read(data interface{}) (hasData bool, serial uint64) {
 
 	return header.HasData, header.Serial
 	// }
-	return false, 0
+	// return false, 0
 }
 
 // Read16 reads a 16 bits array from file
@@ -433,7 +433,7 @@ func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial uint64) {
 	}
 	return header.HasData, header.Serial
 	// }
-	return false, 0
+	// return false, 0
 }
 
 // Read32 reads a 32 bits array from file
@@ -479,7 +479,7 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial uint64) {
 	}
 	return header.HasData, header.Serial
 	// }
-	return false, 0
+	// return false, 0
 }
 
 // Read64 reads a 64 bits array from file
@@ -522,7 +522,7 @@ func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial uint64) {
 	}
 	return header.HasData, header.Serial
 	// }
-	return false, 0
+	// return false, 0
 }
 
 //

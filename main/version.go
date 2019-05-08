@@ -1,13 +1,19 @@
 package main
 
-// IBROWSER_VERSION - Current ibrowser version
-const IBROWSER_VERSION = 0.5
+import "fmt"
 
-// DEFAULT_BLOCK_SIZE - Default block size
-const DEFAULT_BLOCK_SIZE = uint64(100000)
+// IBrowserVersion - Current ibrowser version
+const IBrowserVersion = 0.5
 
-// DEFAULT_OUTFILE - Default output file
-const DEFAULT_OUTFILE = "res/output"
-
-// DEFAULT_COUNTER_BITS - Default counter bits
-const DEFAULT_COUNTER_BITS = 32
+// PrintVersion - prints the version
+func PrintVersion() {
+	fmt.Println("IBrowser Git Commit Author  :", IBrowserGitCommitAuthor)
+	fmt.Println("IBrowser Git Commit Commiter:", IBrowserGitCommitCommiter)
+	fmt.Println("IBrowser Git Commit Hash    :", IBrowserGitCommitHash)
+	fmt.Println("IBrowser Git Commit Notes   :", IBrowserGitCommitNotes)
+	fmt.Println("IBrowser Git Commit Title   :", IBrowserGitCommitTitle)
+	fmt.Println("IBrowser Git Status         :", IBrowserGitStatus)
+	fmt.Println("IBrowser Git Diff           :", IBrowserGitDiff)
+	fmt.Println("IBrowser Go Version         :", IBrowserGoVersion)
+	fmt.Println("IBrowser Version            :", IBrowserVersion)
+}
