@@ -558,8 +558,56 @@ func (d *DistanceMatrix1Dg) kToIJ(k uint64) (uint64, uint64) {
 func (d *DistanceMatrix1Dg) Check() (res bool) {
 	res = true
 
+	// *(data.(*[]uint32)) = e
+
+	// d := DistanceMatrix1Dg{
+	// 	ChromosomeName: chromosomeName,
+	// 	BlockSize:      blockSize,
+	// 	Dimension:      dimension,
+	// 	Size:           size,
+	// 	CounterBits:    counterBits,
+	// 	BlockPosition:  blockPosition,
+	// 	BlockNumber:    blockNumber,
+	// 	Serial:         0,
+	// }
+
 	return res
 }
+
+func (d *DistanceMatrix1Dg) checkHeader(header RegisterHeader) {
+	fmt.Println("DistanceMatrix1Dg::checkHeader")
+
+	if header.Serial != d.Serial {
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: Serial mismatch: %d != %d", header.Serial, d.Serial)
+		panic("DistanceMatrix1Dg:checkHeader :: Serial mismatch")
+	} else if header.CounterBits != d.CounterBits {
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: CounterBits mismatch: %d != %d", header.CounterBits, d.CounterBits)
+		panic("DistanceMatrix1Dg:checkHeader :: CounterBits mismatch")
+	} else if len(d.data32) == 0 {
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: Empty table:", header.CounterBits, d.data32)
+		panic("DistanceMatrix1Dg:checkHeader :: Empty table")
+	} else if uint64(len(d.data32)) != d.Size {
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: LenData mismatch: %d != %d", len(d.data32), d.Size)
+		panic("DistanceMatrix1Dg:checkHeader :: LenData mismatch")
+	} else if header.DataLen != d.Size {
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: DataLen mismatch: %d != %d", header.DataLen, d.Size)
+		panic("DistanceMatrix1Dg:checkHeader :: DataLen mismatch")
+	} else {
+		sumDataV := uint64(0)
+		
+		for _, w := range d.data32 {
+			sumDataV += uint64(w)
+		}
+
+		if header.SumData != sumDataV {
+			fmt.Printf("DistanceMatrix1Dg:checkHeader :: SumData mismatch: %d != %d", header.SumData, sumDataV)
+			panic("DistanceMatrix1Dg:checkHeader :: SumData mismatch")
+		}
+	}
+
+	fmt.Println("DistanceMatrix1Dg::checkHeader - DONE")
+}
+
 
 //
 // Save and Load
@@ -609,13 +657,17 @@ func (d *DistanceMatrix1Dg) Dump(dumper *MultiArrayFile) (serial uint64) {
 
 // UnDump loads the table from a binary file
 func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
+	header := RegisterHeader{}
+
 	if d.CounterBits == 16 {
-		hasData, serial = dumper.Read16(&d.data16)
+		header = dumper.Read16(&d.data16)
 	} else if d.CounterBits == 32 {
-		hasData, serial = dumper.Read32(&d.data32)
+		header = dumper.Read32(&d.data32)
 	} else if d.CounterBits == 64 {
-		hasData, serial = dumper.Read64(&d.data64)
+		header = dumper.Read64(&d.data64)
 	}
 
-	return
+	d.checkHeader(header)
+
+	return header.Serial, header.HasData
 }

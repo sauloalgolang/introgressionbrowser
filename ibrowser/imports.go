@@ -16,17 +16,20 @@ var Min64 = tools.Min64
 // Max64 returns the maximal value between two values
 var Max64 = tools.Max64
 
-// SliceIndex finds the first index of a given value in a slice
+// SliceIndex alias to tools.SliceIndex
 var SliceIndex = tools.SliceIndex
 
 //
 // save
 
-// NewSaverCompressed creates a new compressor for saving files
+// NewSaverCompressed alias to save.NewSaverCompressed
 var NewSaverCompressed = save.NewSaverCompressed
 
-// NewMultiArrayFile creates a new binary dumper
+// NewMultiArrayFile alias to save.NewMultiArrayFile
 var NewMultiArrayFile = save.NewMultiArrayFile
+
+// RegisterHeader alias to save.RegisterHeader
+type RegisterHeader = save.RegisterHeader
 
 // MultiArrayFile defines the file descriptor for binary files
 type MultiArrayFile = save.MultiArrayFile

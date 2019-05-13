@@ -50,7 +50,7 @@ func (p Parameters) String() (res string) {
 	res += fmt.Sprintf(" Chromosomes            : %#v\n", p.Chromosomes)
 	res += fmt.Sprintf(" Compression            : %#v\n", p.Compression)
 	res += fmt.Sprintf(" ContinueOnError        : %#v\n", p.ContinueOnError)
-	res += fmt.Sprintf(" CounterBits            : %#v\n", p.CounterBits)
+	res += fmt.Sprintf(" CounterBits            : %#d\n", p.CounterBits)
 	res += fmt.Sprintf(" DebugFirstOnly         : %#v\n", p.DebugFirstOnly)
 	res += fmt.Sprintf(" DebugMaxRegisterThread : %#v\n", p.DebugMaxRegisterThread)
 	res += fmt.Sprintf(" DebugMaxRegisterChrom  : %#v\n", p.DebugMaxRegisterChrom)

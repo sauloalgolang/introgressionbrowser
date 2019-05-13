@@ -101,8 +101,7 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 		os.Exit(1)
 	}
 
-	block = 
-	ibc.BlockManager.NewBlock(
+	block = ibc.BlockManager.NewBlock(
 		ibc.ChromosomeName,
 		ibc.ChromosomeNumber,
 		ibc.BlockSize,
@@ -371,8 +370,12 @@ func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) 
 	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
 
 	if isSave {
+		fmt.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices")
 		ibc.BlockManager.Save(chromosomeFileName)
+		fmt.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
 	} else {
+		fmt.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices")
 		ibc.BlockManager.Load(chromosomeFileName)
+		fmt.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
 	}
 }

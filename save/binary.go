@@ -349,7 +349,7 @@ func (m *MultiArrayFile) Write64(data *[]uint64) (serial uint64) {
 //
 
 // Read reads a array from file
-func (m *MultiArrayFile) Read(data interface{}) (hasData bool, serial uint64) {
+func (m *MultiArrayFile) Read(data interface{}) (header RegisterHeader) {
 	// if m.isSoft {
 	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
 	// log.Println(registerLocation)
@@ -362,96 +362,7 @@ func (m *MultiArrayFile) Read(data interface{}) (hasData bool, serial uint64) {
 	// }
 	// map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
 	// } else {
-	header := RegisterHeader{}
-
-	err1 := binary.Read(m.bufReaderIdx, m.endianness, &header)
-
-	if err1 != nil {
-		log.Fatalln("binary.Read failed reading data16:", err1)
-	}
-
-	d := *(data.(*[]uint32))
-	d = make([]uint32, header.DataLen, header.DataLen)
-
-	err2 := binary.Read(m.bufReaderDta, m.endianness, d)
-
-	if err2 != nil {
-		log.Fatalln("binary.Read failed reading data16:", err2)
-	}
-
-	sumDataV := uint64(0)
-	for _, w := range *(data.(*[]uint32)) {
-		sumDataV += uint64(w)
-	}
-
-	if header.SumData != sumDataV {
-		log.Fatalln("binary.Read failed reading data16: checksum error", header.SumData, sumDataV)
-	}
-
-	return header.HasData, header.Serial
-	// }
-	// return false, 0
-}
-
-// Read16 reads a 16 bits array from file
-func (m *MultiArrayFile) Read16(data *[]uint16) (hasData bool, serial uint64) {
-	// if m.isSoft {
-	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
-	// log.Println(registerLocation)
-
-	// func Mmap(fd int, offset int64, length int, prot int, flags int) (data []byte, err error)
-	// mmap, err := syscall.Mmap(int(m.file.Fd()), 0, int(t), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
-	// map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
-	// } else {
-	header := RegisterHeader{}
-
-	err1 := binary.Read(m.bufReaderIdx, m.endianness, &header)
-
-	if err1 != nil {
-		log.Fatalln("binary.Read failed reading data16:", err1)
-	}
-
-	(*data) = make([]uint16, header.DataLen, header.DataLen)
-
-	err2 := binary.Read(m.bufReaderDta, m.endianness, data)
-
-	if err2 != nil {
-		log.Fatalln("binary.Read failed reading data16:", err2)
-	}
-
-	sumDataV := uint64(0)
-	for _, w := range *data {
-		sumDataV += uint64(w)
-	}
-
-	if header.SumData != sumDataV {
-		log.Fatalln("binary.Read failed reading data16: checksum error", header.SumData, sumDataV)
-	}
-	return header.HasData, header.Serial
-	// }
-	// return false, 0
-}
-
-// Read32 reads a 32 bits array from file
-func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial uint64) {
-	m.Read(data)
-	// if m.isSoft {
-	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
-	// log.Println(registerLocation)
-
-	// func Mmap(fd int, offset int64, length int, prot int, flags int) (data []byte, err error)
-	// mmap, err := syscall.Mmap(int(m.file.Fd()), 0, int(t), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
-	// map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
-	// } else {
-	header := RegisterHeader{}
+	header = RegisterHeader{}
 
 	err1 := binary.Read(m.bufReaderIdx, m.endianness, &header)
 
@@ -459,70 +370,55 @@ func (m *MultiArrayFile) Read32(data *[]uint32) (hasData bool, serial uint64) {
 		log.Fatalln("binary.Read failed reading data32:", err1)
 	}
 
-	log.Println(header)
+	log.Printf("binary.Read header HasData %#v Serial %d CounterBits %d DataLen %d SumData %d",
+		header.HasData,
+		header.Serial,
+		header.CounterBits,
+		header.DataLen,
+		header.SumData,
+	)
+	
+	e := make([]uint32, header.DataLen, header.DataLen)
 
-	(*data) = make([]uint32, header.DataLen, header.DataLen)
-
-	err2 := binary.Read(m.bufReaderDta, m.endianness, data)
+	err2 := binary.Read(m.bufReaderDta, m.endianness, e)
 
 	if err2 != nil {
 		log.Fatalln("binary.Read failed reading data32:", err2)
 	}
 
 	sumDataV := uint64(0)
-	for _, w := range *data {
+	for _, w := range e {
 		sumDataV += uint64(w)
 	}
 
 	if header.SumData != sumDataV {
 		log.Fatalln("binary.Read failed reading data32: checksum error", header.SumData, sumDataV)
+	// } else {
+	// 	*(data.(*[]uint32)) = e
+	// 	log.Printf("data %#v", data.(*[]uint32))
+	// 	log.Fatalln("binary.Read success reading register", header.SumData)
 	}
-	return header.HasData, header.Serial
+
+	*(data.(*[]uint32)) = e
+
+	return
 	// }
 	// return false, 0
 }
 
+// Read16 reads a 16 bits array from file
+func (m *MultiArrayFile) Read16(data *[]uint16) (RegisterHeader) {
+	return m.Read(data)
+}
+
+// Read32 reads a 32 bits array from file
+func (m *MultiArrayFile) Read32(data *[]uint32) (RegisterHeader) {
+	return m.Read(data)
+}
+
 // Read64 reads a 64 bits array from file
-func (m *MultiArrayFile) Read64(data *[]uint64) (hasData bool, serial uint64) {
-	// if m.isSoft {
-	// registerLocation := m.CalculateRegisterLocation(counterBits, dataLen, serial)
-	// log.Println(registerLocation)
-
-	// func Mmap(fd int, offset int64, length int, prot int, flags int) (data []byte, err error)
-	// mmap, err := syscall.Mmap(int(m.file.Fd()), 0, int(t), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
-	// map_array := (*[n]int)(unsafe.Pointer(&mmap[0]))
-	// } else {
-	header := RegisterHeader{}
-
-	err1 := binary.Read(m.bufReaderIdx, m.endianness, &header)
-
-	if err1 != nil {
-		log.Fatalln("binary.Read failed reading data64:", err1)
-	}
-
-	(*data) = make([]uint64, header.DataLen, header.DataLen)
-
-	err2 := binary.Read(m.bufReaderDta, m.endianness, data)
-
-	if err2 != nil {
-		log.Fatalln("binary.Read failed reading data64:", err2)
-	}
-
-	sumDataV := uint64(0)
-	for _, w := range *data {
-		sumDataV += w
-	}
-
-	if header.SumData != sumDataV {
-		log.Fatalln("binary.Read failed reading data32: checksum error", header.SumData, sumDataV)
-	}
-	return header.HasData, header.Serial
-	// }
-	// return false, 0
+func (m *MultiArrayFile) Read64(data *[]uint64) (RegisterHeader) {
+	return m.Read(data)
 }
 
 //

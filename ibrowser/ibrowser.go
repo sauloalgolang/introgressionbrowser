@@ -13,6 +13,8 @@ import (
 	"github.com/sauloalgolang/introgressionbrowser/save"
 )
 
+const defaultGlobalSummaryName = "_whole_genome"
+
 var mutex = &sync.Mutex{}
 
 //
@@ -36,11 +38,10 @@ type IBrowser struct {
 	//
 	ChromosomesNames NamePosPairList
 	Chromosomes      map[string]*IBChromosome
-	Block            *IBBlock
+	BlockManager     *BlockManager
 	//
 	lastChrom    string
 	lastPosition uint64
-	blockManager *BlockManager
 	//
 	// Header string
 	//
@@ -78,8 +79,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		ChromosomesNames: make(NamePosPairList, 0, 100),
 		Chromosomes:      make(map[string]*IBChromosome, 100),
 		//
-		// block: NewIBBlock("_whole_genome", blockSize, counterBits, 0, 0, 0),
-		blockManager: NewBlockManager("_whole_genome"),
+		BlockManager: NewBlockManager(defaultGlobalSummaryName),
 	}
 
 	return &ib
@@ -91,7 +91,7 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	ib.Samples = make(VCFSamples, numSamples, numSamples)
 
 	ib.NumSamples = uint64(numSamples)
-	ib.Block = ib.blockManager.NewBlock("_whole_genome", 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0)
+	ib.BlockManager.NewBlock(defaultGlobalSummaryName, 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0)
 
 	for samplePos, sampleName := range *samples {
 		// fmt.Println(samplePos, sampleName)
@@ -123,7 +123,7 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 		ib.CounterBits,
 		ib.NumSamples,
 		ib.KeepEmptyBlock,
-		ib.blockManager,
+		ib.BlockManager,
 	)
 
 	ib.ChromosomesNames = append(ib.ChromosomesNames, NamePosPair{chromosomeName, chromosomeNumber})
@@ -160,7 +160,13 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 		ib.NumSNPS++
 
-		ib.Block.AddVcfMatrix(0, reg.Distance)
+		block, hasBlock := ib.GetSummaryBlock()
+		if !hasBlock {
+			fmt.Println(ib.BlockManager)
+			panic("!GetSummaryBlock")
+		}
+
+		block.AddVcfMatrix(0, reg.Distance)
 	}
 	mutex.Unlock()
 }
@@ -196,7 +202,13 @@ func (ib *IBrowser) Check() (res bool) {
 func (ib *IBrowser) selfCheck() (res bool) {
 	res = true
 
-	res = res && ib.Block.Check()
+	block, hasBlock := ib.GetSummaryBlock()
+	if !hasBlock {
+		fmt.Println(ib.BlockManager)
+		panic("!GetSummaryBlock")
+	}
+
+	res = res && block.Check()
 
 	if !res {
 		fmt.Printf("Failed ibrowser self check - block check\n")
@@ -204,32 +216,32 @@ func (ib *IBrowser) selfCheck() (res bool) {
 	}
 
 	{
-		res = res && (ib.BlockSize == ib.Block.BlockSize)
+		res = res && (ib.BlockSize == block.BlockSize)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, ib.Block.BlockSize)
+			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, block.BlockSize)
 			return res
 		}
 
-		res = res && (ib.CounterBits == ib.Block.CounterBits)
+		res = res && (ib.CounterBits == block.CounterBits)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, ib.Block.CounterBits)
+			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, block.CounterBits)
 			return res
 		}
 	}
 
-	res = res && (ib.NumSNPS == ib.Block.NumSNPS)
+	res = res && (ib.NumSNPS == block.NumSNPS)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, ib.Block.NumSNPS)
+		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, block.NumSNPS)
 		return res
 	}
 
-	res = res && (ib.NumSamples == ib.Block.NumSamples)
+	res = res && (ib.NumSamples == block.NumSamples)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, ib.Block.NumSamples)
+		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, block.NumSamples)
 		return res
 	}
 
@@ -269,8 +281,13 @@ func (ib *IBrowser) GetSampleName(sampleID int) (string, bool) {
 }
 
 // GetSummaryBlock returns the summary block
-func (ib *IBrowser) GetSummaryBlock() (*IBBlock, bool) {
-	return ib.Block, true
+func (ib *IBrowser) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
+	block, hasBlock = ib.BlockManager.GetBlockByName(defaultGlobalSummaryName)
+	if !hasBlock {
+		fmt.Println(ib.BlockManager)
+		panic("!GetSummaryBlock")
+	}
+	return block, hasBlock
 }
 
 // GetSummaryBlockMatrix returns the summary block matrix
@@ -527,13 +544,15 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
-		fmt.Println("saving global ibrowser status")
 		ib.Dump(outPrefix, isSave, isSoft)
+		fmt.Println("saving global ibrowser status")
 		saver.Save(ib)
+		fmt.Println("saving global ibrowser status - DONE")
 	} else {
 		fmt.Println("loading global ibrowser status")
 		saver.Load(ib)
 		sort.Sort(ib.ChromosomesNames)
+		fmt.Println("loading global ibrowser status - DONE")
 		ib.Dump(outPrefix, isSave, isSoft)
 	}
 }
@@ -558,10 +577,16 @@ func (ib *IBrowser) GenMatrixChromosomeDumpFileName(outPrefix string, chromosome
 func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 	summaryFileName := ib.GenMatrixDumpFileName(outPrefix)
 
+	fmt.Println("(Un)Dumping Matrices")
+
 	if isSave {
-		ib.blockManager.Save(summaryFileName)
+		fmt.Println(" Dumping Summary Matrices")
+		ib.BlockManager.Save(summaryFileName)
+		fmt.Println(" Dumping Summary Matrices - DONE")
 	} else {
-		ib.blockManager.Load(summaryFileName)
+		fmt.Println(" UnDumping Summary Matrices")
+		ib.BlockManager.Load(summaryFileName)
+		fmt.Println(" UnDumping Summary Matrices - DONE")
 	}
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
@@ -570,4 +595,6 @@ func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 
 		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}
+
+	fmt.Println("(Un) Dumping Matrices - DONE")
 }
