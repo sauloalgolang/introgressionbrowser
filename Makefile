@@ -146,15 +146,23 @@ wasm_exec.js:
 
 
 
-.PHONY: examples
+.PHONY: examples annotated
 
 examples: data/150_VCFs_2.50.tar.gz data/360_merged_2.50.vcf.gz
 
-data/150_VCFs_2.50.tar.gz:
-	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/360_merged_2.50.vcf.gz -O data/360_merged_2.50.vcf.gz.tmp && mv -v data/360_merged_2.50.vcf.gz.tmp data/360_merged_2.50.vcf.gz
+annotated: data/annotated_tomato_150.vcf.gz data/annotated_tomato_360.vcf.gz
 
 data/360_merged_2.50.vcf.gz:
-	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/150_VCFs_2.50.tar.gz   -O data/150_VCFs_2.50.tar.gz.tmp   && mv -v data/150_VCFs_2.50.tar.gz.tmp   data/150_VCFs_2.50.tar.gz
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/360_merged_2.50.vcf.gz      -O data/360_merged_2.50.vcf.gz.tmp      && mv -v data/360_merged_2.50.vcf.gz.tmp      data/360_merged_2.50.vcf.gz
+
+data/150_VCFs_2.50.tar.gz:
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/150_VCFs_2.50.tar.gz        -O data/150_VCFs_2.50.tar.gz.tmp        && mv -v data/150_VCFs_2.50.tar.gz.tmp        data/150_VCFs_2.50.tar.gz
+
+data/annotated_tomato_150.vcf.gz:
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/annotated_tomato_150.vcf.gz -O data/annotated_tomato_150.vcf.gz.tmp && mv -v data/annotated_tomato_150.vcf.gz.tmp data/annotated_tomato_150.vcf.gz
+
+data/annotated_tomato_360.vcf.gz:
+	wget --no-clobber https://s3.eu-central-1.amazonaws.com/saulo.ibrowser/annotated_tomato_360.vcf.gz -O data/annotated_tomato_360.vcf.gz.tmp && mv -v data/annotated_tomato_360.vcf.gz.tmp data/annotated_tomato_360.vcf.gz
 
 
 
