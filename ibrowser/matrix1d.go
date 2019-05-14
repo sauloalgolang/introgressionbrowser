@@ -584,7 +584,7 @@ func (d *DistanceMatrix1Dg) checkHeader(header RegisterHeader) {
 		fmt.Printf("DistanceMatrix1Dg:checkHeader :: CounterBits mismatch: %d != %d", header.CounterBits, d.CounterBits)
 		panic("DistanceMatrix1Dg:checkHeader :: CounterBits mismatch")
 	} else if len(d.data32) == 0 {
-		fmt.Printf("DistanceMatrix1Dg:checkHeader :: Empty table:", header.CounterBits, d.data32)
+		fmt.Printf("DistanceMatrix1Dg:checkHeader :: Empty table: %d != %d", header.CounterBits, d.data32)
 		panic("DistanceMatrix1Dg:checkHeader :: Empty table")
 	} else if uint64(len(d.data32)) != d.Size {
 		fmt.Printf("DistanceMatrix1Dg:checkHeader :: LenData mismatch: %d != %d", len(d.data32), d.Size)
