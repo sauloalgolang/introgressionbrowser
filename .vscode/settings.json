@@ -2,5 +2,6 @@
     "go.formatTool": "gofmt",
     "go.formatFlags": [
         "-s"
-    ]
+    ],
+    "go.inferGopath": false
 }

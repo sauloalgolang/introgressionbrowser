@@ -593,6 +593,7 @@ func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.Chromosomes[chromosomeName.Name]
 
+		chromosome.setRootBlockManager(ib.BlockManager)
 		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}
 

@@ -121,13 +121,21 @@ func (ibc *IBChromosome) HasBlock(blockNum uint64) bool {
 	return false
 }
 
+func (ibc *IBChromosome) setRootBlockManager(bm *BlockManager) {
+	ibc.rootBlockManager = bm
+}
+
 // GetSummaryBlock returns the summar block
 func (ibc *IBChromosome) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
+	// fmt.Println("GetSummaryBlock :: ibc.rootBlockManager: ", ibc.rootBlockManager)
+
 	block, hasBlock = ibc.rootBlockManager.GetBlockByName(ibc.ChromosomeName)
+	
 	if !hasBlock {
 		fmt.Println(ibc.rootBlockManager)
 		panic("!GetSummaryBlock")
 	}
+	
 	return block, hasBlock
 }
 

@@ -27,10 +27,10 @@ func NewBlockManager(domain string) (bm *BlockManager) {
 func (bm *BlockManager) String() (res string) {
 	res += fmt.Sprintf("BlockManager ::\n")
 	res += fmt.Sprintf(" Domain       %s\n", bm.Domain)
-	res += fmt.Sprintf(" Blocks #     %d\n", bm.Blocks)
+	res += fmt.Sprintf(" Blocks #     %d\n", len(bm.Blocks))
 	res += fmt.Sprintf(" Num Blocks   %d\n", bm.NumBlocks)
-	res += fmt.Sprintf(" BlockNames   %s\n", bm.BlockNames)
-	res += fmt.Sprintf(" BlockNumbers %s\n", bm.BlockNumbers)
+	res += fmt.Sprintf(" BlockNames   %#v\n", bm.BlockNames)
+	res += fmt.Sprintf(" BlockNumbers %#v\n", bm.BlockNumbers)
 	return
 }
 
@@ -65,7 +65,10 @@ func (bm *BlockManager) NewBlock(
 
 // GetBlockByName returns block given its name
 func (bm *BlockManager) GetBlockByName(name string) (block *IBBlock, ok bool) {
-	fmt.Println("BlockManager.GetBlockByName :: name:", name, "BlockNames:", bm.BlockNames, "Blocks", bm.Blocks)
+	// fmt.Println("BlockManager.GetBlockByName :: name:", name)
+	// fmt.Println("BlockManager.GetBlockByName :: bm:", bm)
+	// fmt.Println("BlockManager.GetBlockByName :: BlockNames:", bm.BlockNames)
+	// fmt.Println("BlockManager.GetBlockByName :: Blocks", bm.Blocks)
 	if pos, hasName := bm.BlockNames[name]; hasName {
 		if pos > uint64(len(bm.Blocks)) {
 			panic(fmt.Sprintf("BlockManager.GetBlockByName :: access error. position %d > %d", pos, len(bm.Blocks)))
@@ -106,15 +109,17 @@ func (bm *BlockManager) saveLoad(outPrefix string, isSave bool) {
 	dumper := NewMultiArrayFile(outPrefix, isSave, isSoft)
 	defer dumper.Close()
 
-	fmt.Println(bm)
+	// fmt.Println(bm)
 
 	for b, block := range bm.Blocks {
 		fmt.Println("BlockManager.saveLoad", b)
+		// fmt.Println("BlockManager.saveLoad", b, " - BM - ", bm)
 		if isSave {
 			block.Dump(dumper)
 		} else {
 			block.UnDump(dumper)
 		}
-		fmt.Println("BlockManager.saveLoad", b, " - DONE")
+		// fmt.Println("BlockManager.saveLoad", b, " - DONE")
+		// fmt.Println("BlockManager.saveLoad", b, " - BLOCK", bm.Blocks)
 	}
 }

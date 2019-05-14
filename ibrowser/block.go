@@ -310,7 +310,7 @@ func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
 
 // UnDump reads the matrix table from a binary file
 func (ibb *IBBlock) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
-	fmt.Println("UnDump matrix :: ", ibb)
+	// fmt.Println("UnDump matrix :: ", ibb)
 
 	matrix, hasMatrix := ibb.GetMatrix()
 
