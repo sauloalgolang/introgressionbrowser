@@ -71,8 +71,14 @@ help:
 	@echo ""
 	@echo " httpserver"
 	@echo ""
+	@echo " annotated"
+	@echo "  data/annotated_tomato_150.vcf.gz"
+	@echo "  data/annotated_tomato_360.vcf.gz"
 	@echo " examples"
+	@echo "  data/150_VCFs_2.50.tar.gz"
+	@echo "  data/360_merged_2.50.vcf.gz"
 	@echo " serve"
+	@echo " version"
 	@echo ""
 	@echo " get"
 	@echo " requirements"
@@ -90,6 +96,10 @@ help:
 	@echo " test"
 	@echo "  test_save"
 	@echo "  test_load"
+	@echo "  quick_test"
+	@echo "  quick_test_save"
+	@echo "  large_test"
+	@echo "  large_test_save"
 
 .PHONY: ibrowser ibrowser.wasm httpserver bin version
 
