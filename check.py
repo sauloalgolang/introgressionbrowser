@@ -150,119 +150,117 @@ def main(prefix):
 
     dataKey = None
 
-    with open(basefile, 'rt') as fhd:
-        data = load(fhd, Loader=Loader)
+    data = load(open(basefile, 'rt'), Loader=Loader)
+    # print(data)
 
-        # print(data)
+    chromosomesnames = data["chromosomesnames"]
 
-        chromosomesnames = data["chromosomesnames"]
+    print("chromosomesnames", chromosomesnames)
 
-        print("chromosomesnames", chromosomesnames)
+    samples = data["samples"]
+    numsamples = data["numsamples"]
+    #blocksize = data["blocksize"]
+    #keepemptyblock = data["keepemptyblock"]
+    #numregisters = data["numregisters"]
+    numsnps = data["numsnps"]
+    numblocks = data["numblocks"]
 
-        samples = data["samples"]
-        numsamples = data["numsamples"]
-        #blocksize = data["blocksize"]
-        #keepemptyblock = data["keepemptyblock"]
-        #numregisters = data["numregisters"]
-        numsnps = data["numsnps"]
-        numblocks = data["numblocks"]
+    chromosomes = data["chromosomes"]
 
-        chromosomes = data["chromosomes"]
+    numsamplesCalc = len(samples)
+    assert numsamples == numsamplesCalc, "numsamples mismatch: {} != {}".format(numsamples, numsamplesCalc)
+    print(" num samples OK", numsamples)
 
-        numsamplesCalc = len(samples)
-        assert numsamples == numsamplesCalc, "numsamples mismatch: {} != {}".format(numsamples, numsamplesCalc)
-        print(" num samples OK", numsamples)
+    numsnpsCalc = sum([c["numsnps"] for c in chromosomes.values()])
+    assert numsnps == numsnpsCalc, "numsnps mismatch: {} != {}".format(numsnps, numsnpsCalc)
+    print(" num snps OK", numsnps)
 
-        numsnpsCalc = sum([c["numsnps"] for c in chromosomes.values()])
-        assert numsnps == numsnpsCalc, "numsnps mismatch: {} != {}".format(numsnps, numsnpsCalc)
-        print(" num snps OK", numsnps)
+    numblocksCalc = sum([c["blockmanager"]["numblocks"] for c in chromosomes.values()])
+    assert numblocks == numblocksCalc, "numblocks mismatch: {} != {}".format(numblocks, numblocksCalc)
+    print(" num blocks OK", numblocks)
 
-        numblocksCalc = sum([c["blockmanager"]["numblocks"] for c in chromosomes.values()])
-        assert numblocks == numblocksCalc, "numblocks mismatch: {} != {}".format(numblocks, numblocksCalc)
-        print(" num blocks OK", numblocks)
+    blockmanager = data["blockmanager"]
+    blockIndex   = blockmanager["blocknames"]["_whole_genome"]
+    block        = blockmanager["blocks"][blockIndex]
+    blocks = []
 
-        blockmanager = data["blockmanager"]
-        blockIndex   = blockmanager["blocknames"]["_whole_genome"]
-        block        = blockmanager["blocks"][blockIndex]
-        blocks = []
+    sumBlocks = numblocks
+    sumBlocksSnps = block["numsnps"]
+    sumSnps = numsnps
 
-        sumBlocks = numblocks
-        sumBlocksSnps = block["numsnps"]
-        sumSnps = numsnps
+    for chromosomeName, chromosome in chromosomes.items():
+        print(chromosomeName)
+        # print(chromosome)
+        
+        chromosomeNameC = chromosome["chromosomename"]
+        
+        assert chromosomeName == chromosomeNameC
+        
+        minpositionC  = chromosome["minposition"]
+        maxpositionC  = chromosome["maxposition"]
+        numsnpsC      = chromosome["numsnps"]
+        numsamplesC   = chromosome["numsamples"]
 
-        for chromosomeName, chromosome in chromosomes.items():
-            print(chromosomeName)
-            # print(chromosome)
-            
-            chromosomeNameC = chromosome["chromosomename"]
-            
-            assert chromosomeName == chromosomeNameC
-            
-            minpositionC  = chromosome["minposition"]
-            maxpositionC  = chromosome["maxposition"]
-            numsnpsC      = chromosome["numsnps"]
-            numsamplesC   = chromosome["numsamples"]
+        blockIndexC   = blockmanager["blocknames"][chromosomeName]
+        blockC        = blockmanager["blocks"][blockIndexC]
+        
+        blockmanagerC = chromosome["blockmanager"]
+        numblocksC    = blockmanagerC["numblocks"]
 
-            blockIndexC   = blockmanager["blocknames"][chromosomeName]
-            blockC        = blockmanager["blocks"][blockIndexC]
-            
-            blockmanagerC = chromosome["blockmanager"]
-            numblocksC    = blockmanagerC["numblocks"]
+        blocksC       = blockmanagerC["blocks"]
+        blocks.append(blockC)
+        
+        blocknames    = blockmanagerC["blocknames"]
+        blocknumbers  = blockmanagerC["blocknumbers"]
 
-            blocksC       = blockmanagerC["blocks"]
-            blocks.append(blockC)
-            
-            blocknames    = blockmanagerC["blocknames"]
-            blocknumbers  = blockmanagerC["blocknumbers"]
+        sumBlocksSnps -= blockC["numsnps"]
+        print("  numsnps SUB", sumBlocksSnps)
+        
+        # blockMatrix[dataKey] = [blockMatrix[dataKey][p] - blockMatrixC[dataKey][p] for p in range(len(blockMatrix[dataKey]))]
+        
+        numsnps   -= numsnpsC
+        numblocks -= len(blocknumbers)
+        
+        minpositionCCalc = min([c["minposition"] for c in blocksC])
+        assert minpositionC == minpositionCCalc, " minposition mismatch: {} != {} - {}".format(minpositionC, minpositionCCalc, [c["minposition"] for c in blocksC])
+        print(" min position OK", minpositionC)
 
-            sumBlocksSnps -= blockC["numsnps"]
-            print("  numsnps SUB", sumBlocksSnps)
-            
-            # blockMatrix[dataKey] = [blockMatrix[dataKey][p] - blockMatrixC[dataKey][p] for p in range(len(blockMatrix[dataKey]))]
-            
-            numsnps   -= numsnpsC
-            numblocks -= len(blocknumbers)
-            
-            minpositionCCalc = min([c["minposition"] for c in blocksC])
-            assert minpositionC == minpositionCCalc, " minposition mismatch: {} != {} - {}".format(minpositionC, minpositionCCalc, [c["minposition"] for c in blocksC])
-            print(" min position OK", minpositionC)
+        maxpositionCCalc = max([c["maxposition"] for c in blocksC])
+        assert maxpositionC == maxpositionCCalc, " maxposition mismatch: {} != {}".format(maxpositionC, maxpositionCCalc)
+        print(" max position OK", maxpositionC)
 
-            maxpositionCCalc = max([c["maxposition"] for c in blocksC])
-            assert maxpositionC == maxpositionCCalc, " maxposition mismatch: {} != {}".format(maxpositionC, maxpositionCCalc)
-            print(" max position OK", maxpositionC)
+        numblocksCCalc = len(blocknumbers)
+        assert numblocksC == numblocksCCalc, " numblocks mismatch: {} != {}".format(numblocksC, numblocksCCalc)
+        print(" num blocks OK", numblocksC)
 
-            numblocksCCalc = len(blocknumbers)
-            assert numblocksC == numblocksCCalc, " numblocks mismatch: {} != {}".format(numblocksC, numblocksCCalc)
-            print(" num blocks OK", numblocksC)
+        numsnpsCCalc = sum([c["numsnps"] for c in blocksC])
+        assert numsnpsC == numsnpsCCalc, " numsnps mismatch: {} != {}".format(numsnpsC, numsnpsCCalc)
+        print(" num snps OK", numsnpsC)
 
-            numsnpsCCalc = sum([c["numsnps"] for c in blocksC])
-            assert numsnpsC == numsnpsCCalc, " numsnps mismatch: {} != {}".format(numsnpsC, numsnpsCCalc)
-            print(" num snps OK", numsnpsC)
+        assert numsamples == numsamplesC, " numsamples mismatch: {} != {}".format(numsamples, numsamplesC)
+        print(" num samples OK", numsamplesC)
 
-            assert numsamples == numsamplesC, " numsamples mismatch: {} != {}".format(numsamples, numsamplesC)
-            print(" num samples OK", numsamplesC)
+        assert checkBlockOfBlocks(blockC, blocksC, dataKey)
+        print(" block OK")
 
-            assert checkBlockOfBlocks(blockC, blocksC, dataKey)
-            print(" block OK")
-
-            # block:
-            #     blocknumber: 0
-            #     minposition: 0
-            #     maxposition: 8853
-            #     numsnps: 98
-            #     numsamples: 361
-            #     matrix:
-            #         - 14
-            #         - 1
-            # blocks:
-            #     blocknumber: 0
-            #     minposition: 0
-            #     maxposition: 8853
-            #     numsnps: 98
-            #     numsamples: 361
-            #     matrix:
-            #         - 14
-            #         - 1
+        # block:
+        #     blocknumber: 0
+        #     minposition: 0
+        #     maxposition: 8853
+        #     numsnps: 98
+        #     numsamples: 361
+        #     matrix:
+        #         - 14
+        #         - 1
+        # blocks:
+        #     blocknumber: 0
+        #     minposition: 0
+        #     maxposition: 8853
+        #     numsnps: 98
+        #     numsamples: 361
+        #     matrix:
+        #         - 14
+        #         - 1
     
     assert numblocks == 0, "number of blocks did not lower to zero: {} - {}".format(numblocks, sumBlocks)
     print("numblocks OK", sumBlocks)

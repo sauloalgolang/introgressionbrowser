@@ -186,6 +186,7 @@ clean:
 	rm -v $(OUTFILE)*.gob    || true
 	rm -v $(OUTFILE)*.gz     || true
 	rm -v $(OUTFILE)*.snappy || true
+	rm -v $(OUTFILE)*.h5     || true
 
 run150: clean ibrowser data/150_VCFs_2.50.tar.gz
 	time bin/ibrowser save --threads 4 --check --counterBits 32 --description="150 tomato genome project" --format $(FORMAT) --outfile $(OUTFILE)_150_VCFs_2.50.tar.gz data/150_VCFs_2.50.tar.gz
