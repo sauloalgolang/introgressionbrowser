@@ -140,9 +140,10 @@ def main(prefix):
     # output_360_merged_2.50.vcf.gz_chromosomes_SL2.50ch00.bin
 
     blockNames = [ e['chromosomename'] for e in data['blockmanager']['blocks'] ]
-    print('blockNames', blockNames)
+    # numblocks  = data['blockmanager']['blocks'][numblocks]
+    # print('blockNames', blockNames)
 
-    numRegisters, matrixi, matrix = readIbrowserBinary(summary, colNames=blockNames)
+    _, matrixi, matrix = readIbrowserBinary(summary, colNames=blockNames)
 
     checkSummary(matrixi, matrix)
 
@@ -154,8 +155,16 @@ def main(prefix):
         filename = chromosomes.format(blockName)
         print("blockName    ", blockName)
         print("filename     ", filename)
+        
         cNumRegisters, cMatrixi, cMatrix = readIbrowserBinary(filename)
+        
         print(" cNumRegisters", cNumRegisters)
+
+        numblocks = data['chromosomes'][blockName]['blockmanager']['numblocks']
+        print(" numblocks    ", numblocks)
+
+        assert numblocks == cNumRegisters
+        
         chromosomesDfs[blockName] = cMatrix
         checkChromosome(cMatrixi, cMatrix, matrix[blockName])
 

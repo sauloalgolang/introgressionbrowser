@@ -115,32 +115,32 @@ def subtractMatrices(blockMatrix, blockMatrixC):
   
     return blockMatrix
 
-def sumMatrices(prefix, chromosomeName, blocknames):
-    res = None
-    reg = 0
+# def sumMatrices(prefix, chromosomeName, blocknames):
+#     res = None
+#     reg = 0
 
-    for pos in blocknames.keys():
-        matrix, dataKey = readBlocksMatrixChrom(prefix, chromosomeName, pos)
+#     for pos in blocknames.keys():
+#         matrix, dataKey = readBlocksMatrixChrom(prefix, chromosomeName, pos)
 
-        reg += 1
-        print(".", end="")
+#         reg += 1
+#         print(".", end="")
         
-        if reg % 100 == 0:
-            print("{:8d}".format(reg))
-            sys.stdout.flush()
+#         if reg % 100 == 0:
+#             print("{:8d}".format(reg))
+#             sys.stdout.flush()
 
-        if res is None:
-            res = matrix[dataKey]
-            # print(res)
+#         if res is None:
+#             res = matrix[dataKey]
+#             # print(res)
         
-        else:
-            for i in range(len(res)):
-                res[i] += matrix[dataKey][i]
+#         else:
+#             for i in range(len(res)):
+#                 res[i] += matrix[dataKey][i]
 
-    print("{:8d}".format(reg))
-    print()
+#     print("{:8d}".format(reg))
+#     print()
     
-    return res
+#     return res
 
 
 def main(prefix):
@@ -210,7 +210,7 @@ def main(prefix):
         blocksC       = blockmanagerC["blocks"]
         blocks.append(blockC)
         
-        blocknames    = blockmanagerC["blocknames"]
+        # blocknames    = blockmanagerC["blocknames"]
         blocknumbers  = blockmanagerC["blocknumbers"]
 
         sumBlocksSnps -= blockC["numsnps"]
