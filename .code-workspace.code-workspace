@@ -9,7 +9,7 @@
 		"editor.formatOnPaste": true,
 		"go.formatTool": "gofmt",
 		"go.inferGopath": true,
-		"go.gopath": "/home/saulo/dev/gowasm/ibrowser",
+		// "go.gopath": "/home/saulo/dev/gowasm/ibrowser",
 		"go.lintOnSave": "workspace",
 		"go.vetOnSave": "workspace",
 		"git.autorefresh": true,

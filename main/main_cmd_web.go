@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	// "log"
 	log "github.com/sirupsen/logrus"
 	"os"
 )
@@ -13,12 +12,11 @@ import (
 
 // WebCommand holds the parameter for the commandline web command
 type WebCommand struct {
-	Host        string `long:"host" description:"Hostname" default:"127.0.0.1"`
-	Port        int    `long:"port" description:"Port" default:"8000"`
-	DatabaseDir string `long:"DatabaseDir" description:"Databases folder" default:"res/"`
-	HTTPDir     string `long:"HTTPDir" description:"Web page folder to be served folder" default:"http/"`
-	Verbose     []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
-	verbosity   int
+	Host          string `long:"host" description:"Hostname" default:"127.0.0.1"`
+	Port          int    `long:"port" description:"Port" default:"8000"`
+	DatabaseDir   string `long:"DatabaseDir" description:"Databases folder" default:"res/"`
+	HTTPDir       string `long:"HTTPDir" description:"Web page folder to be served folder" default:"http/"`
+	LoggerOptions LoggerOptions
 }
 
 func (w WebCommand) String() (res string) {
@@ -33,34 +31,7 @@ var webCommand WebCommand
 
 // Execute runs the processing of the commandline parameters
 func (w *WebCommand) Execute(args []string) error {
-	w.verbosity = len(w.Verbose)
-
-	var verbosityLevel log.Level
-	switch w.verbosity {
-	case 0:
-		log.Println("LOG LEVEL ", w.verbosity, "Info")
-		verbosityLevel = log.InfoLevel
-	case 1:
-		log.Println("LOG LEVEL ", w.verbosity, "Debug")
-		verbosityLevel = log.DebugLevel
-	case 2:
-		log.Println("LOG LEVEL ", w.verbosity, "Trace")
-		verbosityLevel = log.TraceLevel
-	default:
-		if w.verbosity > 2 {
-			log.Println("LOG LEVEL ", w.verbosity, "Trace")
-			verbosityLevel = log.TraceLevel
-		} else {
-			log.Println("LOG LEVEL ", w.verbosity, "Warn")
-			verbosityLevel = log.WarnLevel
-			// log.SetLevel(log.ErrorLevel)
-			// log.SetLevel(log.FatalLevel)
-			// log.SetLevel(log.PanicLevel)
-		}
-	}
-
-	log.SetLevel(verbosityLevel)
-	// Only log the warning severity or above.
+	w.LoggerOptions.Process()
 
 	log.Info("Web")
 	log.Info("\n", w)
@@ -74,7 +45,7 @@ func (w *WebCommand) Execute(args []string) error {
 		log.Fatal("input folder ", w.DatabaseDir, " is not a folder")
 	}
 
-	web.NewWeb(w.DatabaseDir, w.HTTPDir, w.Host, w.Port, verbosityLevel)
+	web.NewWeb(w.DatabaseDir, w.HTTPDir, w.Host, w.Port)
 
 	return nil
 }
@@ -86,11 +57,4 @@ func init() {
 		"Start web interface",
 		&webCommand,
 	)
-
-	// Log as JSON instead of the default ASCII formatter.
-	// log.SetFormatter(&log.JSONFormatter{})
-
-	// Output to stdout instead of the default stderr
-	// Can be any io.Writer, see below for File example
-	log.SetOutput(os.Stdout)
 }

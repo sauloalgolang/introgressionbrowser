@@ -1,6 +1,7 @@
 package ibrowser
 
 import (
+	log "github.com/sirupsen/logrus"
 	"fmt"
 	"math"
 	"os"
@@ -58,7 +59,7 @@ func NewIBChromosome(
 		rootBlockManager *BlockManager,
 	) *IBChromosome {
 	
-	fmt.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName,
+	log.Println("  NewIBChromosome :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
 		" blockSize: ", blockSize,
 		" counterBits: ", counterBits,
@@ -94,10 +95,10 @@ func NewIBChromosome(
 
 // AppendBlock appends a block to IBChromosome
 func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
-	// fmt.Println("IBChromosome :: AppendBlock :: blockNum: ", blockNum)
+	// log.Println("IBChromosome :: AppendBlock :: blockNum: ", blockNum)
 
 	if ibc.HasBlock(blockNum) {
-		fmt.Println("tried to append existing blockNum:", blockNum)
+		log.Println("tried to append existing blockNum:", blockNum)
 		os.Exit(1)
 	}
 
@@ -127,12 +128,12 @@ func (ibc *IBChromosome) setRootBlockManager(bm *BlockManager) {
 
 // GetSummaryBlock returns the summar block
 func (ibc *IBChromosome) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
-	// fmt.Println("GetSummaryBlock :: ibc.rootBlockManager: ", ibc.rootBlockManager)
+	// log.Println("GetSummaryBlock :: ibc.rootBlockManager: ", ibc.rootBlockManager)
 
 	block, hasBlock = ibc.rootBlockManager.GetBlockByName(ibc.ChromosomeName)
 	
 	if !hasBlock {
-		fmt.Println(ibc.rootBlockManager)
+		log.Println(ibc.rootBlockManager)
 		panic("!GetSummaryBlock")
 	}
 	
@@ -184,7 +185,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 	numBlocksAdded := uint64(0)
 
 	if !hasBlock {
-		fmt.Println("  IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW")
+		log.Println("  IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW")
 
 		isNew = true
 
@@ -199,7 +200,7 @@ func (ibc *IBChromosome) normalizeBlocks(blockNum uint64) (*IBBlock, bool, uint6
 			}
 
 			for currBlockPos := lastBlockPos; currBlockPos < blockNum; currBlockPos++ {
-				fmt.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW. adding intermediate: ", currBlockPos)
+				log.Println("IBChromosome :: normalizeBlocks :: blockNum: ", blockNum, " NEW. adding intermediate: ", currBlockPos)
 				ibc.AppendBlock(currBlockPos)
 				numBlocksAdded++
 			}
@@ -250,7 +251,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 	res = res && ibc.selfCheck()
 
 	if !res {
-		fmt.Printf("Failed chromosome self check\n")
+		log.Printf("Failed chromosome self check\n")
 		return res
 	}
 
@@ -258,7 +259,7 @@ func (ibc *IBChromosome) Check() (res bool) {
 		res = res && block.Check()
 
 		if !res {
-			fmt.Printf("Failed chromosome - block check - block %s pos %d number %d\n",
+			log.Printf("Failed chromosome - block check - block %s pos %d number %d\n",
 				block.ChromosomeName,
 				block.BlockPosition,
 				block.BlockNumber,
@@ -281,7 +282,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 	res = res && summaryBlock.Check()
 
 	if !res {
-		fmt.Printf("Failed chromosome self check - block chek\n")
+		log.Printf("Failed chromosome self check - block chek\n")
 		return res
 	}
 
@@ -291,14 +292,14 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (summaryBlock.NumSNPS == sumBlock.NumSNPS)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block NumSNPS: %d != %d\n", ibc.ChromosomeName, summaryBlock.NumSNPS, sumBlock.NumSNPS)
+			log.Printf("Failed chromosome %s self check - block NumSNPS: %d != %d\n", ibc.ChromosomeName, summaryBlock.NumSNPS, sumBlock.NumSNPS)
 			return res
 		}
 
 		res = res && (ibc.NumSNPS == sumBlock.NumSNPS)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - sumBlock NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.NumSNPS, sumBlock.NumSNPS)
+			log.Printf("Failed chromosome %s self check - sumBlock NumSNPS: %d != %d\n", ibc.ChromosomeName, ibc.NumSNPS, sumBlock.NumSNPS)
 			return res
 		}
 	}
@@ -306,28 +307,28 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (summaryBlock.MinPosition == sumBlock.MinPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block MinPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MinPosition, sumBlock.MinPosition)
+			log.Printf("Failed chromosome %s self check - block MinPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MinPosition, sumBlock.MinPosition)
 			return res
 		}
 
 		res = res && (ibc.MinPosition == sumBlock.MinPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - sumBlock MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.MinPosition, sumBlock.MinPosition)
+			log.Printf("Failed chromosome %s self check - sumBlock MinPosition: %d != %d\n", ibc.ChromosomeName, ibc.MinPosition, sumBlock.MinPosition)
 			return res
 		}
 
 		res = res && (summaryBlock.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - block MaxPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MaxPosition, sumBlock.MaxPosition)
+			log.Printf("Failed chromosome %s self check - block MaxPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
 
 		res = res && (ibc.MaxPosition == sumBlock.MaxPosition)
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - sumblock MaxPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MaxPosition, sumBlock.MaxPosition)
+			log.Printf("Failed chromosome %s self check - sumblock MaxPosition: %d != %d\n", ibc.ChromosomeName, summaryBlock.MaxPosition, sumBlock.MaxPosition)
 			return res
 		}
 	}
@@ -336,7 +337,7 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 		res = res && (summaryBlock.IsEqual(sumBlock))
 
 		if !res {
-			fmt.Printf("Failed chromosome %s self check - blocks not equal\n", ibc.ChromosomeName)
+			log.Printf("Failed chromosome %s self check - blocks not equal\n", ibc.ChromosomeName)
 			return res
 		}
 	}
@@ -378,12 +379,12 @@ func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) 
 	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
 
 	if isSave {
-		fmt.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices")
+		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices")
 		ibc.BlockManager.Save(chromosomeFileName)
-		fmt.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
+		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
 	} else {
-		fmt.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices")
+		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices")
 		ibc.BlockManager.Load(chromosomeFileName)
-		fmt.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
+		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
 	}
 }

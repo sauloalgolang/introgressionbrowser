@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 )
 
 // IndexExtension is the default extension from the ibrowser save file
@@ -62,7 +62,7 @@ func (cn *ChromosomeNamesType) Add(chromosomeName string, startPosition int64) {
 		})
 
 	} else {
-		fmt.Println("got last chromosome", cn)
+		log.Println("got last chromosome", cn)
 
 		cn.NumChromosomes = int64(len(cn.Infos))
 		cn.NumRegisters = 0
@@ -79,6 +79,6 @@ func (cn *ChromosomeNamesType) Add(chromosomeName string, startPosition int64) {
 		cn.StartPosition = cn.Infos[0].StartPosition
 		cn.EndPosition = cn.Infos[cn.NumChromosomes-1].StartPosition
 
-		fmt.Println("fixed chromosome sizes", cn)
+		log.Println("fixed chromosome sizes", cn)
 	}
 }

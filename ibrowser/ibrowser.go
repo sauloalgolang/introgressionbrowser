@@ -1,7 +1,7 @@
 package ibrowser
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"math"
 	"os"
 	"sort"
@@ -55,7 +55,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 	keepEmptyBlock := parameters.KeepEmptyBlock
 
 	if blockSize > uint64((math.MaxUint32/3)-1) {
-		fmt.Println("block size too large")
+		log.Println("block size too large")
 		os.Exit(1)
 	}
 
@@ -94,7 +94,7 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	ib.BlockManager.NewBlock(defaultGlobalSummaryName, 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0)
 
 	for samplePos, sampleName := range *samples {
-		// fmt.Println(samplePos, sampleName)
+		// log.Println(samplePos, sampleName)
 		ib.Samples[samplePos] = sampleName
 	}
 }
@@ -102,17 +102,17 @@ func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 // GetOrCreateChromosome gets or creates a new chromosome if it does not already exists
 func (ib *IBrowser) GetOrCreateChromosome(chromosomeName string, chromosomeNumber int) *IBChromosome {
 	if chromosome, ok := ib.GetChromosome(chromosomeName); ok {
-		// fmt.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
+		// log.Println("GetOrCreateChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome
 	}
-	// fmt.Println("GetOrCreateChromosome", chromosomeName, "creating")
+	// log.Println("GetOrCreateChromosome", chromosomeName, "creating")
 	return ib.AddChromosome(chromosomeName, chromosomeNumber)
 }
 
 // AddChromosome adds a new chromosome
 func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *IBChromosome {
 	if chromosome, hasChromosome := ib.GetChromosome(chromosomeName); hasChromosome {
-		fmt.Println("Failed to add chromosome", chromosomeName, ". Already exists", &chromosome)
+		log.Println("Failed to add chromosome", chromosomeName, ". Already exists", &chromosome)
 		os.Exit(1)
 	}
 
@@ -140,8 +140,8 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 	} else {
 		if len(ib.Samples) != len(*samples) {
-			fmt.Println("Sample mismatch")
-			fmt.Println(len(ib.Samples), "!=", len(*samples))
+			log.Println("Sample mismatch")
+			log.Println(len(ib.Samples), "!=", len(*samples))
 			os.Exit(1)
 		}
 	}
@@ -162,7 +162,7 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 		block, hasBlock := ib.GetSummaryBlock()
 		if !hasBlock {
-			fmt.Println(ib.BlockManager)
+			log.Println(ib.BlockManager)
 			panic("!GetSummaryBlock")
 		}
 
@@ -173,14 +173,14 @@ func (ib *IBrowser) RegisterCallBack(samples *VCFSamples, reg *VCFRegister) {
 
 // Check checks for self consistency in the data
 func (ib *IBrowser) Check() (res bool) {
-	fmt.Println("Starting self check")
+	log.Println("Starting self check")
 
 	res = true
 
 	res = res && ib.selfCheck()
 
 	if !res {
-		fmt.Println("Failed ibrowser self check")
+		log.Println("Failed ibrowser self check")
 		return res
 	}
 
@@ -191,7 +191,7 @@ func (ib *IBrowser) Check() (res bool) {
 		res = res && chromosome.Check()
 
 		if !res {
-			fmt.Printf("Failed ibrowser chromosome %s (%d) check\n", chromosomeName.Name, chromosomeName.Pos)
+			log.Printf("Failed ibrowser chromosome %s (%d) check\n", chromosomeName.Name, chromosomeName.Pos)
 			return res
 		}
 	}
@@ -204,14 +204,14 @@ func (ib *IBrowser) selfCheck() (res bool) {
 
 	block, hasBlock := ib.GetSummaryBlock()
 	if !hasBlock {
-		fmt.Println(ib.BlockManager)
+		log.Println(ib.BlockManager)
 		panic("!GetSummaryBlock")
 	}
 
 	res = res && block.Check()
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - block check\n")
+		log.Printf("Failed ibrowser self check - block check\n")
 		return res
 	}
 
@@ -219,14 +219,14 @@ func (ib *IBrowser) selfCheck() (res bool) {
 		res = res && (ib.BlockSize == block.BlockSize)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, block.BlockSize)
+			log.Printf("Failed ibrowser self check - block size %d != %d\n", ib.BlockSize, block.BlockSize)
 			return res
 		}
 
 		res = res && (ib.CounterBits == block.CounterBits)
 
 		if !res {
-			fmt.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, block.CounterBits)
+			log.Printf("Failed ibrowser self check - CounterBits %d != %d\n", ib.CounterBits, block.CounterBits)
 			return res
 		}
 	}
@@ -234,14 +234,14 @@ func (ib *IBrowser) selfCheck() (res bool) {
 	res = res && (ib.NumSNPS == block.NumSNPS)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, block.NumSNPS)
+		log.Printf("Failed ibrowser self check - NumSNPS %d != %d\n", ib.NumSNPS, block.NumSNPS)
 		return res
 	}
 
 	res = res && (ib.NumSamples == block.NumSamples)
 
 	if !res {
-		fmt.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, block.NumSamples)
+		log.Printf("Failed ibrowser self check - NumSamples %d != %d\n", ib.NumSamples, block.NumSamples)
 		return res
 	}
 
@@ -284,7 +284,7 @@ func (ib *IBrowser) GetSampleName(sampleID int) (string, bool) {
 func (ib *IBrowser) GetSummaryBlock() (block *IBBlock, hasBlock bool) {
 	block, hasBlock = ib.BlockManager.GetBlockByName(defaultGlobalSummaryName)
 	if !hasBlock {
-		fmt.Println(ib.BlockManager)
+		log.Println(ib.BlockManager)
 		panic("!GetSummaryBlock")
 	}
 	return block, hasBlock
@@ -353,10 +353,10 @@ func (ib *IBrowser) GetChromosomes() (chromosomes []*IBChromosome) {
 // GetChromosome returns a given chromosome by its name
 func (ib *IBrowser) GetChromosome(chromosomeName string) (*IBChromosome, bool) {
 	if chromosome, ok := ib.Chromosomes[chromosomeName]; ok {
-		// fmt.Println("GetChromosome", chromosomeName, "exists", &chromosome)
+		// log.Println("GetChromosome", chromosomeName, "exists", &chromosome)
 		return chromosome, ok
 	}
-	// fmt.Println("GetChromosome", chromosomeName, "DOES NOT exists")
+	// log.Println("GetChromosome", chromosomeName, "DOES NOT exists")
 	return nil, false
 }
 
@@ -508,7 +508,7 @@ func (ib *IBrowser) EasyLoadPrefix(outPrefix string, isSoft bool) {
 	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
 
 	if !found {
-		fmt.Println("could not easy load prefix: ", outPrefix)
+		log.Println("could not easy load prefix: ", outPrefix)
 		os.Exit(1)
 	}
 
@@ -521,7 +521,7 @@ func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
 	found, format, compression, outPrefix := save.GuessFormat(outFile)
 
 	if !found {
-		fmt.Println("could not easy load file:", outFile)
+		log.Println("could not easy load file:", outFile)
 		os.Exit(1)
 	}
 
@@ -545,14 +545,14 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 
 	if isSave {
 		ib.Dump(outPrefix, isSave, isSoft)
-		fmt.Println("saving global ibrowser status")
+		log.Println("saving global ibrowser status")
 		saver.Save(ib)
-		fmt.Println("saving global ibrowser status - DONE")
+		log.Println("saving global ibrowser status - DONE")
 	} else {
-		fmt.Println("loading global ibrowser status")
+		log.Println("loading global ibrowser status")
 		saver.Load(ib)
 		sort.Sort(ib.ChromosomesNames)
-		fmt.Println("loading global ibrowser status - DONE")
+		log.Println("loading global ibrowser status - DONE")
 		ib.Dump(outPrefix, isSave, isSoft)
 	}
 }
@@ -577,16 +577,16 @@ func (ib *IBrowser) GenMatrixChromosomeDumpFileName(outPrefix string, chromosome
 func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 	summaryFileName := ib.GenMatrixDumpFileName(outPrefix)
 
-	fmt.Println("(Un)Dumping Matrices")
+	log.Println("(Un)Dumping Matrices")
 
 	if isSave {
-		fmt.Println(" Dumping Summary Matrices")
+		log.Println(" Dumping Summary Matrices")
 		ib.BlockManager.Save(summaryFileName)
-		fmt.Println(" Dumping Summary Matrices - DONE")
+		log.Println(" Dumping Summary Matrices - DONE")
 	} else {
-		fmt.Println(" UnDumping Summary Matrices")
+		log.Println(" UnDumping Summary Matrices")
 		ib.BlockManager.Load(summaryFileName)
-		fmt.Println(" UnDumping Summary Matrices - DONE")
+		log.Println(" UnDumping Summary Matrices - DONE")
 	}
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
@@ -597,5 +597,5 @@ func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
 		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}
 
-	fmt.Println("(Un) Dumping Matrices - DONE")
+	log.Println("(Un) Dumping Matrices - DONE")
 }

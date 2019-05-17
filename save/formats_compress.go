@@ -1,7 +1,7 @@
 package save
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"	
 	"os"
 )
 
@@ -54,9 +54,9 @@ func GetCompressInformation(compressor string) *CompressFormat {
 	sf, ok := Compressors[compressor]
 
 	if !ok {
-		fmt.Println("Unknown compressor: ", compressor, ". valid compressor are:")
+		log.Println("Unknown compressor: ", compressor, ". valid compressor are:")
 		for k := range Compressors {
-			fmt.Println(" ", k)
+			log.Println(" ", k)
 		}
 		os.Exit(1)
 	}

@@ -2,7 +2,7 @@ package vcf
 
 import (
 	"bufio"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strconv"
@@ -11,7 +11,7 @@ import (
 
 // ProcessVcfRaw process vcf manually
 func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback RegisterCallBack, chromosomeNames []string) {
-	fmt.Println("Opening file to read chromosome:", chromosomeNames)
+	log.Println("Opening file to read chromosome:", chromosomeNames)
 
 	contents := bufio.NewScanner(r)
 	cbuffer := make([]byte, 0, bufio.MaxScanTokenSize)
@@ -57,12 +57,12 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 				} else {
 					columnNames := strings.Split(row, "\t")
-					// fmt.Println("columnNames", columnNames)
+					// log.Println("columnNames", columnNames)
 
 					SampleNames = columnNames[9:]
 					numSampleNames = uint64(len(SampleNames))
 					register.TempDistance = NewDistanceMatrix(numSampleNames)
-					// fmt.Println("SampleNames", SampleNames, "chromosomeNames", chromosomeNames)
+					// log.Println("SampleNames", SampleNames, "chromosomeNames", chromosomeNames)
 				}
 			}
 			continue
@@ -71,7 +71,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		cols := strings.Split(row, "\t")
 
 		if len(cols) < 9 {
-			fmt.Println("less than 9 columns. can't continue")
+			log.Println("less than 9 columns. can't continue")
 			os.Exit(1)
 		}
 
@@ -81,7 +81,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			chromosomeNumber++
 			registerNumberChrom = 0
 			chromIndex, _ = SliceIndex(len(chromosomeNames), func(i int) bool { return chromosomeNames[i] == chrom })
-			fmt.Println("  new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
+			log.Println("  new chromosome ", chrom, " index ", chromIndex, " in ", chromosomeNames)
 		}
 
 		lastChrom = chrom
@@ -106,7 +106,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 
 		if chromIndex == -1 {
 			if foundChromosome { // already found, therefore finished
-				fmt.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
+				log.Println("Finished reading chromosome", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
 				return
 			}
 			
@@ -114,7 +114,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			continue
 		} else {
 			if !foundChromosome {
-				fmt.Println("Found first chromosome from list:", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
+				log.Println("Found first chromosome from list:", chromosomeNames, " now at ", chrom, registerNumberThread, " registers ")
 				foundChromosome = true
 			}
 		}
@@ -122,14 +122,14 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		registerNumberChrom++
 
 		if BreakAtChrom > 0 && registerNumberChrom >= BreakAtChrom {
-			// fmt.Println(" BREAKING ", chrom, " at register ", registerNumberChrom)
+			// log.Println(" BREAKING ", chrom, " at register ", registerNumberChrom)
 			continue
 		}
 
 		registerNumberThread++
 
 		if BreakAtThread > 0 && registerNumberThread >= BreakAtThread {
-			fmt.Println(" BREAKING ", chromosomeNames, " at register ", registerNumberThread)
+			log.Println(" BREAKING ", chromosomeNames, " at register ", registerNumberThread)
 			return
 		}
 
@@ -151,7 +151,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			if callBackParameters.ContinueOnError {
 				continue
 			} else {
-				fmt.Println(posErr)
+				log.Println(posErr)
 				os.Exit(1)
 			}
 		}
@@ -160,7 +160,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			if callBackParameters.ContinueOnError {
 				continue
 			} else {
-				fmt.Println("no genotype info field")
+				log.Println("no genotype info field")
 				os.Exit(1)
 			}
 		}
@@ -173,7 +173,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 			if callBackParameters.ContinueOnError {
 				continue
 			} else {
-				fmt.Println("wrong number of columns: expected ", numSampleNames, " got ", numSamples)
+				log.Println("wrong number of columns: expected ", numSampleNames, " got ", numSamples)
 				os.Exit(1)
 			}
 		}
@@ -196,7 +196,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 						if callBackParameters.ContinueOnError {
 							continue
 						} else {
-							fmt.Println(sampleGT0Err)
+							log.Println(sampleGT0Err)
 							os.Exit(1)
 						}
 					}
@@ -205,7 +205,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 						if callBackParameters.ContinueOnError {
 							continue
 						} else {
-							fmt.Println(sampleGT1Err)
+							log.Println(sampleGT1Err)
 							os.Exit(1)
 						}
 					}
@@ -226,7 +226,7 @@ func ProcessVcfRaw(r io.Reader, callBackParameters CallBackParameters, callback 
 		// GT . . . . . 0|1
 
 		if lineNumber%100000 == 0 && lineNumber != 0 {
-			fmt.Println(lineNumber,
+			log.Println(lineNumber,
 				registerNumberThread,
 				chrom,
 				pos,

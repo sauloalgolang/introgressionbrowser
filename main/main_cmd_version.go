@@ -6,6 +6,7 @@ import (
 
 // VersionCommand holds the parameter for the commandline version command
 type VersionCommand struct {
+	LoggerOptions LoggerOptions
 }
 
 // VersionOptions holds the parameter for the commandline version - options
@@ -18,6 +19,8 @@ var versionCommand VersionCommand
 
 // Execute runs the processing of the commandline parameters
 func (x *VersionCommand) Execute(args []string) error {
+	x.LoggerOptions.Process()
+
 	PrintVersion()
 	os.Exit(0)
 	return nil

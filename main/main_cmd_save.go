@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
@@ -27,6 +26,7 @@ type SaveCommand struct {
 	ProfileOptions    ProfileOptions
 	SaveLoadOptions   SaveLoadOptions
 	DebugOptions      DebugOptions
+	LoggerOptions     LoggerOptions
 }
 
 // SaveArgsOptions commandline save parameters - options
@@ -34,40 +34,26 @@ type SaveArgsOptions struct {
 	VCF string `long:"infile" description:"Input VCF file" required:"true" positional-arg-name:"Input VCF file"`
 }
 
-// DebugOptions commandline debug options
-type DebugOptions struct {
-	Debug                  bool  `long:"debug" description:"Print debug information"`
-	DebugFirstOnly         bool  `long:"debugFirstOnly" description:"Read only fist chromosome from each thread"`
-	DebugMaxRegisterThread int64 `long:"debugMaxRegisterThread" description:"Maximum number of registers to read per thread" default:"0"`
-	DebugMaxRegisterChrom  int64 `long:"debugMaxRegisterChrom" description:"Maximum number of registers to read per chromosome" default:"0"`
-}
-
-func (d DebugOptions) String() (res string) {
-	res += fmt.Sprintf("Debug:\n")
-	res += fmt.Sprintf(" Debug                  : %#v\n", d.Debug)
-	res += fmt.Sprintf(" DebugFirstOnly         : %#v\n", d.DebugFirstOnly)
-	res += fmt.Sprintf(" DebugMaxRegisterThread : %d\n", d.DebugMaxRegisterThread)
-	res += fmt.Sprintf(" DebugMaxRegisterChrom  : %d\n", d.DebugMaxRegisterChrom)
-	return res
-}
-
 // SaveCommand instance
 var saveCommand SaveCommand
 
 // Execute runs the processing of the commandline parameters
 func (x *SaveCommand) Execute(args []string) error {
-	fmt.Printf("Save\n")
+	x.LoggerOptions.Process()
+
+	log.Printf("Save\n")
 
 	// sourceFile := processArgs(args)
 	sourceFile := x.Infile.VCF
 
 	fi, err := os.Stat(sourceFile)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
+
 	if !fi.Mode().IsRegular() {
-		fmt.Println("input file ", sourceFile, " is not a file")
+		log.Println("input file ", sourceFile, " is not a file")
 		os.Exit(1)
 	}
 
@@ -79,18 +65,19 @@ func (x *SaveCommand) Execute(args []string) error {
 		x.Description = filepath.Base(sourceFile)
 	}
 
-	processDebugParameters(&parameters, x.DebugOptions)
-	processSaveLoadParameters(&parameters, x.SaveLoadOptions)
-	processSaveParameters(&parameters, *x)
+	x.DebugOptions.ProcessParameters(&parameters)
+	x.SaveLoadOptions.ProcessParameters(&parameters)
+	x.ProcessParameters(&parameters)
 
-	fmt.Printf(" sourceFile             : %s\n", sourceFile)
-	fmt.Println(parameters)
-	fmt.Println(x.ProfileOptions)
-	fmt.Println(x.DebugOptions)
+	log.Printf(" sourceFile             : %s\n", sourceFile)
+	log.Println(parameters)
+	// log.Println(x.LoggerOptions)
+	log.Println(x.ProfileOptions)
+	log.Println(x.DebugOptions)
 
-	processDebug(x.DebugOptions)
-	processSaveLoad(x.SaveLoadOptions)
-	profileCloser := processProfile(x.ProfileOptions)
+	x.DebugOptions.Process()
+	x.SaveLoadOptions.Process()
+	profileCloser := x.ProfileOptions.Process()
 
 	log.Println("Openning", sourceFile)
 
@@ -121,28 +108,16 @@ func (x *SaveCommand) Execute(args []string) error {
 	return nil
 }
 
-func processDebug(opts DebugOptions) {
-	vcf.Debug = opts.Debug
-	vcf.OnlyFirst = opts.DebugFirstOnly
-	vcf.BreakAtThread = opts.DebugMaxRegisterThread
-	vcf.BreakAtChrom = opts.DebugMaxRegisterChrom
-}
-
-func processSaveParameters(parameters *Parameters, saveCommand SaveCommand) {
-	parameters.BlockSize = saveCommand.BlockSize
-	parameters.Chromosomes = saveCommand.Chromosomes
-	parameters.ContinueOnError = !saveCommand.NoContinueOnError
-	parameters.CounterBits = saveCommand.CounterBits
-	parameters.Description = saveCommand.Description
-	parameters.KeepEmptyBlock = !saveCommand.NoKeepEmptyBlock
-	parameters.MaxSnpPerBlock = saveCommand.MaxSnpPerBlock
-	parameters.MinSnpPerBlock = saveCommand.MinSnpPerBlock
-}
-
-func processDebugParameters(parameters *Parameters, debugOptions DebugOptions) {
-	parameters.DebugFirstOnly = debugOptions.DebugFirstOnly
-	parameters.DebugMaxRegisterThread = debugOptions.DebugMaxRegisterThread
-	parameters.DebugMaxRegisterChrom = debugOptions.DebugMaxRegisterChrom
+// ProcessParameters processes parameters
+func (x *SaveCommand) ProcessParameters(parameters *Parameters) {
+	parameters.BlockSize = x.BlockSize
+	parameters.Chromosomes = x.Chromosomes
+	parameters.ContinueOnError = !x.NoContinueOnError
+	parameters.CounterBits = x.CounterBits
+	parameters.Description = x.Description
+	parameters.KeepEmptyBlock = !x.NoKeepEmptyBlock
+	parameters.MaxSnpPerBlock = x.MaxSnpPerBlock
+	parameters.MinSnpPerBlock = x.MinSnpPerBlock
 }
 
 func init() {

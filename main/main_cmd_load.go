@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 import (
@@ -15,6 +14,7 @@ type LoadCommand struct {
 	IsNotSoft       bool            `long:"notSoftLoad" description:"Force load matrices"`
 	ProfileOptions  ProfileOptions
 	SaveLoadOptions SaveLoadOptions
+	LoggerOptions   LoggerOptions
 }
 
 // LoadArgsOptions commandline load parameters - options
@@ -27,7 +27,9 @@ var loadCommand LoadCommand
 
 // Execute runs the processing of the commandline parameters
 func (x *LoadCommand) Execute(args []string) error {
-	fmt.Printf("Load\n")
+	x.LoggerOptions.Process()
+
+	log.Printf("Load\n")
 
 	// sourceFile := processArgs(args)
 	sourceFile := x.Infile.DbPrefix
@@ -35,14 +37,15 @@ func (x *LoadCommand) Execute(args []string) error {
 	parameters := Parameters{}
 	x.SaveLoadOptions.NoCheck = false
 
-	processSaveLoadParameters(&parameters, x.SaveLoadOptions)
+	x.SaveLoadOptions.ProcessParameters(&parameters)
 
-	fmt.Printf(" sourceFile             : %s\n", sourceFile)
-	fmt.Println(parameters)
-	fmt.Println(x.ProfileOptions)
+	log.Printf(" sourceFile             : %s\n", sourceFile)
+	log.Println(parameters)
+	log.Println(x.LoggerOptions)
+	log.Println(x.ProfileOptions)
 
-	processSaveLoad(x.SaveLoadOptions)
-	profileCloser := processProfile(x.ProfileOptions)
+	x.SaveLoadOptions.Process()
+	profileCloser := x.ProfileOptions.Process()
 
 	log.Println("Openning", sourceFile)
 

@@ -2,6 +2,7 @@ package ibrowser
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"math"
 	"os"
 )
@@ -39,7 +40,7 @@ func NewIBBlock(
 	blockNumber uint64,
 	blockPosition uint64,
 ) *IBBlock {
-	fmt.Println("   NewIBBlock :: chromosomeName: ", chromosomeName,
+	log.Println("   NewIBBlock :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
 		" blockSize: ", blockSize,
 		" blockNumber: ", blockNumber,
@@ -91,7 +92,7 @@ func (ibb *IBBlock) String() string {
 
 // AddVcfMatrix add a vcf matrix to the blocks
 func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
-	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
+	// log.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
 	ibb.MinPosition = Min64(ibb.MinPosition, position)
 	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
@@ -100,7 +101,7 @@ func (ibb *IBBlock) AddVcfMatrix(position uint64, distance *VCFDistanceMatrix) {
 
 // Add add another ibmatrix to the blocks
 func (ibb *IBBlock) Add(position uint64, distance *IBDistanceMatrix) {
-	// fmt.Println("Add", position, ibb.NumSNPS, ibb)
+	// log.Println("Add", position, ibb.NumSNPS, ibb)
 	ibb.NumSNPS++
 	ibb.MinPosition = Min64(ibb.MinPosition, position)
 	ibb.MaxPosition = Max64(ibb.MaxPosition, position)
@@ -168,7 +169,7 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 	res = res && (ibb.NumSNPS == other.NumSNPS)
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed block %s - #%d check - NumSNPS: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.NumSNPS, other.NumSNPS)
+		log.Printf("IsEqual :: Failed block %s - #%d check - NumSNPS: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.NumSNPS, other.NumSNPS)
 		return res
 	}
 
@@ -176,14 +177,14 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 		res = res && (ibb.MinPosition == other.MinPosition)
 
 		if !res {
-			fmt.Printf("IsEqual :: Failed block %s - #%d check - MinPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, other.MinPosition)
+			log.Printf("IsEqual :: Failed block %s - #%d check - MinPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, other.MinPosition)
 			return res
 		}
 
 		res = res && (ibb.MaxPosition == other.MaxPosition)
 
 		if !res {
-			fmt.Printf("IsEqual :: Failed block %s - #%d check - MaxPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MaxPosition, other.MaxPosition)
+			log.Printf("IsEqual :: Failed block %s - #%d check - MaxPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MaxPosition, other.MaxPosition)
 			return res
 		}
 	}
@@ -193,7 +194,7 @@ func (ibb *IBBlock) IsEqual(other *IBBlock) (res bool) {
 	res = res && ibb.Matrix.IsEqual(matrix)
 
 	if !res {
-		fmt.Printf("IsEqual :: Failed block %s - #%d check - Matrix not equal\n", ibb.ChromosomeName, ibb.BlockNumber)
+		log.Printf("IsEqual :: Failed block %s - #%d check - Matrix not equal\n", ibb.ChromosomeName, ibb.BlockNumber)
 		return res
 	}
 
@@ -215,17 +216,17 @@ func (ibb *IBBlock) CheckSerial(serial uint64) bool {
 	eq1 := ibb.Serial == serial
 
 	if !eq1 {
-		fmt.Println("block serial ", ibb.Serial, " != ", serial, ibb)
+		log.Println("block serial ", ibb.Serial, " != ", serial, ibb)
 	} else {
-		// fmt.Println("block serial ", ibb.Serial, " == ", serial, ibb)
+		// log.Println("block serial ", ibb.Serial, " == ", serial, ibb)
 	}
 
 	eq2 := ibb.Matrix.Serial == serial
 
 	if !eq2 {
-		fmt.Println("matrix serial ", ibb.Matrix.Serial, " != ", serial, ibb.Matrix)
+		log.Println("matrix serial ", ibb.Matrix.Serial, " != ", serial, ibb.Matrix)
 	} else {
-		// fmt.Println("matrix serial ", ibb.Matrix.Serial, " == ", serial, ibb.Matrix)
+		// log.Println("matrix serial ", ibb.Matrix.Serial, " == ", serial, ibb.Matrix)
 	}
 
 	return eq1 && eq2
@@ -242,21 +243,21 @@ func (ibb *IBBlock) Check() (res bool) {
 	res = res && (ibb.BlockNumber == ibb.Matrix.BlockNumber)
 
 	if !res {
-		fmt.Printf("Failed block %s - #%d check - BlockNumber: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockNumber, ibb.Matrix.BlockNumber)
+		log.Printf("Failed block %s - #%d check - BlockNumber: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockNumber, ibb.Matrix.BlockNumber)
 		return res
 	}
 
 	res = res && (ibb.BlockPosition == ibb.Matrix.BlockPosition)
 
 	if !res {
-		fmt.Printf("Failed block %s - #%d check - BlockPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockPosition, ibb.Matrix.BlockPosition)
+		log.Printf("Failed block %s - #%d check - BlockPosition: %d != %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.BlockPosition, ibb.Matrix.BlockPosition)
 		return res
 	}
 
 	// res = res && (ibb.ChromosomeName == ibb.Matrix.ChromosomeName)
 
 	// if !res {
-	// 	fmt.Printf("Failed block %s - #%d check - ChromosomeName: %s != %s\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.ChromosomeName, ibb.Matrix.ChromosomeName)
+	// 	log.Printf("Failed block %s - #%d check - ChromosomeName: %s != %s\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.ChromosomeName, ibb.Matrix.ChromosomeName)
 	// 	return res
 	// }
 
@@ -264,8 +265,8 @@ func (ibb *IBBlock) Check() (res bool) {
 		res = res && (ibb.MinPosition <= ibb.MaxPosition)
 
 		if !res {
-			fmt.Printf("Failed block %s - #%d check - MinPosition %d > MaxPosition %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, ibb.MaxPosition)
-			fmt.Println(ibb)
+			log.Printf("Failed block %s - #%d check - MinPosition %d > MaxPosition %d\n", ibb.ChromosomeName, ibb.BlockNumber, ibb.MinPosition, ibb.MaxPosition)
+			log.Println(ibb)
 			return res
 		}
 	}
@@ -298,7 +299,7 @@ func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
 	matrix, hasMatrix := ibb.GetMatrix()
 
 	if !hasMatrix {
-		fmt.Println("failed getting matrix")
+		log.Println("failed getting matrix")
 		os.Exit(1)
 	}
 
@@ -310,30 +311,30 @@ func (ibb *IBBlock) Dump(dumper *MultiArrayFile) (serial uint64) {
 
 // UnDump reads the matrix table from a binary file
 func (ibb *IBBlock) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool) {
-	// fmt.Println("UnDump matrix :: ", ibb)
+	// log.Println("UnDump matrix :: ", ibb)
 
 	matrix, hasMatrix := ibb.GetMatrix()
 
 	if !hasMatrix {
-		fmt.Println("block.UnDump failed getting matrix")
+		log.Println("block.UnDump failed getting matrix")
 		os.Exit(1)
 	}
 
-	fmt.Println("block.UnDump reading from file")
+	log.Println("block.UnDump reading from file")
 	serial, hasData = matrix.UnDump(dumper)
-	fmt.Println("block.UnDump reading from file - DONE")
+	log.Println("block.UnDump reading from file - DONE")
 
 	if !hasData {
-		fmt.Println("block.UnDump Tried to read beyond the file")
+		log.Println("block.UnDump Tried to read beyond the file")
 		os.Exit(1)
 	}
 
 	if !ibb.CheckSerial(serial) {
-		fmt.Println("block.UnDump Mismatch in order of files")
+		log.Println("block.UnDump Mismatch in order of files")
 		os.Exit(1)
 	}
 
-	fmt.Println("UnDump matrix :: ", ibb.BlockNumber, " - DONE")
+	log.Println("UnDump matrix :: ", ibb.BlockNumber, " - DONE")
 
 	return
 }

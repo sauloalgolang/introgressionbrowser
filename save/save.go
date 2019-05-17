@@ -1,7 +1,7 @@
 package save
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -124,20 +124,20 @@ func (s *Saver) Save(val interface{}) {
 	format := s.Format
 	compress := s.Compressor
 
-	// fmt.Println("format       ", format)
-	// fmt.Println("compress     ", compress)
+	// log.Println("format       ", format)
+	// log.Println("compress     ", compress)
 
 	hasStreamer := GetFormatHasStreamer(format)
 	hasMarshal := GetFormatHasMarshal(format)
 	isCompressed := GetCompressIsCompressed(compress)
 
-	// fmt.Println("hasStreamer  ", hasStreamer)
-	// fmt.Println("hasMarshal   ", hasMarshal)
-	// fmt.Println("isCompressed ", isCompressed)
+	// log.Println("hasStreamer  ", hasStreamer)
+	// log.Println("hasMarshal   ", hasMarshal)
+	// log.Println("isCompressed ", isCompressed)
 
 	outfile := s.GenFilename()
 
-	// fmt.Println("outfile      ", outfile)
+	// log.Println("outfile      ", outfile)
 
 	if hasStreamer {
 		if isCompressed {
@@ -159,26 +159,26 @@ func saveData(outfile string, marshaler Marshaler, val interface{}) {
 	d, err := marshaler(val)
 
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		log.Printf("error: %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("saving data to ", outfile)
+	log.Println("saving data to ", outfile)
 
 	err = ioutil.WriteFile(outfile, d, 0644)
-	fmt.Println("  done")
+	log.Println("  done")
 }
 
 func saveDataStream(outfile string, marshaler MarshalerStreamer, val interface{}) {
-	// fmt.Println("saving stream to ", outfile)
+	// log.Println("saving stream to ", outfile)
 
 	marshaler(outfile, val)
 }
 
 func saveDataStreamCompressed(outfile string, marshaler MarshalerStreamerWriter, compressor GenericNewWriter, val interface{}) error {
-	// fmt.Println("saveDataStreamCompressed :: outfile    ", outfile)
-	// fmt.Println("saveDataStreamCompressed :: marshaler  ", marshaler)
-	// fmt.Println("saveDataStreamCompressed :: compressor ", compressor)
+	// log.Println("saveDataStreamCompressed :: outfile    ", outfile)
+	// log.Println("saveDataStreamCompressed :: marshaler  ", marshaler)
+	// log.Println("saveDataStreamCompressed :: compressor ", compressor)
 
 	file, err := os.OpenFile(outfile, os.O_CREATE|os.O_WRONLY, 0660) //|os.O_APPEND
 	defer file.Close()
@@ -192,7 +192,7 @@ func saveDataStreamCompressed(outfile string, marshaler MarshalerStreamerWriter,
 		comp.Close()
 
 	} else {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
@@ -228,18 +228,18 @@ func loadData(outfile string, unmarshaler UnMarshaler, val interface{}) {
 	data, err := ioutil.ReadFile(outfile)
 
 	if err != nil {
-		fmt.Printf("dump file. Get err   #%v ", err)
+		log.Printf("dump file. Get err   #%v ", err)
 	}
 
 	err = unmarshaler(data, val)
 
 	if err != nil {
-		fmt.Printf("cannot unmarshal data: %v", err)
+		log.Printf("cannot unmarshal data: %v", err)
 	}
 }
 
 func loadDataStream(outfile string, unmarshaler UnMarshalerStreamer, val interface{}) {
-	fmt.Println("loading from ", outfile)
+	log.Println("loading from ", outfile)
 	unmarshaler(outfile, val)
 }
 

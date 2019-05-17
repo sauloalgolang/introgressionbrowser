@@ -3,13 +3,10 @@ package save
 import (
 	"bufio"
 	"encoding/binary"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"math"
 	"os"
 	"unsafe"
-	// "bytes"
-	// "io/ioutil"
-	// "fmt"
 )
 
 // https://golang.org/pkg/encoding/binary/

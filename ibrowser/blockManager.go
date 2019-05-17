@@ -1,6 +1,9 @@
 package ibrowser
 
-import "fmt"
+import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
+)
 
 // BlockManager holds information about blocks in a give domain
 type BlockManager struct {
@@ -43,7 +46,6 @@ func (bm *BlockManager) NewBlock(
 	numSamples uint64,
 	blockNumber uint64,
 ) (nb *IBBlock) {
-
 	blockPosition := uint64(len(bm.Blocks))
 	bm.BlockNames[chromosomeName] = blockPosition
 	bm.BlockNumbers[blockNumber] = blockPosition
@@ -65,10 +67,10 @@ func (bm *BlockManager) NewBlock(
 
 // GetBlockByName returns block given its name
 func (bm *BlockManager) GetBlockByName(name string) (block *IBBlock, ok bool) {
-	// fmt.Println("BlockManager.GetBlockByName :: name:", name)
-	// fmt.Println("BlockManager.GetBlockByName :: bm:", bm)
-	// fmt.Println("BlockManager.GetBlockByName :: BlockNames:", bm.BlockNames)
-	// fmt.Println("BlockManager.GetBlockByName :: Blocks", bm.Blocks)
+	// log.Println("BlockManager.GetBlockByName :: name:", name)
+	// log.Println("BlockManager.GetBlockByName :: bm:", bm)
+	// log.Println("BlockManager.GetBlockByName :: BlockNames:", bm.BlockNames)
+	// log.Println("BlockManager.GetBlockByName :: Blocks", bm.Blocks)
 	if pos, hasName := bm.BlockNames[name]; hasName {
 		if pos > uint64(len(bm.Blocks)) {
 			panic(fmt.Sprintf("BlockManager.GetBlockByName :: access error. position %d > %d", pos, len(bm.Blocks)))
@@ -109,17 +111,17 @@ func (bm *BlockManager) saveLoad(outPrefix string, isSave bool) {
 	dumper := NewMultiArrayFile(outPrefix, isSave, isSoft)
 	defer dumper.Close()
 
-	// fmt.Println(bm)
+	// log.Println(bm)
 
 	for b, block := range bm.Blocks {
-		fmt.Println("BlockManager.saveLoad", b)
-		// fmt.Println("BlockManager.saveLoad", b, " - BM - ", bm)
+		log.Println("BlockManager.saveLoad", b)
+		// log.Println("BlockManager.saveLoad", b, " - BM - ", bm)
 		if isSave {
 			block.Dump(dumper)
 		} else {
 			block.UnDump(dumper)
 		}
-		// fmt.Println("BlockManager.saveLoad", b, " - DONE")
-		// fmt.Println("BlockManager.saveLoad", b, " - BLOCK", bm.Blocks)
+		// log.Println("BlockManager.saveLoad", b, " - DONE")
+		// log.Println("BlockManager.saveLoad", b, " - BLOCK", bm.Blocks)
 	}
 }

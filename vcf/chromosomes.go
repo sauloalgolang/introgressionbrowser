@@ -1,7 +1,7 @@
 package vcf
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"io"
@@ -23,14 +23,14 @@ func GatherChromosomeNames(sourceFile string, isTar bool, isGz bool, callBackPar
 	exists, _ := chromosomeNames.Exists(sourceFile)
 
 	if exists {
-		fmt.Println(" exists")
+		log.Println(" exists")
 		chromosomeNames.Load(sourceFile)
 
 	} else {
-		fmt.Println(" creating")
+		log.Println(" creating")
 
 		addToNames := func(SampleNames *Samples, register *Register) {
-			fmt.Println("adding chromosome ", register.Chromosome)
+			log.Println("adding chromosome ", register.Chromosome)
 			chromosomeNames.Add(register.Chromosome, register.LineNumber)
 		}
 

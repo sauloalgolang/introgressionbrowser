@@ -1,7 +1,7 @@
 package save
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 )
@@ -112,9 +112,9 @@ func GetFormatInformation(format string) Format {
 	sf, ok := Formats[format]
 
 	if !ok {
-		fmt.Println("Unknown format: ", format, ". valid formats are:")
+		log.Println("Unknown format: ", format, ". valid formats are:")
 		for k := range Formats {
-			fmt.Println(" ", k)
+			log.Println(" ", k)
 		}
 		os.Exit(1)
 	}

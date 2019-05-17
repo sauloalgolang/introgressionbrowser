@@ -2,7 +2,7 @@ package vcf
 
 import (
 	"bufio"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"io"
@@ -41,7 +41,7 @@ func (cc *ChromosomeCallbackRegister) ChromosomeCallbackSingleThreaded(r io.Read
 
 	ProcessVcfRaw(bufreader, callBackParameters, cc.registerCallBack, cc.chromosomeNames)
 
-	fmt.Println("Finished reading chromosomes   :", cc.chromosomeNames)
+	log.Println("Finished reading chromosomes   :", cc.chromosomeNames)
 }
 
 //
@@ -66,19 +66,19 @@ func CheckFormat(sourceFile string) Format {
 	sourceFileLower := strings.ToLower(sourceFile)
 
 	if strings.HasSuffix(sourceFileLower, ".vcf.tar.gz") {
-		fmt.Println(" .tar.gz format")
+		log.Println(" .tar.gz format")
 		vf.isTar = true
 		vf.isGz = true
 	} else if strings.HasSuffix(sourceFileLower, ".vcf.gz") {
-		fmt.Println(" .gz format")
+		log.Println(" .gz format")
 		vf.isTar = false
 		vf.isGz = true
 	} else if strings.HasSuffix(sourceFileLower, ".vcf") {
-		fmt.Println(" .vcf format")
+		log.Println(" .vcf format")
 		vf.isTar = false
 		vf.isGz = false
 	} else {
-		fmt.Println("unknown file suffix!")
+		log.Println("unknown file suffix!")
 		os.Exit(1)
 	}
 
@@ -93,7 +93,7 @@ func CheckFormat(sourceFile string) Format {
 
 // OpenFile opens file, call callback when a register is found
 func OpenFile(sourceFile string, callBackParameters CallBackParameters, registerCallBack RegisterCallBack) {
-	fmt.Println("OpenFile :: ",
+	log.Println("OpenFile :: ",
 		"sourceFile", sourceFile,
 		"numBits", callBackParameters.NumBits,
 		"continueOnError", callBackParameters.ContinueOnError,
@@ -111,7 +111,7 @@ func OpenFile(sourceFile string, callBackParameters CallBackParameters, register
 	p.Printf(" NumRegisters   : %12d\n", chromosomeNames.NumRegisters)
 
 	if callBackParameters.NumThreads == 1 {
-		fmt.Println("Running single threaded")
+		log.Println("Running single threaded")
 
 		chromosomeGroup := make([]string, chromosomeNames.NumChromosomes, chromosomeNames.NumChromosomes)
 
@@ -126,7 +126,7 @@ func OpenFile(sourceFile string, callBackParameters CallBackParameters, register
 
 		OpenAnyFile(sourceFile, vcfFormat.isTar, vcfFormat.isGz, callBackParameters, ccr.ChromosomeCallbackSingleThreaded)
 
-		fmt.Println("Finished reading file")
+		log.Println("Finished reading file")
 
 	} else {
 		threads := callBackParameters.NumThreads
@@ -158,13 +158,13 @@ func OpenFile(sourceFile string, callBackParameters CallBackParameters, register
 			)
 
 			if OnlyFirst {
-				fmt.Println("Only sending first")
+				log.Println("Only sending first")
 				break
 			}
 		}
 
-		fmt.Println("Waiting for all chromosomes to complete")
+		log.Println("Waiting for all chromosomes to complete")
 		wg.Wait()
-		fmt.Println("All chromosomes completed")
+		log.Println("All chromosomes completed")
 	}
 }

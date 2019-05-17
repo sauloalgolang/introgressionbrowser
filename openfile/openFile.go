@@ -5,7 +5,7 @@ package openfile
 
 import (
 	"archive/tar"
-	"fmt"
+	log "github.com/sirupsen/logrus"	
 	// "compress/gzip"
 	gzip "github.com/klauspost/pgzip"
 	"io"
@@ -19,7 +19,7 @@ import "github.com/sauloalgolang/introgressionbrowser/interfaces"
 func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters interfaces.CallBackParameters, callBack interfaces.VCFMaskedReaderType) {
 	f, err := os.Open(sourceFile)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 	defer f.Close()
@@ -31,7 +31,7 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters inter
 
 		gzReader, err := gzip.NewReaderN(f, 2500000, 32)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(1)
 		}
 		defer gzReader.Close()
@@ -50,7 +50,7 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters inter
 				}
 
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					os.Exit(1)
 				}
 
@@ -60,10 +60,10 @@ func OpenFile(sourceFile string, isTar bool, isGz bool, callBackParameters inter
 				case tar.TypeDir:
 					continue
 				case tar.TypeReg:
-					fmt.Println("(", i, ")", "Name: ", name)
+					log.Println("(", i, ")", "Name: ", name)
 					callBack(tarReader, callBackParameters)
 				default:
-					fmt.Printf("%s : %c %s %s\n",
+					log.Printf("%s : %c %s %s\n",
 						"Yikes! Unable to figure out type",
 						header.Typeflag,
 						"in file",

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -10,7 +10,12 @@ import (
 
 import (
 	"github.com/sauloalgolang/introgressionbrowser/save"
+	"github.com/sauloalgolang/introgressionbrowser/vcf"
 )
+
+//
+// SaveLoadOptions
+//
 
 // SaveLoadOptions holds the sahred parameters for the commandline save and load commands
 type SaveLoadOptions struct {
@@ -29,7 +34,36 @@ func (s SaveLoadOptions) String() (res string) {
 	return res
 }
 
-// ProfileOptions holds the sahred parameters for the commandline profile options
+// Process processes save/load options
+func (s *SaveLoadOptions) Process() {
+	if _, ok := save.Formats[s.Format]; !ok {
+		log.Println("Unknown format: ", s.Format, ". valid formats are:")
+		for k := range save.Formats {
+			log.Println(" ", k)
+		}
+		os.Exit(1)
+	}
+
+	if _, ok := save.Compressors[s.Compression]; !ok {
+		log.Println("Unknown compression: ", s.Compression, ". valid formats are:")
+		for k := range save.Compressors {
+			log.Println(" ", k)
+		}
+		os.Exit(1)
+	}
+}
+
+// ProcessParameters processes parameters
+func (s *SaveLoadOptions) ProcessParameters(parameters *Parameters) {
+	parameters.Compression = s.Compression
+	parameters.Format = s.Format
+}
+
+//
+// ProfileOptions
+//
+
+// ProfileOptions holds the shared parameters for the commandline profile options
 type ProfileOptions struct {
 	CPUProfile     string `long:"CPUProfile" description:"Write cpu profile to file" default:""`
 	MemProfile     string `long:"memProfile" description:"Write memory profile to file" default:""`
@@ -43,53 +77,39 @@ func (p ProfileOptions) String() (res string) {
 	return res
 }
 
-func processSaveLoad(opts SaveLoadOptions) {
-	if _, ok := save.Formats[opts.Format]; !ok {
-		fmt.Println("Unknown format: ", opts.Format, ". valid formats are:")
-		for k := range save.Formats {
-			fmt.Println(" ", k)
-		}
-		os.Exit(1)
-	}
-
-	if _, ok := save.Compressors[opts.Compression]; !ok {
-		fmt.Println("Unknown compression: ", opts.Compression, ". valid formats are:")
-		for k := range save.Compressors {
-			fmt.Println(" ", k)
-		}
-		os.Exit(1)
-	}
-}
-
-func profileCPUStart(opts ProfileOptions) {
-	if opts.CPUProfile != "" {
+// CPUStart starts cpu profiling
+func (p *ProfileOptions) CPUStart() {
+	if p.CPUProfile != "" {
 		err := *new(error)
-		opts.cpuFileHandler, err = os.Create(opts.CPUProfile)
+		p.cpuFileHandler, err = os.Create(p.CPUProfile)
 		if err != nil {
 			log.Fatal("could not create CPU profile", err)
 		}
-		if err := pprof.StartCPUProfile(opts.cpuFileHandler); err != nil {
+		if err := pprof.StartCPUProfile(p.cpuFileHandler); err != nil {
 			log.Fatal("could not start CPU profile", err)
 		}
 	}
 }
 
-func profileCPUEnd(opts ProfileOptions) {
-	if opts.CPUProfile != "" {
+// CPUEnd ends cpu profiling
+func (p *ProfileOptions) CPUEnd() {
+	if p.CPUProfile != "" {
 		pprof.StopCPUProfile()
-		opts.cpuFileHandler.Close()
+		p.cpuFileHandler.Close()
 	}
 }
 
-func profileMemStart(opts ProfileOptions) {
+// MemStart starts memory profiling
+func (p ProfileOptions) MemStart() {
 
 }
 
-func profileMemEnd(opts ProfileOptions) {
+// MemEnd ends memory profiling
+func (p ProfileOptions) MemEnd() {
 	runtime.GC() // get up-to-date statistics
 
-	if opts.MemProfile != "" {
-		f, err := os.Create(opts.MemProfile)
+	if p.MemProfile != "" {
+		f, err := os.Create(p.MemProfile)
 		if err != nil {
 			log.Fatal("could not create memory profile: ", err)
 		}
@@ -101,33 +121,70 @@ func profileMemEnd(opts ProfileOptions) {
 	}
 }
 
-func processProfile(opts ProfileOptions) func() {
-	profileCPUStart(opts)
-	profileMemStart(opts)
+// Process profile options
+func (p ProfileOptions) Process() func() {
+	p.CPUStart()
+	p.MemStart()
 
 	return func() {
-		profileCPUEnd(opts)
-		profileMemEnd(opts)
+		p.CPUEnd()
+		p.MemEnd()
 	}
 }
 
+//
+// Debug
+//
+
+// DebugOptions commandline debug options
+type DebugOptions struct {
+	Debug                  bool  `long:"debug" description:"Print debug information"`
+	DebugFirstOnly         bool  `long:"debugFirstOnly" description:"Read only fist chromosome from each thread"`
+	DebugMaxRegisterThread int64 `long:"debugMaxRegisterThread" description:"Maximum number of registers to read per thread" default:"0"`
+	DebugMaxRegisterChrom  int64 `long:"debugMaxRegisterChrom" description:"Maximum number of registers to read per chromosome" default:"0"`
+}
+
+func (d DebugOptions) String() (res string) {
+	res += fmt.Sprintf("Debug:\n")
+	res += fmt.Sprintf(" Debug                  : %#v\n", d.Debug)
+	res += fmt.Sprintf(" DebugFirstOnly         : %#v\n", d.DebugFirstOnly)
+	res += fmt.Sprintf(" DebugMaxRegisterThread : %d\n", d.DebugMaxRegisterThread)
+	res += fmt.Sprintf(" DebugMaxRegisterChrom  : %d\n", d.DebugMaxRegisterChrom)
+	return res
+}
+
+// Process debug options
+func (d *DebugOptions) Process() {
+	vcf.Debug = d.Debug
+	vcf.OnlyFirst = d.DebugFirstOnly
+	vcf.BreakAtThread = d.DebugMaxRegisterThread
+	vcf.BreakAtChrom = d.DebugMaxRegisterChrom
+}
+
+// ProcessParameters processes parameters
+func (d *DebugOptions) ProcessParameters(parameters *Parameters) {
+	parameters.DebugFirstOnly = d.DebugFirstOnly
+	parameters.DebugMaxRegisterThread = d.DebugMaxRegisterThread
+	parameters.DebugMaxRegisterChrom = d.DebugMaxRegisterChrom
+}
+
+
+//
+// Args
+// 
+
 func processArgs(args []string) (sourceFile string) {
 	if len(args) == 0 {
-		fmt.Println("no database prefix given")
+		log.Println("no database prefix given")
 		os.Exit(1)
 	}
 
 	if len(args) > 1 {
-		fmt.Println("more than one database prefix given")
+		log.Println("more than one database prefix given")
 		os.Exit(1)
 	}
 
 	sourceFile = args[0]
 
 	return sourceFile
-}
-
-func processSaveLoadParameters(parameters *Parameters, saveLoadOptions SaveLoadOptions) {
-	parameters.Compression = saveLoadOptions.Compression
-	parameters.Format = saveLoadOptions.Format
 }

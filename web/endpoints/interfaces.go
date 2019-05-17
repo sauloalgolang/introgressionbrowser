@@ -21,7 +21,7 @@ var DatabaseDir = "database/"
 var DataEndpoint = "dataep/"
 
 // Verbosity is the verbosity level
-var Verbosity = log.WarnLevel
+// var Verbosity = log.WarnLevel
 
 // SliceIndex is the function to search for the index of a value in a list
 var SliceIndex = tools.SliceIndex
@@ -571,7 +571,7 @@ func (d *DbDb) referenceNumber2referenceName(fileName string, referenceNumber in
 func (d *DbDb) GetPlotTable(fileName string, chromosome string, referenceName string) (*PlotInfo, bool) {
 	referenceNumber, hasRfn := d.referenceName2referenceNumber(fileName, referenceName)
 
-	fmt.Printf("GetPlotTable :: fileName %s chromosome %s referenceName %s referenceNumber %d\n",
+	log.Printf("GetPlotTable :: fileName %s chromosome %s referenceName %s referenceNumber %d\n",
 		fileName,
 		chromosome,
 		referenceName,

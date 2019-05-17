@@ -28,7 +28,7 @@ const DatabaseEndpoint = "/databases"
 const PlotsEndpoint = "/plots"
 
 // NewWeb starts a new webserver
-func NewWeb(databaseDir string, httpDir string, host string, port int, verbosityLevel log.Level) {
+func NewWeb(databaseDir string, httpDir string, host string, port int) {
 	router := mux.NewRouter()
 
 	router.StrictSlash(false)
@@ -41,7 +41,7 @@ func NewWeb(databaseDir string, httpDir string, host string, port int, verbosity
 	router.HandleFunc(APIEndpoints+"/", template).Methods("GET").Name("apiSlash")
 
 	newData(databaseDir, router)
-	newAPI(databaseDir, api, verbosityLevel)
+	newAPI(databaseDir, api)
 	newRoot(httpDir, router)
 
 	srv := &http.Server{
@@ -68,7 +68,7 @@ func newData(dir string, router *mux.Router) {
 	router.PathPrefix(DataEndpoint).Handler(http.StripPrefix(DataEndpoint, http.FileServer(http.Dir(dir)))).Name("data")
 }
 
-func newAPI(dir string, router *mux.Router, verbosityLevel log.Level) {
+func newAPI(dir string, router *mux.Router) {
 	//.HeadersRegexp("Content-Type", "application/json")
 	router.HandleFunc("", template).Methods("GET").Name("api")
 	router.HandleFunc("/update", endpoints.Update).Methods("POST").Name("update")
@@ -104,7 +104,6 @@ func newAPI(dir string, router *mux.Router, verbosityLevel log.Level) {
 
 	endpoints.DataEndpoint = tmpl
 	endpoints.DatabaseDir = strings.TrimSuffix(dir, "/")
-	endpoints.Verbosity = verbosityLevel
 
 	endpoints.ListDatabases()
 }

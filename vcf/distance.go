@@ -1,7 +1,7 @@
 package vcf
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -59,7 +59,6 @@ type DistanceRow = []uint64
 // DistanceMatrix distance matrix type
 type DistanceMatrix []DistanceRow
 
-
 // NewDistanceMatrix creates a new distance matrix
 func NewDistanceMatrix(numSampleNames uint64) *DistanceMatrix {
 	res := make(DistanceMatrix, numSampleNames, numSampleNames)
@@ -101,7 +100,7 @@ func CalculateDistanceDiploid(a *GenotypeVal, b *GenotypeVal) uint64 {
 
 	d := DistanceTableValues[i]
 
-	// fmt.Println(a0, a1, a0*2+a1*1, b0, b1, b0*2+b1*1, i, d)
+	// log.Println(a0, a1, a0*2+a1*1, b0, b1, b0*2+b1*1, i, d)
 
 	return d
 }
@@ -118,18 +117,18 @@ func GetValids(samples SamplesGenotype) (valids []Genotype, numValids int) {
 		lgt := len(*gt)
 
 		if lgt == 0 { // wrong.
-			fmt.Print(" samplePos ", samplePos, " GT ", gt, " ", "WRONG 0")
+			log.Print(" samplePos ", samplePos, " GT ", gt, " ", "WRONG 0")
 			os.Exit(1)
 		} else if lgt == 1 { // maybe no call
 			if (*gt)[0] == -1 { // is no call
-				// fmt.Print(" 1 samplePos ", samplePos, " GT ", gt, " ", "NC")
+				// log.Print(" 1 samplePos ", samplePos, " GT ", gt, " ", "NC")
 				continue
 			} else {
-				fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "WRONG NOT -1")
+				log.Println(" samplePos ", samplePos, " GT ", gt, " ", "WRONG NOT -1")
 				os.Exit(1)
 			}
 		} else if lgt == 2 { // alts
-			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "DIPLOID")
+			// log.Println(" samplePos ", samplePos, " GT ", gt, " ", "DIPLOID")
 			if (*gt)[0] == -1 {
 				continue
 			} else {
@@ -137,7 +136,7 @@ func GetValids(samples SamplesGenotype) (valids []Genotype, numValids int) {
 				numValids++
 			}
 		} else { // weird
-			// fmt.Println(" samplePos ", samplePos, " GT ", gt, " ", "POLYPLOYD")
+			// log.Println(" samplePos ", samplePos, " GT ", gt, " ", "POLYPLOYD")
 			valids[numValids] = Genotype{samplePos, gt, lgt, false}
 			numValids++
 		}
@@ -152,7 +151,7 @@ func CalculateDistance(numSamples uint64, reg *Register) *DistanceMatrix {
 
 	valids, numValids := GetValids(reg.Samples)
 
-	// fmt.Println("valids", numValids, valids, numSamples)
+	// log.Println("valids", numValids, valids, numSamples)
 
 	for validPos1 := 0; validPos1 < numValids; validPos1++ {
 		valid1 := valids[validPos1]
@@ -169,10 +168,10 @@ func CalculateDistance(numSamples uint64, reg *Register) *DistanceMatrix {
 			// lgt2 := valid2.Lgt
 
 			if isDiploid1 && isDiploid2 {
-				// fmt.Print("    BOTH DIPLOYD ")
+				// log.Print("    BOTH DIPLOYD ")
 				dist := CalculateDistanceDiploid(gt1, gt2)
 				reg.TempDistance.Set(samplePos1, samplePos2, dist)
-				// fmt.Println(gt1, " ", gt2, " ", dist)
+				// log.Println(gt1, " ", gt2, " ", dist)
 			}
 		}
 	}

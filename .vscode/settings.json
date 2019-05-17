@@ -3,5 +3,6 @@
     "go.formatFlags": [
         "-s"
     ],
-    "go.inferGopath": false
+    "go.inferGopath": false,
+    // "go.gopath": "/home/saulo/dev/gowasm/ibrowser",
 }
