@@ -28,6 +28,7 @@ type DistanceMatrix1Dg struct {
 	data16         DistanceRow16
 	data32         DistanceRow32
 	data64         DistanceRow64
+	tm             *TriangularMatrix
 	// Data           []interface{}
 }
 
@@ -61,13 +62,10 @@ func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, dimension u
 
 // NewDistanceMatrix1Dg creates a new instance of 1d matrix using counterBits bit numbers
 func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	size := dimension * (dimension - 1) / 2
-
 	log.Println("    NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
 		" Block Size: ", blockSize,
 		" Bits:", counterBits,
 		" Dimension:", dimension,
-		" Size:", size,
 		" Block Position: ", blockPosition,
 		" Block Number: ", blockNumber,
 	)
@@ -76,33 +74,40 @@ func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits u
 		ChromosomeName: chromosomeName,
 		BlockSize:      blockSize,
 		Dimension:      dimension,
-		Size:           size,
 		CounterBits:    counterBits,
 		BlockPosition:  blockPosition,
 		BlockNumber:    blockNumber,
 		Serial:         0,
 	}
 
+	d.init()
+
 	if d.CounterBits == 16 {
-		// d.Data = make(DistanceRow32, size, size)
-		d.data16 = make(DistanceRow16, size, size)
+		// d.Data = make(DistanceRow32, d.Size, d.Size)
+		d.data16 = make(DistanceRow16, d.Size, d.Size)
 		d.data32 = make(DistanceRow32, 0, 0)
 		d.data64 = make(DistanceRow64, 0, 0)
 	} else if d.CounterBits == 32 {
-		// d.Data = make(DistanceRow32, size, size)
+		// d.Data = make(DistanceRow32, d.Size, d.Size)
 		d.data16 = make(DistanceRow16, 0, 0)
-		d.data32 = make(DistanceRow32, size, size)
+		d.data32 = make(DistanceRow32, d.Size, d.Size)
 		d.data64 = make(DistanceRow64, 0, 0)
 	} else if d.CounterBits == 64 {
-		// d.Data = make(DistanceRow64, size, size)
+		// d.Data = make(DistanceRow64, d.Size, d.Size)
 		d.data16 = make(DistanceRow16, 0, 0)
 		d.data32 = make(DistanceRow32, 0, 0)
-		d.data64 = make(DistanceRow64, size, size)
+		d.data64 = make(DistanceRow64, d.Size, d.Size)
 	}
 
 	d.Clean()
 
 	return &d
+}
+
+func (d *DistanceMatrix1Dg) init() {
+	d.tm = NewTriangularMatrix(d.Dimension)
+	d.updateSize()
+	// testIJP()
 }
 
 //
@@ -231,7 +236,7 @@ func (d *DistanceMatrix1Dg) IncrementWithVcfMatrix(e *VCFDistanceMatrix) {
 
 // Increment increments the table using another table
 func (d *DistanceMatrix1Dg) Increment(p1 uint64, p2 uint64, val uint64) {
-	p := d.ijToK(p1, p2)
+	p := d.ijToP(p1, p2)
 
 	if d.CounterBits == 16 {
 		d.increment16(p, val)
@@ -284,7 +289,7 @@ func (d *DistanceMatrix1Dg) increment64(p uint64, val uint64) {
 
 // Set sets the value for matrix position p1,p2
 func (d *DistanceMatrix1Dg) Set(p1 uint64, p2 uint64, val uint64) {
-	p := d.ijToK(p1, p2)
+	p := d.ijToP(p1, p2)
 
 	if d.CounterBits == 16 {
 		d.set16(p, val)
@@ -513,7 +518,7 @@ func (d *DistanceMatrix1Dg) isEqual64(e *DistanceMatrix1Dg) (res bool) {
 
 // GetPos returns the value at a given position in the table
 func (d *DistanceMatrix1Dg) GetPos(p1 uint64, p2 uint64) uint64 {
-	p := d.ijToK(p1, p2)
+	p := d.ijToP(p1, p2)
 
 	log.Printf("GetPos :: p1 %d p2 %d p %d len data16 %d data32 %d data64 %d", p1, p2, p, len((*d).data16), len((*d).data32), len((*d).data64))
 
@@ -543,12 +548,21 @@ func (d *DistanceMatrix1Dg) GenFilename(outPrefix string, format string, compres
 // Unexported Methods
 //
 
-func (d *DistanceMatrix1Dg) ijToK(i uint64, j uint64) uint64 {
-	return ijToK(d.Dimension, i, j)
+func (d *DistanceMatrix1Dg) ijToP(i uint64, j uint64) uint64 {
+	return d.tm.IJToP(i, j)
 }
 
-func (d *DistanceMatrix1Dg) kToIJ(k uint64) (uint64, uint64) {
-	return kToIJ(d.Dimension, k)
+func (d *DistanceMatrix1Dg) pToIJ(k uint64) (uint64, uint64) {
+	return d.tm.PToIJ(k)
+}
+
+func (d *DistanceMatrix1Dg) calculateSize() (size uint64) {
+	size = d.tm.CalculateSize()
+	return
+}
+
+func (d *DistanceMatrix1Dg) updateSize() {
+	d.Size = d.calculateSize()
 }
 
 //
@@ -634,6 +648,7 @@ func (d *DistanceMatrix1Dg) saveLoad(isSave bool, outPrefix string, format strin
 	} else {
 		log.Printf("loading matrix           :  %-70s block num: %d block pos: %d\n", outPrefix, d.BlockNumber, d.BlockPosition)
 		saver.Load(d)
+		d.init()
 	}
 }
 
@@ -671,4 +686,23 @@ func (d *DistanceMatrix1Dg) UnDump(dumper *MultiArrayFile) (serial uint64, hasDa
 	d.checkHeader(header)
 
 	return header.Serial, header.HasData
+}
+
+
+func testIJP() {
+	log.Println("testIJP")
+	dimension := uint64(10)
+	tm:= NewTriangularMatrix(dimension)
+	size := tm.CalculateSize()
+
+	var i, j, p, q uint64
+
+	for p = 0; p < size; p++ {
+		i, j = tm.PToIJ(p)
+		q = tm.IJToP(i, j)
+		log.Printf("d %3d size %3d p %3d i %3d j %3d q %3d", dimension, size, p, i, j, q)
+		if p != q {
+			log.Panic("Error")
+		}
+	}
 }
