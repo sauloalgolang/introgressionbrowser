@@ -19,6 +19,7 @@ except ImportError:
 np.set_printoptions(edgeitems=3)
 np.core.arrayprint._line_width = 80
 
+DEBUG = False
 
 def readIbrowserBinary(infile, colNames=None):
     dtI = np.dtype([
@@ -95,6 +96,7 @@ def readIbrowserBinary(infile, colNames=None):
     matrix  = pd.DataFrame(memmap["data"], copy=False).T
 
     matrixi.columns = colNames
+    
     return numRegisters, matrixi, matrix
 
 
@@ -107,6 +109,7 @@ def checkMatrixIndex(matrixi, matrix):
     # print("matrixS\n", matrixS)
     # print("matrixD\n", matrixD)
     print("  diff ", diff)
+    
     assert diff == 0, "calculated sum differs from sum: {} != 0".format(diff)
 
 
@@ -121,8 +124,8 @@ def checkZero(zero, others):
     # print("othersS\n", othersS)
     # print("othersD\n", othersD)
     print("  zeroD", zeroD)
-    assert zeroD == 0, "calculated zerp sum differs from sum: {} != 0".format(
-        zeroD)
+    
+    assert zeroD == 0, "calculated zerp sum differs from sum: {} != 0".format(zeroD)
 
 
 def checkSummary(matrixi, matrix):
@@ -189,16 +192,18 @@ def main(prefix):
 
         assert numblocks == cNumRegisters
 
-        print(" Checking chromosome: ", blockName)
-        # checkChromosome(cMatrixi, cMatrix, matrix[blockName])
-        # chromosomesDfs[blockName] = cMatrix
+        if DEBUG:
+            print(" Checking chromosome: ", blockName)
+            # checkChromosome(cMatrixi, cMatrix, matrix[blockName])
+            # chromosomesDfs[blockName] = cMatrix
+            pass
 
         if cdf is None:
             cdf = cMatrix
         else:
             cdf = cdf.merge(cMatrix, left_index=True, right_index=True, validate="one_to_one", copy=False)
 
-    print(cdf)
+    # print(cdf)
 
     # print("Merging chromosomes")
     # cdf = pd.concat(chromosomesDfs, axis=1, copy=False)
@@ -208,23 +213,26 @@ def main(prefix):
     print("Saving chromosomes to hdf5:", outfileh5)
     cdf.to_hdf(outfileh5, key=basefileKey, mode="w", format="fixed", append=False)#, data_columns=None)
 
-    # print("Saving chromosomes to parquet:", outfilepq)
-    # table = pa.Table.from_pandas(cdf)
-    # pq.write_table(table, outfilepq)
+    print("Saving chromosomes to parquet:", outfilepq)
+    table = pa.Table.from_pandas(cdf, preserve_index=True, nthreads=4)
+    pq.write_table(table, outfilepq, version="2.0")
 
     # cdf.to_parquet(outfilepq, index=True)
 
-    # print("Loading chromosomes from hdf5:", outfileh5)
-    # cdfh5 = pd.read_hdf(outfileh5, key=basefileKey)
+    if DEBUG or True:
+        print("Loading chromosomes from hdf5:", outfileh5)
+        cdfh5 = pd.read_hdf(outfileh5, key=basefileKey)
 
-    # assert cdf.equals(cdfh5), "hdf5 data differ"
+        assert cdf.equals(cdfh5), "hdf5 data differ"
 
-    # print("Loading chromosomes from parquet:", outfilepq)
-    # cdfpq = pd.read_parquet(outfilepq)
+        print("Loading chromosomes from parquet:", outfilepq)
+        # cdfpq = pd.read_parquet(outfilepq)
+        cdfpq = pq.read_table(outfilepq).to_pandas()
 
-    # print(cdf)
-    # print(cdfpq)
-    # assert cdf.equals(cdfpq), "parquet data differ"
+        # print(cdf)
+        # print(cdfh5)
+        # print(cdfpq)
+        assert cdf.equals(cdfpq), "parquet data differ"
 
 
 if __name__ == "__main__":
