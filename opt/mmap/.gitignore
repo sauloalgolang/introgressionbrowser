@@ -1,2 +1,5 @@
 *.dat
 *.idx
+*.bin
+mmap
+mmap2
