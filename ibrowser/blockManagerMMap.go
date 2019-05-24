@@ -1,4 +1,6 @@
-package main
+// +build darwin dragonfly freebsd linux openbsd solaris netbsd
+
+package ibrowser
 
 import (
 	"errors"
@@ -14,9 +16,6 @@ import (
 )
 
 // https://medium.com/@arpith/adventures-with-mmap-463b33405223
-
-// RegisterType - array type
-type RegisterType = uint64
 
 // FileMode - File mode
 type FileMode int
@@ -45,7 +44,10 @@ func (mode FileMode) String() string {
 type Db struct {
 	Filename       string
 	Mode           FileMode
-	Data           *[]RegisterType
+	CounterBits    uint64
+	Data16         *DistanceRow16
+	Data32         *DistanceRow32
+	Data64         *DistanceRow64
 	array          *[]byte
 	file           *os.File
 	mmapFile       *mmap.MMap
@@ -56,13 +58,25 @@ type Db struct {
 }
 
 // NewDb - creates a new instance of db
-func NewDb(filename string, mode FileMode) (dbi *Db, err error) {
-	var registerType RegisterType
+func NewDb(filename string, counterBits uint64, mode FileMode) (dbi *Db, err error) {
+	registerLength := int64(0)
+
+	switch counterBits {
+	case 16:
+		registerLength = int64(unsafe.Sizeof(DistanceType16(0)))
+	case 32:
+		registerLength = int64(unsafe.Sizeof(DistanceType32(0)))
+	case 64:
+		registerLength = int64(unsafe.Sizeof(DistanceType64(0)))
+	default:
+		panic("invalid counterBits")
+	}
 
 	dbi = &Db{
 		Filename:       filename,
 		Mode:           mode,
-		registerLength: int64(unsafe.Sizeof(registerType)),
+		CounterBits:    counterBits,
+		registerLength: registerLength,
 	}
 
 	if err = dbi.open(); err != nil {
@@ -76,14 +90,28 @@ func NewDb(filename string, mode FileMode) (dbi *Db, err error) {
 	return dbi, nil
 }
 
-func (db Db) String() string {
-	return fmt.Sprintf("%s - Mode %s Size %d length %d register length %d",
+func (db Db) String() (res string) {
+	res = fmt.Sprintf("%s - Mode %s Size %d CounterBits %d length %d register length %d",
 		db.Filename,
 		db.Mode,
+		db.CounterBits,
 		db.size,
 		db.length,
 		db.registerLength,
 	)
+
+	switch db.CounterBits {
+	case 16:
+		res += fmt.Sprintf("array length %d", len(*db.Data16))
+	case 32:
+		res += fmt.Sprintf("array length %d", len(*db.Data32))
+	case 64:
+		res += fmt.Sprintf("array length %d", len(*db.Data64))
+	default:
+		panic("invalid counterBits")
+	}
+
+	return
 }
 
 // Len - returns the current register length
@@ -139,9 +167,12 @@ func (db *Db) Close() (err error) {
 
 	db.Filename = ""
 	db.Mode = -1
+	db.CounterBits = 0
 	db.file = nil
 	db.mmapFile = nil
-	db.Data = nil
+	db.Data16 = nil
+	db.Data32 = nil
+	db.Data64 = nil
 	db.array = nil
 	db.fd = 0
 	db.size = 0
@@ -230,7 +261,18 @@ func (db *Db) mmap() (err error) {
 	db.array = &bytem
 	db.unsafeBytesToRegister()
 
-	fmt.Println(" mmapped: ", db.size, "bytes - ", db.length, "registers", "array length", len(*db.Data))
+	fmt.Print(" mmapped: ", db.size, "bytes - ", db.length, "registers")
+
+	switch db.CounterBits {
+	case 16:
+		fmt.Println("array length", len(*db.Data16))
+	case 32:
+		fmt.Println("array length", len(*db.Data32))
+	case 64:
+		fmt.Println("array length", len(*db.Data64))
+	default:
+		panic("invalid counterBits")
+	}
 
 	return nil
 }
@@ -259,7 +301,18 @@ func (db *Db) mmapRaw() (err error) {
 	db.array = &array
 	db.unsafeBytesToRegister()
 
-	fmt.Println(" mmapped: ", db.size, "bytes - ", db.length, "registers", "array length", len(*db.Data))
+	fmt.Print(" mmapped: ", db.size, "bytes - ", db.length, "registers")
+
+	switch db.CounterBits {
+	case 16:
+		fmt.Println("array length", len(*db.Data16))
+	case 32:
+		fmt.Println("array length", len(*db.Data32))
+	case 64:
+		fmt.Println("array length", len(*db.Data64))
+	default:
+		panic("invalid counterBits")
+	}
 
 	return nil
 }
@@ -273,10 +326,22 @@ func (db *Db) mmapRaw() (err error) {
 // }
 
 func (db *Db) unsafeRegisterToBytes() {
-	count := len(*db.Data) * int(db.registerLength)
+	var ptr uintptr
+	var count int
+
+	if db.CounterBits == 16 {
+		count = len(*db.Data16) * int(db.registerLength)
+		ptr = uintptr(unsafe.Pointer(&(*db.Data16)[0]))
+	} else if db.CounterBits == 32 {
+		count = len(*db.Data32) * int(db.registerLength)
+		ptr = uintptr(unsafe.Pointer(&(*db.Data32)[0]))
+	} else if db.CounterBits == 64 {
+		count = len(*db.Data64) * int(db.registerLength)
+		ptr = uintptr(unsafe.Pointer(&(*db.Data64)[0]))
+	}
 
 	slice := reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(&(*db.Data)[0])),
+		Data: ptr,
 		Len:  count,
 		Cap:  count,
 	}
@@ -293,80 +358,16 @@ func (db *Db) unsafeBytesToRegister() {
 		Cap:  count,
 	}
 
-	db.Data = (*[]RegisterType)(unsafe.Pointer(&slice))
-}
+	ptr := unsafe.Pointer(&slice)
 
-func main() {
-	println("Creating mmap2.bin")
-
-	loopSize := int64(5000)
-
-	db, err := NewDb("mmap2.bin", RW)
-
-	if err != nil {
-		panic(err)
+	switch db.CounterBits {
+	case 16:
+		db.Data16 = (*DistanceRow16)(ptr)
+	case 32:
+		db.Data32 = (*DistanceRow32)(ptr)
+	case 64:
+		db.Data64 = (*DistanceRow64)(ptr)
+	default:
+		panic("invalid counterBits")
 	}
-
-	println(" Created")
-
-	fmt.Println(db)
-
-	println("Extending")
-
-	db.Extend(loopSize)
-
-	println(" Extended")
-
-	fmt.Println(db)
-
-	println("Looping")
-
-	for i := int64(0); i < loopSize; i++ {
-		// fmt.Println((*db.Data)[i])
-	}
-
-	println("Changing")
-
-	for i := int64(0); i < loopSize; i++ {
-		(*db.Data)[i] = uint64(i)
-	}
-
-	println("Looping")
-
-	for i := int64(0); i < loopSize; i++ {
-		// fmt.Println((*db.Data)[i])
-		if (*db.Data)[i] != uint64(i) {
-			panic(fmt.Sprintf("value mismatch %d != %d", i, (*db.Data)[i]))
-		}
-	}
-
-	println("Closing")
-
-	fmt.Println(db)
-
-	db.Close()
-
-	println(" Closed")
-
-	println("Opening again")
-
-	db2, err2 := NewDb("mmap2.bin", RO)
-
-	if err2 != nil {
-		panic(err2)
-	}
-
-	println("Looping", db2.Len())
-
-	for i := int64(0); i < db2.Len(); i++ {
-		// fmt.Println((*db2.Data)[i])
-	}
-
-	println("Closing")
-
-	fmt.Println(db2)
-
-	db2.Close()
-
-	println(" Closed")
 }

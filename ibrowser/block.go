@@ -27,6 +27,7 @@ type IBBlock struct {
 	BlockNumber      uint64
 	Serial           uint64
 	Matrix           *IBDistanceMatrix
+	UseMMap          bool
 	hasSerial        bool
 }
 
@@ -60,18 +61,26 @@ func NewIBBlock(
 		BlockNumber:      blockNumber,
 		BlockPosition:    blockPosition,
 		Serial:           0,
+		UseMMap:          false,        
 		hasSerial:        false,
-		Matrix: NewDistanceMatrix(
-			chromosomeName,
-			blockSize,
-			counterBits,
-			numSamples,
-			blockPosition,
-			blockNumber,
-		),
 	}
 
+	ibb.Init()
+
 	return &ibb
+}
+
+// Init - run init function
+func (ibb *IBBlock) Init() {
+	ibb.Matrix = NewDistanceMatrix(
+		ibb.ChromosomeName,
+		ibb.BlockSize,
+		ibb.CounterBits,
+		ibb.NumSamples,
+		ibb.BlockPosition,
+		ibb.BlockNumber,
+		ibb.UseMMap,
+	)
 }
 
 func (ibb *IBBlock) String() string {
@@ -321,7 +330,9 @@ func (ibb *IBBlock) UnDump(dumper *MultiArrayFile) (serial uint64, hasData bool)
 	}
 
 	log.Println("block.UnDump reading from file")
+	
 	serial, hasData = matrix.UnDump(dumper)
+	
 	log.Println("block.UnDump reading from file - DONE")
 
 	if !hasData {
