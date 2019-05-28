@@ -29,6 +29,7 @@ type DistanceMatrix1Dg struct {
 	data32         *DistanceRow32
 	data64         *DistanceRow64
 	tm             *TriangularMatrix
+	matrixMaker    MatrixMaker
 	// Data           []interface{}
 }
 
@@ -45,70 +46,44 @@ func (d *DistanceMatrix1Dg) String() string {
 	)
 }
 
-// NewDistanceMatrix1Dg16 creates a new instance of 1d matrix using 16 bit numbers
-func NewDistanceMatrix1Dg16(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := false
-	counterBits := uint64(16)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
 
-// NewDistanceMatrix1Dg32 creates a new instance of 1d matrix using 32 bit numbers
-func NewDistanceMatrix1Dg32(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := false
-	counterBits := uint64(32)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
 
-// NewDistanceMatrix1Dg64 creates a new instance of 1d matrix using 64 bit numbers
-func NewDistanceMatrix1Dg64(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := false
-	counterBits := uint64(64)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
-
-// NewDistanceMatrix1Dg16MMap creates a new instance of 1d matrix using 16 bit numbers
-func NewDistanceMatrix1Dg16MMap(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := true
-	counterBits := uint64(16)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
-
-// NewDistanceMatrix1Dg32MMap creates a new instance of 1d matrix using 32 bit numbers
-func NewDistanceMatrix1Dg32MMap(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := true
-	counterBits := uint64(32)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
-
-// NewDistanceMatrix1Dg64MMap creates a new instance of 1d matrix using 64 bit numbers
-func NewDistanceMatrix1Dg64MMap(chromosomeName string, blockSize uint64, dimension uint64, blockPosition uint64, blockNumber uint64) *DistanceMatrix1Dg {
-	doMMap := true
-	counterBits := uint64(64)
-	return NewDistanceMatrix1Dg(chromosomeName, blockSize, counterBits, dimension, blockPosition, blockNumber, doMMap)
-}
+//
+// Generic instance creator
+//
 
 // NewDistanceMatrix1Dg creates a new instance of 1d matrix using counterBits bit numbers
-func NewDistanceMatrix1Dg(chromosomeName string, blockSize uint64, counterBits uint64, dimension uint64, blockPosition uint64, blockNumber uint64, doMMap bool) *DistanceMatrix1Dg {
+func NewDistanceMatrix1Dg(
+	chromosomeName string, 
+	blockNumber uint64, 
+	blockPosition uint64, 
+	blockSize uint64, 
+	counterBits uint64, 
+	dimension uint64, 
+	matrixMaker MatrixMaker) *DistanceMatrix1Dg {
+
 	log.Println("    NewDistanceMatrix1D :: Chromosome: ", chromosomeName,
+		" Block Number: ", blockNumber,
+		" Block Position: ", blockPosition,
 		" Block Size: ", blockSize,
 		" Bits:", counterBits,
 		" Dimension:", dimension,
-		" Block Position: ", blockPosition,
-		" Block Number: ", blockNumber,
-		" Do MMap: ", doMMap,
 	)
 
 	d := DistanceMatrix1Dg{
 		ChromosomeName: chromosomeName,
+		BlockNumber:    blockNumber,
+		BlockPosition:  blockPosition,
 		BlockSize:      blockSize,
 		Dimension:      dimension,
 		CounterBits:    counterBits,
-		BlockPosition:  blockPosition,
-		BlockNumber:    blockNumber,
 		Serial:         0,
+		matrixMaker:    matrixMaker,
 	}
 
 	d.Init()
+
+	d.Clean()
 
 	return &d
 }
@@ -126,21 +101,22 @@ func (d *DistanceMatrix1Dg) Init() {
 	d.data32 = &data32
 	d.data64 = &data64
 
+	mmapMatrix, err := d.matrixMaker()
+
+	if err != nil {
+		panic("Error generating matrix")
+	}
+
 	switch d.CounterBits {
 	case 16:
-		data16 = make(DistanceRow16, d.Size, d.Size)
-		d.data16 = &data16
+		d.data16 = (*DistanceRow16)((mmapMatrix).(*DistanceRow16))
 	case 32:
-		data32 = make(DistanceRow32, d.Size, d.Size)
-		d.data32 = &data32
+		d.data32 = (*DistanceRow32)((mmapMatrix).(*DistanceRow32))
 	case 64:
-		data64 = make(DistanceRow64, d.Size, d.Size)
-		d.data64 = &data64
+		d.data64 = (*DistanceRow64)((mmapMatrix).(*DistanceRow64))
 	default:
 		panic("invalid counterBits")
 	}
-
-	d.Clean()
 
 	// testIJP()
 }
@@ -593,13 +569,13 @@ func (d *DistanceMatrix1Dg) pToIJ(k uint64) (uint64, uint64) {
 	return d.tm.PToIJ(k)
 }
 
+func (d *DistanceMatrix1Dg) updateSize() {
+	d.Size = d.calculateSize()
+}
+
 func (d *DistanceMatrix1Dg) calculateSize() (size uint64) {
 	size = d.tm.CalculateSize()
 	return
-}
-
-func (d *DistanceMatrix1Dg) updateSize() {
-	d.Size = d.calculateSize()
 }
 
 //

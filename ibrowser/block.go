@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+type MatrixMaker func () (interface{}, error)
+
 //
 //
 // BLOCK SECTION
@@ -27,42 +29,44 @@ type IBBlock struct {
 	BlockNumber      uint64
 	Serial           uint64
 	Matrix           *IBDistanceMatrix
-	UseMMap          bool
 	hasSerial        bool
+	matrixMaker      MatrixMaker
 }
 
 // NewIBBlock generates a new instance of a block
 func NewIBBlock(
 	chromosomeName string,
 	chromosomeNumber int,
+	blockNumber uint64,
+	blockPosition uint64,
 	blockSize uint64,
 	counterBits uint64,
 	numSamples uint64,
-	blockNumber uint64,
-	blockPosition uint64,
+	matrixMaker MatrixMaker,
 ) *IBBlock {
 	log.Println("   NewIBBlock :: chromosomeName: ", chromosomeName,
 		" chromosomeNumber: ", chromosomeNumber,
-		" blockSize: ", blockSize,
 		" blockNumber: ", blockNumber,
 		" blockPosition: ", blockPosition,
+		" blockSize: ", blockSize,
+		" counterBits: ", counterBits,
 		" numSamples: ", numSamples,
 	)
 
 	ibb := IBBlock{
 		ChromosomeName:   chromosomeName,
 		ChromosomeNumber: chromosomeNumber,
-		BlockSize:        blockSize,
-		CounterBits:      counterBits,
-		MinPosition:      math.MaxUint64,
-		MaxPosition:      0,
-		NumSNPS:          0,
-		NumSamples:       numSamples,
 		BlockNumber:      blockNumber,
 		BlockPosition:    blockPosition,
+		BlockSize:        blockSize,
+		CounterBits:      counterBits,
+		NumSamples:       numSamples,
+		NumSNPS:          0,
 		Serial:           0,
-		UseMMap:          false,        
+		MinPosition:      math.MaxUint64,
+		MaxPosition:      0,
 		hasSerial:        false,
+		matrixMaker:      matrixMaker,
 	}
 
 	ibb.Init()
@@ -74,12 +78,12 @@ func NewIBBlock(
 func (ibb *IBBlock) Init() {
 	ibb.Matrix = NewDistanceMatrix(
 		ibb.ChromosomeName,
+		ibb.BlockNumber,
+		ibb.BlockPosition,
 		ibb.BlockSize,
 		ibb.CounterBits,
 		ibb.NumSamples,
-		ibb.BlockPosition,
-		ibb.BlockNumber,
-		ibb.UseMMap,
+		ibb.matrixMaker,
 	)
 }
 
@@ -88,13 +92,13 @@ func (ibb *IBBlock) String() string {
 		" ChromosomeName:   ", ibb.ChromosomeName, "\n",
 		" ChromosomeNumber: ", ibb.ChromosomeNumber, "\n",
 		" BlockSize:        ", ibb.BlockSize, "\n",
+		" BlockNumber:      ", ibb.BlockNumber, "\n",
+		" BlockPosition:    ", ibb.BlockPosition, "\n",
 		" CounterBits:      ", ibb.CounterBits, "\n",
+		" NumSamples:       ", ibb.NumSamples, "\n",
+		" NumSNPS:          ", ibb.NumSNPS, "\n",
 		" MinPosition:      ", ibb.MinPosition, "\n",
 		" MaxPosition:      ", ibb.MaxPosition, "\n",
-		" NumSNPS:          ", ibb.NumSNPS, "\n",
-		" NumSamples:       ", ibb.NumSamples, "\n",
-		" BlockPosition:    ", ibb.BlockPosition, "\n",
-		" BlockNumber:      ", ibb.BlockNumber, "\n",
 		" Serial:           ", ibb.Serial, "\n",
 	)
 }

@@ -38,6 +38,7 @@ type Parameters struct {
 	DebugMaxRegisterChrom  int64
 	Description            string
 	Format                 string
+	Outfile                string
 	KeepEmptyBlock         bool
 	MaxSnpPerBlock         uint64
 	MinSnpPerBlock         uint64

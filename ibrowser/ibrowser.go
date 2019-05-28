@@ -42,6 +42,7 @@ type IBrowser struct {
 	//
 	lastChrom    string
 	lastPosition uint64
+	outPrefix    string
 	//
 	// Header string
 	//
@@ -53,6 +54,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 	blockSize := parameters.BlockSize
 	counterBits := parameters.CounterBits
 	keepEmptyBlock := parameters.KeepEmptyBlock
+	outPrefix := parameters.Outfile
 
 	if blockSize > uint64((math.MaxUint32/3)-1) {
 		log.Println("block size too large")
@@ -79,7 +81,7 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 		ChromosomesNames: make(NamePosPairList, 0, 100),
 		Chromosomes:      make(map[string]*IBChromosome, 100),
 		//
-		BlockManager: NewBlockManager(defaultGlobalSummaryName),
+		outPrefix: outPrefix,
 	}
 
 	return &ib
@@ -88,10 +90,27 @@ func NewIBrowser(parameters Parameters) *IBrowser {
 // SetSamples set the sample names
 func (ib *IBrowser) SetSamples(samples *VCFSamples) {
 	numSamples := len(*samples)
-	ib.Samples = make(VCFSamples, numSamples, numSamples)
 
+	ib.Samples = make(VCFSamples, numSamples, numSamples)
 	ib.NumSamples = uint64(numSamples)
-	ib.BlockManager.NewBlock(defaultGlobalSummaryName, 0, ib.BlockSize, ib.CounterBits, ib.NumSamples, 0)
+
+	fileName := ib.GetMatrixDumpFileName()
+
+	ib.BlockManager = NewBlockManager(
+		defaultGlobalSummaryName,
+		fileName,
+		ib.CounterBits,
+		ib.NumSamples,
+		ib.BlockSize,
+	)
+
+	chromosomeNumber := int(0)
+	blockNumber := uint64(0)
+	ib.BlockManager.NewBlock(
+		defaultGlobalSummaryName,
+		chromosomeNumber,
+		blockNumber,
+	)
 
 	for samplePos, sampleName := range *samples {
 		// log.Println(samplePos, sampleName)
@@ -116,6 +135,8 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 		os.Exit(1)
 	}
 
+	fileName := ib.GetMatrixChromosomeDumpFileName(chromosomeName)
+
 	ib.Chromosomes[chromosomeName] = NewIBChromosome(
 		chromosomeName,
 		chromosomeNumber,
@@ -123,6 +144,7 @@ func (ib *IBrowser) AddChromosome(chromosomeName string, chromosomeNumber int) *
 		ib.CounterBits,
 		ib.NumSamples,
 		ib.KeepEmptyBlock,
+		fileName,
 		ib.BlockManager,
 	)
 
@@ -478,8 +500,8 @@ func (ib *IBrowser) getChromosomeBlockMatrixTable(chromosomeName string, blockNu
 //
 
 // GenFilename returns the filename of this project when saved
-func (ib *IBrowser) GenFilename(outPrefix string, format string, compression string) (baseName string, fileName string) {
-	baseName = outPrefix
+func (ib *IBrowser) GenFilename(format string, compression string) (baseName string, fileName string) {
+	baseName = ib.outPrefix
 
 	saver := NewSaverCompressed(baseName, format, compression)
 
@@ -493,10 +515,9 @@ func (ib *IBrowser) GenFilename(outPrefix string, format string, compression str
 //
 
 // Save saves this project to file
-func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
+func (ib *IBrowser) Save(format string, compression string) {
 	isSave := true
-	isSoft := false
-	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
+	ib.saveLoad(isSave, format, compression)
 }
 
 //
@@ -504,20 +525,20 @@ func (ib *IBrowser) Save(outPrefix string, format string, compression string) {
 //
 
 // EasyLoadPrefix loads a project from file by its prefix and guesses the file format
-func (ib *IBrowser) EasyLoadPrefix(outPrefix string, isSoft bool) {
-	found, format, compression, _ := save.GuessPrefixFormat(outPrefix)
+func (ib *IBrowser) EasyLoadPrefix() {
+	found, format, compression, _ := save.GuessPrefixFormat(ib.outPrefix)
 
 	if !found {
-		log.Println("could not easy load prefix: ", outPrefix)
+		log.Println("could not easy load prefix: ", ib.outPrefix)
 		os.Exit(1)
 	}
 
 	isSave := false
-	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
+	ib.saveLoad(isSave, format, compression)
 }
 
 // EasyLoadFile loads a project from file by its full name and guesses the file format
-func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
+func (ib *IBrowser) EasyLoadFile(outFile string) {
 	found, format, compression, outPrefix := save.GuessFormat(outFile)
 
 	if !found {
@@ -525,26 +546,28 @@ func (ib *IBrowser) EasyLoadFile(outFile string, isSoft bool) {
 		os.Exit(1)
 	}
 
+	ib.outPrefix = outPrefix
+
 	isSave := false
-	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
+	ib.saveLoad(isSave, format, compression)
 }
 
 // Load loads a project from file
-func (ib *IBrowser) Load(outPrefix string, format string, compression string, isSoft bool) {
+func (ib *IBrowser) Load(format string, compression string) {
 	isSave := false
-	ib.saveLoad(isSave, isSoft, outPrefix, format, compression)
+	ib.saveLoad(isSave, format, compression)
 }
 
 //
 // SaveLoad
 //
 
-func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format string, compression string) {
-	baseName, _ := ib.GenFilename(outPrefix, format, compression)
+func (ib *IBrowser) saveLoad(isSave bool, format string, compression string) {
+	baseName, _ := ib.GenFilename(format, compression)
 	saver := NewSaverCompressed(baseName, format, compression)
 
 	if isSave {
-		ib.Dump(outPrefix, isSave, isSoft)
+		ib.Dump(isSave)
 		log.Println("saving global ibrowser status")
 		saver.Save(ib)
 		log.Println("saving global ibrowser status - DONE")
@@ -553,7 +576,7 @@ func (ib *IBrowser) saveLoad(isSave bool, isSoft bool, outPrefix string, format 
 		saver.Load(ib)
 		sort.Sort(ib.ChromosomesNames)
 		log.Println("loading global ibrowser status - DONE")
-		ib.Dump(outPrefix, isSave, isSoft)
+		ib.Dump(isSave)
 	}
 }
 
@@ -573,28 +596,38 @@ func (ib *IBrowser) GenMatrixChromosomeDumpFileName(outPrefix string, chromosome
 	return
 }
 
+// GetMatrixDumpFileName generates the filename of a dump file
+func (ib *IBrowser) GetMatrixDumpFileName() (string) {
+	return ib.GenMatrixDumpFileName(ib.outPrefix)
+}
+
+// GetMatrixChromosomeDumpFileName generates the filename of a dump file for a chromosome
+func (ib *IBrowser) GetMatrixChromosomeDumpFileName(chromosomeName string) (string) {
+	return ib.GenMatrixChromosomeDumpFileName(ib.outPrefix, chromosomeName)
+}
+
 // Dump dumps matrices to file
-func (ib *IBrowser) Dump(outPrefix string, isSave bool, isSoft bool) {
-	summaryFileName := ib.GenMatrixDumpFileName(outPrefix)
+func (ib *IBrowser) Dump(isSave bool) {
+	// summaryFileName := ib.GenMatrixDumpFileName()
 
-	log.Println("(Un)Dumping Matrices")
+	// log.Println("(Un)Dumping Matrices")
 
-	if isSave {
-		log.Println(" Dumping Summary Matrices")
-		ib.BlockManager.Save(summaryFileName)
-		log.Println(" Dumping Summary Matrices - DONE")
-	} else {
-		log.Println(" UnDumping Summary Matrices")
-		ib.BlockManager.Load(summaryFileName)
-		log.Println(" UnDumping Summary Matrices - DONE")
-	}
+	// if isSave {
+	// 	log.Println(" Dumping Summary Matrices")
+	// 	// ib.BlockManager.Save(summaryFileName)
+	// 	log.Println(" Dumping Summary Matrices - DONE")
+	// } else {
+	// 	log.Println(" UnDumping Summary Matrices")
+	// 	// ib.BlockManager.Load(summaryFileName)
+	// 	log.Println(" UnDumping Summary Matrices - DONE")
+	// }
 
 	for chromosomePos := 0; chromosomePos < len(ib.ChromosomesNames); chromosomePos++ {
 		chromosomeName := ib.ChromosomesNames[chromosomePos]
 		chromosome := ib.Chromosomes[chromosomeName.Name]
 
 		chromosome.setRootBlockManager(ib.BlockManager)
-		chromosome.DumpBlocks(outPrefix, isSave, isSoft)
+		// chromosome.DumpBlocks(outPrefix, isSave, isSoft)
 	}
 
 	log.Println("(Un) Dumping Matrices - DONE")

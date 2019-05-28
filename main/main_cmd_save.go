@@ -45,6 +45,7 @@ func (x *SaveCommand) Execute(args []string) error {
 
 	// sourceFile := processArgs(args)
 	sourceFile := x.Infile.VCF
+	outfile := x.Outfile
 
 	fi, err := os.Stat(sourceFile)
 	if err != nil {
@@ -59,6 +60,7 @@ func (x *SaveCommand) Execute(args []string) error {
 
 	parameters := Parameters{
 		SourceFile: sourceFile,
+		Outfile:    outfile,
 	}
 
 	if x.Description == "" {
@@ -101,7 +103,10 @@ func (x *SaveCommand) Execute(args []string) error {
 		}
 	}
 
-	ibrowser.Save(x.Outfile, x.SaveLoadOptions.Format, x.SaveLoadOptions.Compression)
+	ibrowser.Save(
+		x.SaveLoadOptions.Format,
+		x.SaveLoadOptions.Compression,
+	)
 
 	profileCloser()
 

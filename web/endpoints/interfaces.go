@@ -92,7 +92,7 @@ func (d *DbDb) Register(fileName string, path string) (err error) {
 	}()
 
 	ib := NewIBrowser(Parameters{})
-	ib.EasyLoadFile(path, true)
+	ib.EasyLoadFile(path)
 
 	dbi := NewDatabaseInfo(fileName, path, ib)
 

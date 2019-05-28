@@ -50,8 +50,10 @@ func (x *LoadCommand) Execute(args []string) error {
 	log.Println("Openning", sourceFile)
 
 	ibrowser := ibrowser.NewIBrowser(parameters)
-	isSoft := !x.IsNotSoft
-	ibrowser.Load(sourceFile, x.SaveLoadOptions.Format, x.SaveLoadOptions.Compression, isSoft)
+	ibrowser.Load(
+		x.SaveLoadOptions.Format, 
+		x.SaveLoadOptions.Compression,
+	)
 
 	if !x.SaveLoadOptions.NoCheck {
 		checkRes := ibrowser.Check()

@@ -30,6 +30,7 @@ type IBChromosome struct {
 	// BlockNames       map[uint64]uint64
 	BlockManager     *BlockManager
 	rootBlockManager *BlockManager
+	outPrefix        string
 }
 
 func (ibc *IBChromosome) String() string {
@@ -56,6 +57,7 @@ func NewIBChromosome(
 		counterBits      uint64, 
 		numSamples       uint64, 
 		keepEmptyBlock   bool,
+		outPrefix        string,
 		rootBlockManager *BlockManager,
 	) *IBChromosome {
 	
@@ -64,6 +66,7 @@ func NewIBChromosome(
 		" blockSize: ", blockSize,
 		" counterBits: ", counterBits,
 		" numSamples: ", numSamples,
+		" outPrefix: ", outPrefix,
 	)
 
 	ibc := IBChromosome{
@@ -76,18 +79,24 @@ func NewIBChromosome(
 		MaxPosition:      0,
 		NumSNPS:          0,
 		KeepEmptyBlock:   keepEmptyBlock,
-		// BlockNames:       make(map[uint64]uint64, 100),
-		BlockManager:     NewBlockManager(chromosomeName),
 		rootBlockManager: rootBlockManager,
+		outPrefix:        outPrefix,
 	}
+
+	fileName := ibc.GenMatrixDumpFileName()
+	
+	ibc.BlockManager = NewBlockManager(
+		chromosomeName, 
+		fileName, 
+		counterBits, 
+		numSamples, 
+		blockSize,
+	)
 
 	rootBlockManager.NewBlock(
 		chromosomeName,
-		chromosomeNumber,
-		blockSize,
-		counterBits,
-		numSamples,
-		0,
+		chromosomeNumber + 1,
+		uint64(chromosomeNumber + 1),
 	)
 
 	return &ibc
@@ -105,9 +114,6 @@ func (ibc *IBChromosome) AppendBlock(blockNum uint64) (block *IBBlock) {
 	block = ibc.BlockManager.NewBlock(
 		ibc.ChromosomeName,
 		ibc.ChromosomeNumber,
-		ibc.BlockSize,
-		ibc.CounterBits,
-		ibc.NumSamples,
 		blockNum,
 	)	
 
@@ -347,14 +353,19 @@ func (ibc *IBChromosome) selfCheck() (res bool) {
 
 // GetSumBlocks returns a single block with the sum of all blocks
 func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
+	blockNumber := uint64(0)
+	blockPos := uint64(0)
+	mm := ibc.BlockManager.GetFallbackMatrixMaker()
+
 	sumBlock = NewIBBlock(
 		ibc.ChromosomeName,
 		ibc.ChromosomeNumber,
+		blockNumber,
+		blockPos,
 		ibc.BlockSize,
 		ibc.CounterBits,
 		ibc.NumSamples,
-		0,
-		0,
+		mm,
 	)
 
 	for _, block := range ibc.BlockManager.Blocks {
@@ -369,22 +380,22 @@ func (ibc *IBChromosome) GetSumBlocks() (sumBlock *IBBlock) {
 //
 
 // GenMatrixDumpFileName returns the filename of the dump of this project
-func (ibc *IBChromosome) GenMatrixDumpFileName(outPrefix string) (filename string) {
-	filename = outPrefix + "_chromosomes_" + ibc.ChromosomeName + ".bin"
+func (ibc *IBChromosome) GenMatrixDumpFileName() (filename string) {
+	filename = ibc.outPrefix + "_chromosomes_" + ibc.ChromosomeName + ".bin"
 	return
 }
 
-// DumpBlocks dumps all blocks of this chromosome
-func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) {
-	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
+// // DumpBlocks dumps all blocks of this chromosome
+// func (ibc *IBChromosome) DumpBlocks(outPrefix string, isSave bool, isSoft bool) {
+// 	chromosomeFileName := ibc.GenMatrixDumpFileName(outPrefix)
 
-	if isSave {
-		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices")
-		ibc.BlockManager.Save(chromosomeFileName)
-		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
-	} else {
-		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices")
-		ibc.BlockManager.Load(chromosomeFileName)
-		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
-	}
-}
+// 	if isSave {
+// 		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices")
+// 		ibc.BlockManager.Save(chromosomeFileName)
+// 		log.Println("  Dumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
+// 	} else {
+// 		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices")
+// 		ibc.BlockManager.Load(chromosomeFileName)
+// 		log.Println("  UnDumping chromosome", ibc.ChromosomeName, " Matrices - DONE")
+// 	}
+// }

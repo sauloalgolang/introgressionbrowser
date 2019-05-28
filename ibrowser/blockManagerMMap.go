@@ -40,73 +40,44 @@ func (mode FileMode) String() string {
 	return names[mode]
 }
 
-// Db - mmap struct
-type Db struct {
+// BlockManagerMMap - mmap struct
+type BlockManagerMMap struct {
 	Filename       string
 	Mode           FileMode
 	CounterBits    uint64
+	RegisterLength uint64
+	BlockLength    uint64
+	NumBlocks      uint64
+	NumRegisters   uint64
+	NumBytes       uint64
 	Data16         *DistanceRow16
 	Data32         *DistanceRow32
 	Data64         *DistanceRow64
-	array          *[]byte
-	file           *os.File
-	mmapFile       *mmap.MMap
 	fd             int
-	size           int64
-	length         int64
-	registerLength int64
+	file           *os.File
+	array          *[]byte
+	mmapFile       *mmap.MMap
 }
 
-// NewDb - creates a new instance of db
-func NewDb(filename string, counterBits uint64, mode FileMode) (dbi *Db, err error) {
-	registerLength := int64(0)
-
-	switch counterBits {
-	case 16:
-		registerLength = int64(unsafe.Sizeof(DistanceType16(0)))
-	case 32:
-		registerLength = int64(unsafe.Sizeof(DistanceType32(0)))
-	case 64:
-		registerLength = int64(unsafe.Sizeof(DistanceType64(0)))
-	default:
-		panic("invalid counterBits")
-	}
-
-	dbi = &Db{
-		Filename:       filename,
-		Mode:           mode,
-		CounterBits:    counterBits,
-		registerLength: registerLength,
-	}
-
-	if err = dbi.open(); err != nil {
-		return nil, err
-	}
-
-	if err = dbi.mmap(); err != nil {
-		return nil, err
-	}
-
-	return dbi, nil
-}
-
-func (db Db) String() (res string) {
-	res = fmt.Sprintf("%s - Mode %s Size %d CounterBits %d length %d register length %d",
-		db.Filename,
-		db.Mode,
-		db.CounterBits,
-		db.size,
-		db.length,
-		db.registerLength,
+func (bmm BlockManagerMMap) String() (res string) {
+	res = fmt.Sprintf("%s - Mode %s CounterBits %d BlockLength %d RegisterLength %d NumBlocks %d NumRegisters %d NumBytes %d",
+		bmm.Filename,
+		bmm.Mode,
+		bmm.CounterBits,
+		bmm.BlockLength,
+		bmm.RegisterLength,
+		bmm.NumBlocks,
+		bmm.NumRegisters,
+		bmm.NumBytes,
 	)
 
-	switch db.CounterBits {
+	switch bmm.CounterBits {
 	case 16:
-		res += fmt.Sprintf("array length %d", len(*db.Data16))
+		res += fmt.Sprintf("array length %d", len(*bmm.Data16))
 	case 32:
-		res += fmt.Sprintf("array length %d", len(*db.Data32))
+		res += fmt.Sprintf("array length %d", len(*bmm.Data32))
 	case 64:
-		res += fmt.Sprintf("array length %d", len(*db.Data64))
+		res += fmt.Sprintf("array length %d", len(*bmm.Data64))
 	default:
 		panic("invalid counterBits")
 	}
@@ -114,35 +85,57 @@ func (db Db) String() (res string) {
 	return
 }
 
-// Len - returns the current register length
-func (db *Db) Len() int64 {
-	return db.length
+// NewBlockManagerMMap - creates a new instance of db
+func NewBlockManagerMMap(filename string, counterBits uint64, blockLength uint64, mode FileMode) (bmm *BlockManagerMMap, err error) {
+	fmt.Println("NewBlockManagerMMap")
+
+	registerLength := uint64(0)
+
+	switch counterBits {
+	case 16:
+		registerLength = uint64(unsafe.Sizeof(DistanceType16(0)))
+	case 32:
+		registerLength = uint64(unsafe.Sizeof(DistanceType32(0)))
+	case 64:
+		registerLength = uint64(unsafe.Sizeof(DistanceType64(0)))
+	default:
+		panic("invalid counterBits")
+	}
+
+	bmm = &BlockManagerMMap{
+		Filename:       filename,
+		Mode:           mode,
+		CounterBits:    counterBits,
+		RegisterLength: registerLength,
+		BlockLength:    blockLength,
+		NumBlocks:      0,
+		NumRegisters:   0,
+		NumBytes:       0,
+		Data16:         nil,
+		Data32:         nil,
+		Data64:         nil,
+		fd:             0,
+		file:           nil,
+		array:          nil,
+		mmapFile:       nil,
+	}
+
+	if err = bmm.Init(); err != nil {
+		return nil, err
+	}
+
+	return bmm, nil
 }
 
-// Append - extends the size of the mmap by 1
-func (db *Db) Append() (err error) {
-	return db.Extend(1)
-}
+// Init - Initialize files
+func (bmm *BlockManagerMMap) Init() (err error) {
+	fmt.Println("Initializing MMAP")
 
-// Extend - extends the size of the mmap
-func (db *Db) Extend(size int64) (err error) {
-	if db.Mode == RO {
-		return errors.New("Trying to resize in a read only file")
-	}
-
-	if err = db.file.Close(); err != nil {
+	if err = bmm.open(); err != nil {
 		return err
 	}
 
-	if err = db.open(); err != nil {
-		return err
-	}
-
-	if err = db.resizeRegisters(size); err != nil {
-		return err
-	}
-
-	if err = db.mmap(); err != nil {
+	if err = bmm.mmap(); err != nil {
 		return err
 	}
 
@@ -150,73 +143,207 @@ func (db *Db) Extend(size int64) (err error) {
 }
 
 // Close - close file
-func (db *Db) Close() (err error) {
-	if db.mmapFile != nil {
-		if err = db.mmapFile.Flush(); err != nil {
-			return err
-		}
+func (bmm *BlockManagerMMap) Close() (err error) {
+	fmt.Println("Closing MMAP")
 
-		if err = db.mmapFile.Unmap(); err != nil {
-			return err
-		}
+	if err = bmm.close(); err != nil {
+		return
 	}
 
-	if err = db.file.Close(); err != nil {
-		return err
-	}
-
-	db.Filename = ""
-	db.Mode = -1
-	db.CounterBits = 0
-	db.file = nil
-	db.mmapFile = nil
-	db.Data16 = nil
-	db.Data32 = nil
-	db.Data64 = nil
-	db.array = nil
-	db.fd = 0
-	db.size = 0
-	db.length = 0
-	db.registerLength = 0
+	bmm.Filename = ""
+	bmm.Mode = -1
+	bmm.CounterBits = 0
+	bmm.RegisterLength = 0
+	bmm.BlockLength = 0
+	bmm.NumBlocks = 0
+	bmm.NumRegisters = 0
+	bmm.NumBytes = 0
+	bmm.Data16 = nil
+	bmm.Data32 = nil
+	bmm.Data64 = nil
+	bmm.fd = 0
+	bmm.file = nil
+	bmm.array = nil
+	bmm.mmapFile = nil
 
 	return nil
 }
 
-func (db *Db) resizeRegisters(length int64) (err error) { // in uint64
-	fmt.Println("Resizing registers: ", length)
+// LenBlocks - returns the current number of blcks
+func (bmm *BlockManagerMMap) LenBlocks() uint64 {
+	return bmm.NumBlocks
+}
 
-	size := length * db.registerLength
+// LenRegisters - returns the current number of registers
+func (bmm *BlockManagerMMap) LenRegisters() uint64 {
+	return bmm.NumRegisters
+}
 
-	err = db.resizeBytes(size)
+// LenBytes - returns the current number of bytes
+func (bmm *BlockManagerMMap) LenBytes() uint64 {
+	return bmm.NumBytes
+}
+
+// GetNewBlock - returns a newly created matrix
+func (bmm *BlockManagerMMap) GetNewBlock() (interface{}, error) {
+	nb := bmm.NumBlocks
+	err := bmm.CreateNewBlock()
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err2 := bmm.GetBlockPos(nb)
+
+	if err2 != nil {
+		return nil, err2
+	}
+
+	return data, nil
+}
+
+// GetBlockPos - returns a matrix
+func (bmm *BlockManagerMMap) GetBlockPos(pos uint64) (interface{}, error) {
+	bl := bmm.BlockLength
+	startPos := bl * pos
+	endPos := bl * (pos + 1)
+
+	if pos > bmm.NumBlocks {
+		return nil, errors.New("Position > length")
+	}
+
+	switch bmm.CounterBits {
+	case 16:
+		frag := (*bmm.Data16)[startPos:endPos]
+		return &frag, nil
+	case 32:
+		frag := (*bmm.Data32)[startPos:endPos]
+		return &frag, nil
+	case 64:
+		frag := (*bmm.Data64)[startPos:endPos]
+		return &frag, nil
+	default:
+		panic("invalid counterBits")
+	}
+
+	return nil, nil
+}
+
+// CreateNewBlock - add a new block
+func (bmm *BlockManagerMMap) CreateNewBlock() error {
+	fmt.Println("Creating New Block")
+
+	return bmm.CreateNewBlocks(1)
+}
+
+// CreateNewBlocks - extends number of blocks
+func (bmm *BlockManagerMMap) CreateNewBlocks(numNewBlocks uint64) (err error) {
+	fmt.Println("Creating New Blocks: ", numNewBlocks)
+
+	numNewRegisters := bmm.BlockLength * numNewBlocks
+
+	err = bmm.CreateNewRegisters(numNewRegisters)
+
+	return
+}
+
+// CreateNewRegisters - extends the NumBytes of the mmap
+func (bmm *BlockManagerMMap) CreateNewRegisters(numNewRegisters uint64) (err error) {
+	fmt.Println("Creating New Registers: ", numNewRegisters)
+
+	numNewBytes := bmm.RegisterLength * numNewRegisters
+
+	err = bmm.CreateNewBytes(numNewBytes)
 
 	return err
 }
 
-func (db *Db) resizeBytes(size int64) (err error) { // in bytes
-	fmt.Println("Resizing bytes: ", size)
+// CreateNewBytes - extends the NumBytes of the mmap
+func (bmm *BlockManagerMMap) CreateNewBytes(numNewBytes uint64) (err error) {
+	fmt.Println("Creating New Bytes: ", numNewBytes)
 
-	err = syscall.Ftruncate(db.fd, size)
+	numBytes := bmm.NumBytes + numNewBytes
+
+	err = bmm.ResizeToBytes(numBytes)
+
+	return err
+}
+
+// ResizeToBlocks - Resize to a specific number of blocks
+func (bmm *BlockManagerMMap) ResizeToBlocks(numBlocks uint64) (err error) {
+	fmt.Println("Resizing To Blocks: ", numBlocks)
+
+	numRegisters := bmm.BlockLength * numBlocks
+
+	err = bmm.ResizeToRegisters(numRegisters)
+
+	return err
+}
+
+// ResizeToRegisters - Resize to a specific number of registers
+func (bmm *BlockManagerMMap) ResizeToRegisters(numRegisters uint64) (err error) { // in uint64
+	fmt.Println("Resizing To Registers: ", numRegisters)
+
+	numBytes := bmm.RegisterLength * numRegisters
+
+	err = bmm.ResizeToBytes(numBytes)
+
+	return err
+}
+
+// ResizeToBytes - Resize to a specific number of bytes
+func (bmm *BlockManagerMMap) ResizeToBytes(numBytes uint64) (err error) { // in bytes
+	fmt.Println("Resizing To Bytes: ", numBytes)
+
+	if bmm.Mode == RO {
+		return errors.New("Trying to resize in a read only file")
+	}
+
+	if err = bmm.close(); err != nil {
+		return err
+	}
+
+	if err = bmm.open(); err != nil {
+		return err
+	}
+
+	err = syscall.Ftruncate(bmm.fd, int64(numBytes))
 
 	if err != nil {
 		fmt.Println("Error resizing: ", err)
 		return err
 	}
 
-	db.size = size
-	db.length = size / db.registerLength
+	if err = bmm.updateSize(); err != nil {
+		return err
+	}
+
+	if err = bmm.mmap(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (db *Db) open() (err error) {
-	fmt.Println("Getting file descriptor")
+// GetMatrixMaker - Return default matrix maker
+func (bmm *BlockManagerMMap) GetMatrixMaker() MatrixMaker {
+	return bmm.GetNewBlock
+}
+
+// GetFallbackMatrixMaker - Return fallback matrix maker
+func (bmm *BlockManagerMMap) GetFallbackMatrixMaker() MatrixMaker {
+	return bmm.GetNewBlock
+}
+
+func (bmm *BlockManagerMMap) open() (err error) {
+	fmt.Println("Opening file")
 
 	var f *os.File
 
-	if db.Mode == RW {
-		f, err = os.OpenFile(db.Filename, os.O_CREATE|os.O_RDWR, 0664)
+	if bmm.Mode == RW {
+		f, err = os.OpenFile(bmm.Filename, os.O_CREATE|os.O_RDWR, 0664)
 	} else {
-		f, err = os.OpenFile(db.Filename, os.O_RDONLY, 0664)
+		f, err = os.OpenFile(bmm.Filename, os.O_RDONLY, 0664)
 	}
 
 	if err != nil {
@@ -224,52 +351,87 @@ func (db *Db) open() (err error) {
 		return err
 	}
 
-	db.fd = int(f.Fd())
-	db.file = f
+	bmm.fd = int(f.Fd())
+	bmm.file = f
 
-	fi, err := f.Stat()
+	if err = bmm.updateSize(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bmm *BlockManagerMMap) close() (err error) {
+	fmt.Println("Closing file")
+
+	if bmm.mmapFile != nil {
+		fmt.Println(" Flushing mmap")
+		if err = bmm.mmapFile.Flush(); err != nil {
+			return err
+		}
+
+		fmt.Println(" Unmapping mmap file")
+		if err = bmm.mmapFile.Unmap(); err != nil {
+			return err
+		}
+	}
+
+	if err = bmm.file.Close(); err != nil {
+		fmt.Println(" Closing file handler")
+		return err
+	}
+
+	return nil
+}
+
+func (bmm *BlockManagerMMap) updateSize() error {
+	fmt.Println("Updating size")
+
+	fi, err := bmm.file.Stat()
+
 	if err != nil {
 		// Could not obtain stat, handle error
 		fmt.Println("Could not obtain stat: ", err)
 		return err
 	}
 
-	db.size = fi.Size()
-	db.length = db.size / db.registerLength
+	bmm.NumBytes = uint64(fi.Size())
+	bmm.NumRegisters = bmm.NumBytes / bmm.RegisterLength
+	bmm.NumBlocks = bmm.NumRegisters / bmm.BlockLength
 
 	return nil
 }
 
-func (db *Db) mmap() (err error) {
-	fmt.Println("mmapping: ", db.size, "bytes - ", db.length, "registers")
+func (bmm *BlockManagerMMap) mmap() (err error) {
+	fmt.Println("mmapping: ", bmm.NumBytes, "bytes - ", bmm.NumRegisters, "registers")
 
 	var mmapFile mmap.MMap
 
-	if db.Mode == RW {
-		mmapFile, err = mmap.Map(db.file, mmap.RDWR, 0)
+	if bmm.Mode == RW {
+		mmapFile, err = mmap.Map(bmm.file, mmap.RDWR, 0)
 	} else {
-		mmapFile, err = mmap.Map(db.file, mmap.RDONLY, 0)
+		mmapFile, err = mmap.Map(bmm.file, mmap.RDONLY, 0)
 	}
 
 	if err != nil {
-		db.Close()
+		bmm.Close()
 		return err
 	}
 
-	db.mmapFile = &mmapFile
 	bytem := []byte(mmapFile)
-	db.array = &bytem
-	db.unsafeBytesToRegister()
+	bmm.mmapFile = &mmapFile
+	bmm.array = &bytem
+	bmm.unsafeBytesToRegister()
 
-	fmt.Print(" mmapped: ", db.size, "bytes - ", db.length, "registers")
+	fmt.Print(" mmapped: ", bmm.NumBytes, "bytes - ", bmm.NumRegisters, "registers")
 
-	switch db.CounterBits {
+	switch bmm.CounterBits {
 	case 16:
-		fmt.Println("array length", len(*db.Data16))
+		fmt.Println("array length", len(*bmm.Data16))
 	case 32:
-		fmt.Println("array length", len(*db.Data32))
+		fmt.Println("array length", len(*bmm.Data32))
 	case 64:
-		fmt.Println("array length", len(*db.Data64))
+		fmt.Println("array length", len(*bmm.Data64))
 	default:
 		panic("invalid counterBits")
 	}
@@ -277,67 +439,19 @@ func (db *Db) mmap() (err error) {
 	return nil
 }
 
-func (db *Db) mmapRaw() (err error) {
-	fmt.Println("mmapping: ", db.size, "bytes - ", db.length, "registers")
-
-	if db.size == 0 {
-		return nil
-	}
-
-	var array []byte
-
-	if db.Mode == RW {
-		array, err = syscall.Mmap(db.fd, 0, int(db.size), syscall.PROT_WRITE|syscall.PROT_READ, syscall.MAP_SHARED)
-	} else {
-		array, err = syscall.Mmap(db.fd, 0, int(db.size), syscall.PROT_READ, syscall.MAP_SHARED)
-	}
-
-	if err != nil {
-		fmt.Println("Error mmapping: ", err)
-		db.Close()
-		return err
-	}
-
-	db.array = &array
-	db.unsafeBytesToRegister()
-
-	fmt.Print(" mmapped: ", db.size, "bytes - ", db.length, "registers")
-
-	switch db.CounterBits {
-	case 16:
-		fmt.Println("array length", len(*db.Data16))
-	case 32:
-		fmt.Println("array length", len(*db.Data32))
-	case 64:
-		fmt.Println("array length", len(*db.Data64))
-	default:
-		panic("invalid counterBits")
-	}
-
-	return nil
-}
-
-// func (db *Db) flush(addr, len uintptr) error {
-// 	_, _, errno := syscall.Syscall(_SYS_MSYNC, addr, len, _MS_SYNC)
-// 	if errno != 0 {
-// 		return syscall.Errno(errno)
-// 	}
-// 	return nil
-// }
-
-func (db *Db) unsafeRegisterToBytes() {
+func (bmm *BlockManagerMMap) unsafeRegisterToBytes() {
 	var ptr uintptr
 	var count int
 
-	if db.CounterBits == 16 {
-		count = len(*db.Data16) * int(db.registerLength)
-		ptr = uintptr(unsafe.Pointer(&(*db.Data16)[0]))
-	} else if db.CounterBits == 32 {
-		count = len(*db.Data32) * int(db.registerLength)
-		ptr = uintptr(unsafe.Pointer(&(*db.Data32)[0]))
-	} else if db.CounterBits == 64 {
-		count = len(*db.Data64) * int(db.registerLength)
-		ptr = uintptr(unsafe.Pointer(&(*db.Data64)[0]))
+	if bmm.CounterBits == 16 {
+		count = len(*bmm.Data16) * int(bmm.RegisterLength)
+		ptr = uintptr(unsafe.Pointer(&(*bmm.Data16)[0]))
+	} else if bmm.CounterBits == 32 {
+		count = len(*bmm.Data32) * int(bmm.RegisterLength)
+		ptr = uintptr(unsafe.Pointer(&(*bmm.Data32)[0]))
+	} else if bmm.CounterBits == 64 {
+		count = len(*bmm.Data64) * int(bmm.RegisterLength)
+		ptr = uintptr(unsafe.Pointer(&(*bmm.Data64)[0]))
 	}
 
 	slice := reflect.SliceHeader{
@@ -346,28 +460,76 @@ func (db *Db) unsafeRegisterToBytes() {
 		Cap:  count,
 	}
 
-	db.array = (*[]byte)(unsafe.Pointer(&slice))
+	bmm.array = (*[]byte)(unsafe.Pointer(&slice))
 }
 
-func (db *Db) unsafeBytesToRegister() {
-	count := len(*db.array) / int(db.registerLength)
+func (bmm *BlockManagerMMap) unsafeBytesToRegister() {
+	count := len(*bmm.array) / int(bmm.RegisterLength)
 
 	slice := reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(&(*db.array)[0])),
+		Data: uintptr(unsafe.Pointer(&(*bmm.array)[0])),
 		Len:  count,
 		Cap:  count,
 	}
 
 	ptr := unsafe.Pointer(&slice)
 
-	switch db.CounterBits {
+	switch bmm.CounterBits {
 	case 16:
-		db.Data16 = (*DistanceRow16)(ptr)
+		bmm.Data16 = (*DistanceRow16)(ptr)
 	case 32:
-		db.Data32 = (*DistanceRow32)(ptr)
+		bmm.Data32 = (*DistanceRow32)(ptr)
 	case 64:
-		db.Data64 = (*DistanceRow64)(ptr)
+		bmm.Data64 = (*DistanceRow64)(ptr)
 	default:
 		panic("invalid counterBits")
 	}
 }
+
+// func (bmm *BlockManagerMMap) mmapRaw() (err error) {
+// 	fmt.Println("mmapping: ", bmm.NumBytes, "bytes - ", bmm.NumRegisters, "registers")
+
+// 	if bmm.NumBytes == 0 {
+// 		return nil
+// 	}
+
+// 	var array []byte
+
+// 	if bmm.Mode == RW {
+// 		array, err = syscall.Mmap(bmm.fd, 0, int(bmm.NumBytes), syscall.PROT_WRITE|syscall.PROT_READ, syscall.MAP_SHARED)
+// 	} else {
+// 		array, err = syscall.Mmap(bmm.fd, 0, int(bmm.NumBytes), syscall.PROT_READ, syscall.MAP_SHARED)
+// 	}
+
+// 	if err != nil {
+// 		fmt.Println("Error mmapping: ", err)
+// 		bmm.Close()
+// 		return err
+// 	}
+
+// 	bmm.array = &array
+// 	bmm.unsafeBytesToRegister()
+
+// 	fmt.Print(" mmapped: ", bmm.NumBytes, "bytes - ", bmm.NumRegisters, "registers")
+
+// 	switch bmm.CounterBits {
+// 	case 16:
+// 		fmt.Println("array length", len(*bmm.Data16))
+// 	case 32:
+// 		fmt.Println("array length", len(*bmm.Data32))
+// 	case 64:
+// 		fmt.Println("array length", len(*bmm.Data64))
+// 	default:
+// 		panic("invalid counterBits")
+// 	}
+
+// 	return nil
+// }
+
+// func (bmm *BlockManagerMMap) flush(addr, len uintptr) error {
+// 	_, _, errno := syscall.Syscall(_SYS_MSYNC, addr, len, _MS_SYNC)
+// 	if errno != 0 {
+// 		return syscall.Errno(errno)
+// 	}
+// 	return nil
+// }
