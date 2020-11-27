@@ -14,11 +14,11 @@ TODO
   - [ ] maxSnpPerBlock
 - [ ] Ibrowser per sample stats (?)
 - [ ] Try to write to parquet
-  - https://github.com/xitongsys/parquet-go
+  - <https://github.com/xitongsys/parquet-go>
 - [ ] Consider TABIX
-  - https://github.com/brentp/bix
-  - https://github.com/biogo/hts
-  - https://github.com/brentp/cgotabix
+  - <https://github.com/brentp/bix>
+  - <https://github.com/biogo/hts>
+  - <https://github.com/brentp/cgotabix>
 
 DONE
 ----
@@ -28,11 +28,11 @@ DONE
 - [X] Save parameters in dump
 - [X] Replace as many callbacks as possible
 - [X] Use snappy for compression
-  - https://github.com/golang/snappy
+  - <https://github.com/golang/snappy>
 - [x] Rewrite check.py
 - [x] Double check distance matrix is working
 - [x] Test YAML Encoder/Decoder using streams
-  - https://godoc.org/gopkg.in/yaml.v2#Encoder
+  - <https://godoc.org/gopkg.in/yaml.v2#Encoder>
 - [x] Test using int32 in matrix
   - 64 989
   - 32
@@ -42,6 +42,8 @@ DONE
       - 2.1G output.yaml.tar
       - 429M output.yaml.tar.gz
 - [X] Test compression
+
+```text
   - 100
     - 194K Apr 11 21:31 output.gob
     -  36K Apr 11 21:32 output.gob.gz
@@ -52,3 +54,4 @@ DONE
     -  41M Apr 11 22:23 output.yaml.tar.gz
     -  62M Apr 11 22:39 output.gob.tar
     -  26M Apr 11 22:39 output.gob.tar.gz
+```
