@@ -7,6 +7,8 @@ import json
 import gzip
 import struct
 import multiprocessing as mp
+
+from glob import iglob
 from collections import OrderedDict
 
 import numpy as np
@@ -144,7 +146,7 @@ TriangleIndexType    = typing.OrderedDict[typing.Tuple[int,int], int]
 IUPACType            = typing.Dict[typing.FrozenSet[str], str]
 SampleNamesType      = typing.List[str]
 ChromosomeNamesType  = typing.List[str]
-ChromosomesType      = typing.List["Chromosome"]
+ChromosomesType      = typing.OrderedDict[str, "Chromosome"]
 
 
 class Chromosome():
@@ -263,19 +265,23 @@ class Chromosome():
 
     @property
     def filename(self) -> str:
-        return f"{self.vcf_name}.{self.bin_width}.{self.metric}.{self.chromosome_order:06d}.{self.chromosome_name}.npz"
+        basefolder = self.vcf_name + "_ib"
+        dirname    = os.path.join(basefolder, str(self.bin_width), self.metric)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        return f"{dirname}{os.path.sep}ib_{self.chromosome_order:06d}.{self.chromosome_name}.npz"
 
     @property
     def exists(self) -> bool:
         return os.path.exists(self.filename)
 
     @property
-    def matrix(self) -> np.ndarray:
-        return self.matrixNp
-
-    @property
     def is_loaded(self) -> bool:
         return self._is_loaded
+
+    @property
+    def matrix(self) -> np.ndarray:
+        return self.matrixNp
 
     @property
     def matrix_dtype(self) -> np.dtype:
@@ -831,7 +837,7 @@ class Chromosome():
 
         vcf_name                           = meta_dict["vcf_name"]
         assert os.path.basename(vcf_name) == os.path.basename(self.vcf_name)
-        self.vcf_name                      = vcf_name
+        # self.vcf_name                      = vcf_name
 
         self.matrix_size                   = info_dict["matrix_size"]
         assert self.matrix_size == self.matrixNp.shape[1]
@@ -1050,7 +1056,9 @@ class Genome():
 
     @property
     def filename(self) -> str:
-        return f"{self.vcf_name}.{self.bin_width}.npz"
+        basefolder =  self.vcf_name + "_ib"
+        dirname    = os.path.join(basefolder, str(self.bin_width))
+        return f"{dirname}{os.path.sep}{os.path.basename(self.vcf_name)}.npz"
 
     @property
     def exists(self) -> bool:
@@ -1059,29 +1067,33 @@ class Genome():
     @property
     def loaded(self) -> bool:
         if not self.exists:
+            # print(f"genome loaded error - file does not exists {self.filename}", file=sys.stderr)
             return False
         
         if self._chromosomes is None:
+            # print("genome loaded error - chromosomes is None", file=sys.stderr)
             return False
 
-        if len(self._chromosomes) == 0:
-            return False
+        # if len(self._chromosomes) == 0:
+        #     return False
 
         return True
 
     @property
     def complete(self) -> bool:
         if not self.loaded:
+            # print("genome complete error - not loaded", file=sys.stderr)
             return False
         
-        for chromosome in self._chromosomes:
+        for chromosome in self._chromosomes.values():
             if not chromosome.exists:
+                # print(f"genome complete error - chromosome does not exists {chromosome.filename}", file=sys.stderr)
                 return False
 
         return True
 
     def _processVcf(self, threads=DEFAULT_THREADS):
-        self._chromosomes     = []
+        self._chromosomes     = OrderedDict()
         self.chromosome_names = []
         self.chromosome_count = 0
         self.genome_bins      = 0
@@ -1217,7 +1229,7 @@ class Genome():
             
             chromosome.load()
             
-            self._chromosomes.append(chromosome)
+            self._chromosomes[chromosome_name] = chromosome
         
         print("all chromosomes loaded")
 
@@ -1256,7 +1268,7 @@ class Genome():
             res.append(f"  {k:.<30s}{s:.>30s}")
         return "\n".join(res)
 
-    def _load_db(self):
+    def _load_db(self, preload=False):
         if self.complete:
             return
 
@@ -1308,49 +1320,20 @@ class Genome():
 
         print(self)
 
-        chromosome_bins   = 0
-        chromosome_snps   = 0
-        self._chromosomes = []
-        for chromosome_order, chromosome_name in enumerate(self.chromosome_names):
-            chromosome = Chromosome(
-                vcf_name              = self.vcf_name,
-                bin_width             = self.bin_width,
-                metric                = self.metric,
+        self._chromosomes = OrderedDict()
 
-                chromosome_order      = chromosome_order,
-                chromosome_name       = chromosome_name,
-
-                type_matrix_counter   = self.type_matrix_counter,
-                type_matrix_distance  = self.type_matrix_distance,
-                type_pairwise_counter = self.type_pairwise_counter,
-                type_positions        = self.type_positions 
-            )
+        if preload:
+            chromosome_bins   = 0
+            chromosome_snps   = 0
             
-            if not chromosome.exists:
-                raise IOError(f"chromosome database file {chromosome.filename} does not exists")
+            for chromosome_name in self.chromosome_names:
+                chromosome       = self.get_chromosome(chromosome_name)
 
-            chromosome.load()
-            
-            assert os.path.basename(chromosome.vcf_name)              == os.path.basename(self.vcf_name)
-            assert chromosome.bin_width             == self.bin_width
-            assert chromosome.chromosome_order      == chromosome_order
-            assert chromosome.chromosome_name       == chromosome_name
-            assert chromosome.metric                == self.metric
-            assert chromosome.sample_names          == self.sample_names
-            assert chromosome.type_matrix_counter   == self.type_matrix_counter
-            assert chromosome.type_matrix_distance  == self.type_matrix_distance
-            assert chromosome.type_pairwise_counter == self.type_pairwise_counter
-            assert chromosome.type_positions        == self.type_positions
-            
-            # bin_max, chromosome.chromosome_snps
+                chromosome_bins += chromosome.bin_count
+                chromosome_snps += chromosome.chromosome_snps
 
-            chromosome_bins += chromosome.bin_count
-            chromosome_snps += chromosome.chromosome_snps
-            
-            self._chromosomes.append(chromosome)
-
-        assert self.genome_bins == chromosome_bins, f"self.genome_bins {self.genome_bins} == {chromosome_bins} chromosome_bins"
-        assert self.genome_snps == chromosome_snps, f"self.genome_snps {self.genome_snps} == {chromosome_snps} chromosome_snps"
+            assert self.genome_bins == chromosome_bins, f"self.genome_bins {self.genome_bins} == {chromosome_bins} chromosome_bins"
+            assert self.genome_snps == chromosome_snps, f"self.genome_snps {self.genome_snps} == {chromosome_snps} chromosome_snps"
 
     def save(self):
         print(f"{'saving numpy array:':.<32s}{self.filename:.>30s}")
@@ -1379,10 +1362,10 @@ class Genome():
             meta_values      = meta_valuesNp
         )
 
-    def load(self, threads=DEFAULT_THREADS):
+    def load(self, preload=False, threads=DEFAULT_THREADS):
         if self.exists:
             print(f"database exists {self.filename}")
-            self._load_db()
+            self._load_db(preload=preload)
 
         else:
             print(f"database does not exists {self.filename}. reading vcf")
@@ -1393,9 +1376,306 @@ class Genome():
             if not self.complete:
                 raise IOError("not complete. not able to load the database")
 
-    def get_chromosome(self, chromosome_name: str):
-        chromosome_position = self.chromosome_names.index(chromosome_name)
-        return self._chromosomes[chromosome_position]
+    def get_chromosome(self, chromosome_name: str) -> Chromosome:
+        # chromosome_position = self.chromosome_names.index(chromosome_name)
+        assert chromosome_name in self.chromosome_names, f"invalid chromosome name {chromosome_name}: {','.join(self.chromosome_names)}"
+        
+        if chromosome_name not in self._chromosomes:
+            chromosome_order = self.chromosome_names.index(chromosome_name)
+            chromosome       = Chromosome(
+                vcf_name              = self.vcf_name,
+                bin_width             = self.bin_width,
+                metric                = self.metric,
+
+                chromosome_order      = chromosome_order,
+                chromosome_name       = chromosome_name,
+
+                type_matrix_counter   = self.type_matrix_counter,
+                type_matrix_distance  = self.type_matrix_distance,
+                type_pairwise_counter = self.type_pairwise_counter,
+                type_positions        = self.type_positions 
+            )
+            
+            if not chromosome.exists:
+                raise IOError(f"chromosome database file {chromosome.filename} does not exists")
+
+            chromosome.load()
+            
+            assert os.path.basename(chromosome.vcf_name) == os.path.basename(self.vcf_name)
+            assert chromosome.bin_width                  == self.bin_width
+            assert chromosome.chromosome_order           == chromosome_order
+            assert chromosome.chromosome_name            == chromosome_name
+            assert chromosome.metric                     == self.metric
+            assert chromosome.sample_names               == self.sample_names
+            assert chromosome.type_matrix_counter        == self.type_matrix_counter
+            assert chromosome.type_matrix_distance       == self.type_matrix_distance
+            assert chromosome.type_pairwise_counter      == self.type_pairwise_counter
+            assert chromosome.type_positions             == self.type_positions
+
+            self._chromosomes[chromosome_name] = chromosome
+
+        return self._chromosomes[chromosome_name]
+
+
+
+class Genomes():
+    def __init__(self, folder_name: str):
+        self.folder_name     : str        = folder_name
+        self._genomes                     = None
+
+        self.curr_genome_name: str        = None
+        self.curr_genome_binw: int        = None
+        self.curr_genome_metr: str        = None
+        self.curr_genome     : Genome     = None
+        self.curr_chrom_name : str        = None
+        self.curr_chrom      : Chromosome = None
+
+        self.update()
+
+        print("genomes    ", self.genomes)
+        # print("genome_info", self.genomes[0], self.genome_info(self.genomes[0]))
+        genomes     = self.genomes
+        genome_name = genomes[0]
+        print("genome_name", genome_name)
+        bin_widths  = self.bin_widths(genome_name)
+        print("bin_widths ", bin_widths)
+        bin_width    = bin_widths[0]
+        # print("bin_width_info", self.bin_width_info(genome_name, bin_width)
+        metrics     = self.metrics(genome_name, bin_width)
+        print("metrics    ", metrics)
+        metric      = metrics[0]
+        print("metric     ", metric)
+        # print("metric_info", self.metric_info(genome_name, bin_width, metric)
+
+        self.load_genome(genome_name, bin_width, metric)
+        print("chromosomes", self.chromosomes)
+        chromosome = self.chromosomes[0]
+        print("chromosome " , chromosome)
+        self.load_chromosome(genome_name, bin_width, metric, chromosome)
+
+    @property
+    def genomes(self) -> typing.List[str]:
+        return list(self._genomes.keys())
+
+    @property
+    def genome(self) -> Genome:
+        return self.curr_genome
+
+    @property
+    def chromosomes(self) -> ChromosomeNamesType:
+        if self.genome is None:
+            return None
+        return self.genome.chromosome_names
+
+    @property
+    def chromosome(self) -> Chromosome:
+        return self.curr_chrom
+
+    def genome_info(self, genome_name: str):
+        assert genome_name in self.genomes
+        return self._genomes[genome_name]
+
+    def bin_widths(self, genome_name: str) -> typing.List[str]:
+        assert genome_name in self.genomes
+        return list(self.genome_info(genome_name)["bin_widths"].keys())
+
+    def bin_width_info(self, genome_name: str, bin_width: int):
+        assert genome_name in self.genomes
+        assert bin_width    in self.bin_widths(genome_name)
+        return self.genome_info(genome_name)["bin_widths"][bin_width]
+
+    def metrics(self, genome_name: str, bin_width: int) -> typing.List[str]:
+        assert genome_name in self.genomes
+        assert bin_width    in self.bin_widths(genome_name)
+        return list(self.bin_width_info(genome_name, bin_width)["metrics"].keys())
+
+    def metric_info(self, genome_name: str, bin_width: int, metric: str) -> typing.List[str]:
+        assert genome_name in self.genomes
+        assert bin_width    in self.bin_widths(genome_name)
+        assert metric      in self.metrics(genome_name, bin_width)
+        return self.bin_width_info(genome_name, bin_width)["metrics"]
+
+    def update(self):
+        self._genomes = Genomes.listProjects(self.folder_name)
+
+    def load_genome(self, genome_name: str, bin_width: int, metric: str) -> Genome:
+        if not (
+                genome_name == self.curr_genome_name and
+                bin_width   == self.curr_genome_binw and
+                metric      == self.curr_genome_metr
+        ):
+            self.curr_genome_name: str        = None
+            self.curr_genome_binw: int        = None
+            self.curr_genome_metr: str        = None
+            self.curr_genome     : Genome     = None
+            self.curr_chrom_name : str        = None
+            self.curr_chrom      : Chromosome = None
+
+            # projects[dbname]["bin_widths"][bin_width]["metrics"][metric]
+            if genome_name   not in self.genomes:
+                raise ValueError(f"no such database {genome_name}. {','.join(self.genomes)}")
+
+            if bin_width not in self.bin_widths(genome_name):
+                raise ValueError(f"no such bin width {bin_width} for database {genome_name}: {self.bin_widths(genome_name)}")
+
+            if metric    not in self.metrics(genome_name, bin_width):
+                raise ValueError(f"no such metric {metric} for database {genome_name} bin width {bin_width}: {self.metrics(genome_name, bin_width)}")
+
+            # print(self.genomes[genome_name])
+            project_path = self.genome_info(genome_name)["projectpath"]
+            print("loading project_path", project_path)
+
+            genome = Genome(
+                vcf_name  = project_path,
+                bin_width = bin_width,
+                metric    = metric
+            )
+
+            print("genome.filename", genome.filename)
+            
+            assert genome.exists
+            
+            # print(genome)
+            
+            genome.load()
+
+            assert genome.loaded
+            assert genome.complete
+
+            self.curr_genome_name: str        = genome_name
+            self.curr_genome_binw: int        = bin_width
+            self.curr_genome_metr: str        = metric
+            self.curr_genome     : Genome     = genome
+            self.curr_chrom_name : str        = None
+            self.curr_chrom      : Chromosome = None
+
+        return self.curr_genome
+
+    def load_chromosome(self, genome_name: str, bin_width: int, metric: str, chromosome_name: str) -> Chromosome:
+        genome = self.load_genome(genome_name, bin_width, metric)
+        
+        if chromosome_name != self.curr_chrom_name:
+            chromosome           = genome.get_chromosome(chromosome_name)
+            self.curr_chrom_name = chromosome_name
+            self.curr_chrom      = chromosome
+        
+        return self.curr_chrom
+
+    @staticmethod
+    def listProjects(folder_name, verbose=False):
+        basepath  = os.path.abspath(folder_name)
+        filenames = list(iglob(os.path.join(basepath,"**/*.npz"), recursive=True))
+        projects  = OrderedDict()
+
+        for filepath in filenames:
+            filedir     = filepath[len(basepath)+1:]
+            filename    = os.path.basename(filedir)
+            filefolder  = filedir[:-1*len(filename)-1]
+            dbname      = filefolder.split(os.path.sep)[0][:-3]
+
+            for ext in ['.vcf.bgz', '.vcf.gz', '.vcf']:
+                dbname = dbname[:-1*len(ext)] if dbname.endswith(ext) else dbname
+            dbname = dbname.replace("_", " ")
+
+            datafolder, bin_width, metric = None, None, None
+            folder_parts                 = filefolder.strip(os.path.sep).split(os.path.sep)
+            
+            if filename.startswith("ib_"): # data
+                try:
+                    projectfolder        = os.path.join(*folder_parts[:-2])
+                    assert projectfolder.endswith("_ib")
+                    projectfolder        = projectfolder[:-3]
+                    datafolder, bin_width, metric = folder_parts[-3:]
+                except:
+                    print(f"invalid folder {filefolder}")
+                    continue
+
+            else: # root
+                try:
+                    projectfolder        = os.path.join(*folder_parts[:-1])
+                    assert projectfolder.endswith("_ib")
+                    projectfolder        = projectfolder[:-3]
+                    datafolder, bin_width = filefolder.strip(os.path.sep).split(os.path.sep)[-2:]
+                except:
+                    print(f"invalid folder {filefolder}")
+                    continue
+
+            projectpath = os.path.join(basepath, projectfolder)
+            bin_width    = int(bin_width)
+            # print(f"filepath {filepath} filedir {filedir} filename {filename} filefolder {filefolder} datafolder {datafolder} bin_width {bin_width} dbname {dbname}")
+
+            if dbname not in projects:
+                projects[dbname] = {
+                    "dbname"       : dbname,
+                    "datafolder"   : datafolder,
+                    "projectfolder": projectfolder,
+                    "projectpath"  : projectpath,
+                    "bin_widths"    : OrderedDict()
+                }
+
+            if bin_width not in projects[dbname]["bin_widths"]:
+                projects[dbname]["bin_widths"][bin_width] = {
+                    "dbname"       : dbname,
+                    "datafolder"   : datafolder,
+                    "projectfolder": projectfolder,
+                    "projectpath"  : projectpath,
+                    "bin_width"     : bin_width,
+                    "metrics"      : OrderedDict()
+                }
+
+            if metric is None: # root
+                projects[dbname]["bin_widths"][bin_width].update({
+                    "filepath"  : filepath,
+                    "filedir"   : filedir,
+                    "filename"  : filename,
+                    "filefolder": filefolder,
+                })
+            
+            else: #data
+                if metric not in projects[dbname]["bin_widths"][bin_width]["metrics"]:
+                    projects[dbname]["bin_widths"][bin_width]["metrics"][metric] = []
+                
+                projects[dbname]["bin_widths"][bin_width]["metrics"][metric].append({
+                    "filepath"     : filepath,
+                    "filedir"      : filedir,
+                    "filename"     : filename,
+                    "filefolder"   : filefolder,
+                    "projectfolder": projectfolder,
+                    "projectpath"  : projectpath,
+                    "datafolder"   : datafolder,
+                    "bin_width"     : bin_width,
+                    "metric"       : metric,
+                    "dbname"       : dbname
+                })
+
+        assert len(projects) > 0
+
+        if verbose:
+            for dbname, dbdata in projects.items():
+                print(f"{'database':19s}: {dbname}")
+                
+                for dataname, datavalue in dbdata.items():
+                    if dataname == 'bin_widths':
+                        continue
+                    print(f"  {dataname:17s}: {datavalue}")
+                
+                for bin_width, binvalues in dbdata['bin_widths'].items():
+                    print(f"  {'bin_width':17s}: {bin_width}")
+                    
+                    for binkey, binvalue in binvalues.items():
+                        if binkey == 'metrics':
+                            continue
+                        print(f"    {binkey:15s}: {binvalue}")
+
+                    for metrickey, metricvalues in binvalues['metrics'].items():
+                        print(f"    {'metric':15s}: {metrickey}")
+                        
+                        for metric_pos, metric in enumerate(metricvalues):
+                            print(f"      {'metric #':13s}: {metric_pos}")
+                            for metrickey, metricvalue in metric.items():
+                                print(f"        {metrickey:11s}: {metricvalue}")
+
+        return projects
 
 
 class BGzip():
@@ -1965,6 +2245,8 @@ def genIUPAC() -> IUPACType:
         IUPAC[frozenset(pair)] = val
 
     return IUPAC
+
+
 
 def main():
     genome = Genome(

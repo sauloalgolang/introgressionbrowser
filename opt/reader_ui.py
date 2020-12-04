@@ -7,18 +7,16 @@ import typing
 import numpy as np
 
 import flexx
-from flexx import flx
+from   flexx import flx
 
 import reader
 
 DEBUG       = True
 
-SampleNamesType      = typing.List[str]
-ChromosomeNamesType  = typing.List[str]
 
 class ChromosomeController(flx.PyComponent):
     def init(self, chromosome: reader.Chromosome):
-        self._chromosome : reader.Chromosome = chromosome
+        self._chromosome = chromosome
 
     @property
     def vcf_name(self) -> str:
@@ -39,10 +37,6 @@ class ChromosomeController(flx.PyComponent):
     @property
     def metric(self) -> str:
         return self._chromosome.metric
-
-    @property
-    def matrix_dtype(self) -> np.dtype:
-        return self._chromosome.matrix_dtype
 
 
 
@@ -87,7 +81,7 @@ class ChromosomeController(flx.PyComponent):
 
 
     @property
-    def sample_names(self) -> SampleNamesType:
+    def sample_names(self) -> reader.SampleNamesType:
         return self._chromosome.sample_names
             
     @property
@@ -95,12 +89,21 @@ class ChromosomeController(flx.PyComponent):
         return self._chromosome.sample_count
 
 
+    @property
+    def filename(self) -> str:
+        return self._chromosome.filename
 
     @property
     def matrix(self) -> np.ndarray:
         return self._chromosome.matrix
 
-    def matrix_sample(self, sample_name: str, metric=None) -> np.ndarray:
+    @property
+    def matrix_dtype(self) -> np.dtype:
+        return self._chromosome.matrix_dtype
+
+
+
+    def matrix_sample(self, sample_name) -> np.ndarray:
         return self._chromosome.matrix_sample(sample_name, metric=self.metric)
 
     def matrix_bin(self, binNum: int) -> np.ndarray:
@@ -128,7 +131,7 @@ class ChromosomeController(flx.PyComponent):
     # self.matrixNp                     : np.ndarray = None
     # self.matrixNp                     = np.zeros((self.bin_max, self.matrix_size ), self.type_matrix_counter  )
 
-    # self.pairwiNp                   : np.ndarray = None
+    # self.pairwiNp                     : np.ndarray = None
     # self.pairwiNp                     = np.zeros((self.bin_max, self.sample_count), self.type_pairwise_counter)
 
     # self.binsnpNp                     : np.ndarray = None
@@ -142,71 +145,107 @@ class ChromosomeController(flx.PyComponent):
 
 
 class GenomeController(flx.PyComponent):
-    datahandler : reader.Genome = None
-    # https://flexx.readthedocs.io/en/stable/examples/send_data_src.html
-
-    def init(self):
-        assert GenomeController.datahandler is not None
+    def init(self, genome: reader.Genome):
+        self._genome = genome
 
     @property
     def vcf_name(self) -> str:
-        return GenomeController.datahandler.vcf_name
+        return self._genome.vcf_name
 
     @property
     def bin_width(self) -> int:
-        return GenomeController.datahandler.bin_width
+        return self._genome.bin_width
 
     @property
     def metric(self) -> str:
-        return GenomeController.datahandler.metric
+        return self._genome.metric
 
     @property
-    def sample_names(self) -> SampleNamesType:
-        return GenomeController.datahandler.sample_names
+    def sample_names(self) -> reader.SampleNamesType:
+        return self._genome.sample_names
 
     @property
     def sample_count(self) -> int:
-        return GenomeController.datahandler.sample_count
+        return self._genome.sample_count
 
     @property
-    def chromosome_names(self) -> ChromosomeNamesType:
-        return GenomeController.datahandler.chromosome_names
+    def chromosome_names(self) -> reader.ChromosomeNamesType:
+        return self._genome.chromosome_names
 
     @property
     def chromosome_count(self) -> int:
-        return GenomeController.datahandler.chromosome_count
+        return self._genome.chromosome_count
 
     @property
     def genome_bins(self) -> int:
-        return GenomeController.datahandler.genome_bins
+        return self._genome.genome_bins
 
     @property
     def genome_snps(self) -> int:
-        return GenomeController.datahandler.genome_snps
+        return self._genome.genome_snps
+
+    @property
+    def filename(self) -> str:
+        return self._genome.filename
 
     def get_chromosome(self, chromosome_name: str):
-        return ChromosomeController(GenomeController.datahandler.get_chromosome(chromosome_name))
+        return ChromosomeController(self._genome.get_chromosome(chromosome_name))
 
-class DataHandler():
-    def __init__(self, filename):
-        self.filename = filename
-        self.genome   = None
-        self.load_data()
 
-    def load_data(self):
-        self.genome = reader.Genome(self.filename)
-        print(self.genome.filename)
-        assert self.genome.exists
-        print(self.genome)
-        self.genome.load()
-        assert self.genome.loaded
-        assert self.genome.complete
+class MainController(flx.PyComponent):
+    genomes : reader.Genomes = None
+    # https://flexx.readthedocs.io/en/stable/examples/send_data_src.html
+
+    def init(self):
+        self._genomes = MainController.genomes
+        self.update()
+
+    @property
+    def genomes(self) -> typing.List[str]:
+        return self._genomes.genomes
+
+    @property
+    def genome(self) -> GenomeController:
+        return GenomeController(self._genomes.genome)
+
+    @property
+    def chromosomes(self) -> reader.ChromosomeNamesType:
+        return self._genomes.chromosomes
+
+    @property
+    def chromosome(self) -> ChromosomeController:
+        return ChromosomeController(self._genomes.chromosome)
+
+    def genome_info(self, genome_name: str):
+        return self._genomes.genome_info(genome_name)
+
+    def bin_widths(self, genome_name: str) -> typing.List[str]:
+        return self._genomes.bin_widths(genome_name)
+
+    def bin_width_info(self, genome_name: str, bin_width: int):
+        return self._genomes.bin_width_info(genome_name, bin_width)
+
+    def metrics(self, genome_name: str, bin_width: int) -> typing.List[str]:
+        return self._genomes.metrics(genome_name, bin_width)
+
+    def metric_info(self, genome_name: str, bin_width: int, metric: str) -> typing.List[str]:
+        return self._genomes.metric_info(genome_name, bin_width, metric)
+
+    def update(self):
+        self._genomes.update()
+
+    def load_genome(self, genome_name: str, bin_width: int, metric: str) -> GenomeController:
+        return self._genomes.load_genome(genome_name, bin_width, metric)
+
+    def load_chromosome(self, genome_name: str, bin_width: int, metric: str, chromosome_name: str) -> ChromosomeController:
+        return self._genomes.load_genome(genome_name, bin_width, metric, chromosome_name)
+
 
 
 def main():
-    filename            = sys.argv[1]
+    folder_name = sys.argv[1]
 
-    GenomeController.datahandler = DataHandler(filename)
+    MainController.genomes = reader.Genomes(folder_name)
 
     # https://flexx.readthedocs.io/en/stable/guide/running.html
     # https://flexx.readthedocs.io/en/stable/guide/reactions.html
@@ -219,7 +258,7 @@ def main():
     flexx.config.browser_stacktrace = True
     flexx.config.cookie_secret      = "0123456789"
 
-    app = flx.App(GenomeController)
+    app = flx.App(MainController)
     app.serve('')  # Serve at http://domain.com/
     flx.start()  # mainloop will exit when the app is closed
 
