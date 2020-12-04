@@ -66,6 +66,7 @@ from scipy.spatial.distance import pdist, squareform
     real     99m40.466s
     user    611m 1.784s
     sys       1m46.982s
+
 """
 
 
@@ -107,8 +108,8 @@ from scipy.spatial.distance import pdist, squareform
     4.0K 360_merged_2.50.vcf.gz.250000.npz
 """
 
-DEBUG                         = True
-DEBUG_MAX_BIN                 = 2
+DEBUG                         = False
+DEBUG_MAX_BIN                 = 10
 DEFAULT_BIN_SIZE              = 250_000
 DEFAULT_DISTANCE_TYPE_MATRIX  = np.float32
 DEFAULT_COUNTER_TYPE_MATRIX   = np.uint16
@@ -504,7 +505,7 @@ class Chromosome():
         # print(meta_dict)
 
         vcf_name                           = meta_dict["vcf_name"]
-        assert vcf_name == self.vcf_name
+        assert os.path.basename(vcf_name) == os.path.basename(self.vcf_name)
         self.vcf_name                      = vcf_name
 
         self.matrix_size                   = info_dict["matrix_size"]
@@ -583,12 +584,13 @@ class Chromosome():
     def convert_matrix_to_distance(self, metric):
         assert metric in METRIC_VALIDS
         assert self.is_loaded
-        
-        dist = np.zeros((self.matrixNp.shape[0], self.matrixNp.shape[1]), dtype=self.type_matrix_counter)
+
+        print(f"chromosome {self.chromosome_name} - calculating distance {metric}")
+        dist = np.zeros((self.matrixNp.shape[0], self.matrixNp.shape[1]), dtype=self.type_matrix_distance)
 
         for binNum in range(self.bin_max):
-            print(f"chromosome {self.chromosome_name} - calculating distance {metric} - bin {binNum}")
-            dist[binNum,:] = matrixDistance(self.matrixNp[binNum,:], metric=metric, dtype=self.type_matrix_counter)
+            # print(f"chromosome {self.chromosome_name} - calculating distance {metric} - bin {binNum}")
+            dist[binNum,:] = matrixDistance(self.matrixNp[binNum,:], metric=metric, dtype=self.type_matrix_distance)
         
         return dist
 
@@ -1205,6 +1207,7 @@ class Genome():
         for k in [
             "vcf_name",
             "bin_width",
+            "metric",
             "chromosome_names",
             "chromosome_count",
             "genome_bins",
@@ -1259,7 +1262,9 @@ class Genome():
         meta_dict                  = {meta_names[k]: meta_values[k]  for k in range(len(meta_names))}
         # print(meta_dict)
 
-        self.vcf_name              = meta_dict["vcf_name"]
+        vcf_name                   = meta_dict["vcf_name"]
+        assert os.path.basename(vcf_name) == os.path.basename(self.vcf_name)
+
         type_matrix_counter_name   = meta_dict["type_matrix_counter_name"]
         type_matrix_distance_name  = meta_dict["type_matrix_distance_name"]
         type_pairwise_counter_name = meta_dict["type_pairwise_counter_name"]
@@ -1304,12 +1309,12 @@ class Genome():
 
             chromosome.load()
             
+            assert os.path.basename(chromosome.vcf_name)              == os.path.basename(self.vcf_name)
             assert chromosome.bin_width             == self.bin_width
-            assert chromosome.sample_names          == self.sample_names
-            assert chromosome.vcf_name              == self.vcf_name
-            assert chromosome.bin_width             == self.bin_width
-            assert chromosome.chromosome_name       == chromosome_name
             assert chromosome.chromosome_order      == chromosome_order
+            assert chromosome.chromosome_name       == chromosome_name
+            assert chromosome.metric                == self.metric
+            assert chromosome.sample_names          == self.sample_names
             assert chromosome.type_matrix_counter   == self.type_matrix_counter
             assert chromosome.type_matrix_distance  == self.type_matrix_distance
             assert chromosome.type_pairwise_counter == self.type_pairwise_counter
@@ -1340,8 +1345,8 @@ class Genome():
         info_namesNp               = np.array(["bin_width"   , "chromosome_count"   , "sample_count"   , "genome_bins"   , "genome_snps"   ], np.unicode_)
         info_valuesNp              = np.array([self.bin_width, self.chromosome_count, self.sample_count, self.genome_bins, self.genome_snps], np.int64   )
 
-        meta_namesNp               = np.array(["vcf_name"   , "type_matrix_counter_name", "type_matrix_distance_name", "type_pairwise_counter_name", "type_positions_name"], np.unicode_)
-        meta_valuesNp              = np.array([self.vcf_name, type_matrix_counter_name  , type_matrix_distance_name  , type_pairwise_counter_name  , type_positions_name  ], np.unicode_)
+        meta_namesNp               = np.array(["vcf_name"   , "metric"   , "type_matrix_counter_name", "type_matrix_distance_name", "type_pairwise_counter_name", "type_positions_name"], np.unicode_)
+        meta_valuesNp              = np.array([self.vcf_name, self.metric, type_matrix_counter_name  , type_matrix_distance_name  , type_pairwise_counter_name  , type_positions_name  ], np.unicode_)
 
         np.savez_compressed(self.filename,
             sample_names     = sample_namesNp,
