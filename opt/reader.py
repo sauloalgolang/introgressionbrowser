@@ -1419,7 +1419,7 @@ class Genome():
 
 
 class Genomes():
-    def __init__(self, folder_name: str):
+    def __init__(self, folder_name: str, verbose=False):
         self.folder_name     : str        = folder_name
         self._genomes                     = None
 
@@ -1430,28 +1430,31 @@ class Genomes():
         self.curr_chrom_name : str        = None
         self.curr_chrom      : Chromosome = None
 
-        self.update()
+        self.update(verbose=verbose)
 
-        print("genomes    ", self.genomes)
-        # print("genome_info", self.genomes[0], self.genome_info(self.genomes[0]))
-        genomes     = self.genomes
-        genome_name = genomes[0]
-        print("genome_name", genome_name)
-        bin_widths  = self.bin_widths(genome_name)
-        print("bin_widths ", bin_widths)
-        bin_width    = bin_widths[0]
-        # print("bin_width_info", self.bin_width_info(genome_name, bin_width)
-        metrics     = self.metrics(genome_name, bin_width)
-        print("metrics    ", metrics)
-        metric      = metrics[0]
-        print("metric     ", metric)
-        # print("metric_info", self.metric_info(genome_name, bin_width, metric)
+        if DEBUG:
+            print("genomes    ", self.genomes)
+            # print("genome_info", self.genomes[0], self.genome_info(self.genomes[0]))
+            genomes     = self.genomes
+            genome_name = genomes[0]
+            print("genome_name", genome_name)
+            bin_widths  = self.bin_widths(genome_name)
+            print("bin_widths ", bin_widths)
+            bin_width    = bin_widths[0]
+            # print("bin_width_info", self.bin_width_info(genome_name, bin_width)
+            metrics     = self.metrics(genome_name, bin_width)
+            print("metrics    ", metrics)
+            metric      = metrics[0]
+            print("metric     ", metric)
+            # print("metric_info", self.metric_info(genome_name, bin_width, metric)
+            chroms = self.chromosome_names(genome_name, bin_width, metric)
+            print("chroms     ", chroms)
 
-        self.load_genome(genome_name, bin_width, metric)
-        print("chromosomes", self.chromosomes)
-        chromosome = self.chromosomes[0]
-        print("chromosome " , chromosome)
-        self.load_chromosome(genome_name, bin_width, metric, chromosome)
+            self.load_genome(genome_name, bin_width, metric)
+            print("chromosomes", self.chromosomes)
+            chromosome = self.chromosomes[0]
+            print("chromosome " , chromosome)
+            self.load_chromosome(genome_name, bin_width, metric, chromosome)
 
     @property
     def genomes(self) -> typing.List[str]:
@@ -1476,27 +1479,26 @@ class Genomes():
         return self._genomes[genome_name]
 
     def bin_widths(self, genome_name: str) -> typing.List[str]:
-        assert genome_name in self.genomes
         return list(self.genome_info(genome_name)["bin_widths"].keys())
 
     def bin_width_info(self, genome_name: str, bin_width: int):
-        assert genome_name in self.genomes
-        assert bin_width    in self.bin_widths(genome_name)
+        assert bin_width   in self.bin_widths(genome_name)
         return self.genome_info(genome_name)["bin_widths"][bin_width]
 
     def metrics(self, genome_name: str, bin_width: int) -> typing.List[str]:
-        assert genome_name in self.genomes
-        assert bin_width    in self.bin_widths(genome_name)
         return list(self.bin_width_info(genome_name, bin_width)["metrics"].keys())
 
-    def metric_info(self, genome_name: str, bin_width: int, metric: str) -> typing.List[str]:
-        assert genome_name in self.genomes
-        assert bin_width    in self.bin_widths(genome_name)
+    def metric_info(self, genome_name: str, bin_width: int, metric: str) -> typing.Dict[str, typing.Any]:
         assert metric      in self.metrics(genome_name, bin_width)
-        return self.bin_width_info(genome_name, bin_width)["metrics"]
+        return self.bin_width_info(genome_name, bin_width)["metrics"][metric]
 
-    def update(self):
-        self._genomes = Genomes.listProjects(self.folder_name)
+    def chromosome_names(self, genome_name: str, bin_width: int, metric: str) -> typing.List[typing.Tuple[int, str]]:
+        metric_info      = self.metric_info(genome_name, bin_width, metric)
+        chromosome_names = [(m["chromosome_pos"], m["chromosome_name"]) for m in metric_info]
+        return chromosome_names
+
+    def update(self, verbose=False):
+        self._genomes = Genomes.listProjects(self.folder_name, verbose=verbose)
 
     def load_genome(self, genome_name: str, bin_width: int, metric: str) -> Genome:
         if not (
@@ -1577,15 +1579,19 @@ class Genomes():
                 dbname = dbname[:-1*len(ext)] if dbname.endswith(ext) else dbname
             dbname = dbname.replace("_", " ")
 
-            datafolder, bin_width, metric = None, None, None
-            folder_parts                 = filefolder.strip(os.path.sep).split(os.path.sep)
+            datafolder, bin_width, metric   = None, None, None
+            chromosome_pos, chromosome_name = None, None
+            folder_parts                    = filefolder.strip(os.path.sep).split(os.path.sep)
             
             if filename.startswith("ib_"): # data
                 try:
-                    projectfolder        = os.path.join(*folder_parts[:-2])
+                    projectfolder                   = os.path.join(*folder_parts[:-2])
                     assert projectfolder.endswith("_ib")
-                    projectfolder        = projectfolder[:-3]
-                    datafolder, bin_width, metric = folder_parts[-3:]
+                    projectfolder                   = projectfolder[:-3]
+                    datafolder, bin_width, metric   = folder_parts[-3:]
+                    fileparts                       = filename[3:-4].split('.')
+                    chromosome_pos, chromosome_name = fileparts[0], ".".join(fileparts[1:])
+                    chromosome_pos = int(chromosome_pos)
                 except:
                     print(f"invalid folder {filefolder}")
                     continue
@@ -1636,44 +1642,48 @@ class Genomes():
                     projects[dbname]["bin_widths"][bin_width]["metrics"][metric] = []
                 
                 projects[dbname]["bin_widths"][bin_width]["metrics"][metric].append({
-                    "filepath"     : filepath,
-                    "filedir"      : filedir,
-                    "filename"     : filename,
-                    "filefolder"   : filefolder,
-                    "projectfolder": projectfolder,
-                    "projectpath"  : projectpath,
-                    "datafolder"   : datafolder,
-                    "bin_width"     : bin_width,
-                    "metric"       : metric,
-                    "dbname"       : dbname
+                    "filepath"       : filepath,
+                    "filedir"        : filedir,
+                    "filename"       : filename,
+                    "filefolder"     : filefolder,
+                    "projectfolder"  : projectfolder,
+                    "projectpath"    : projectpath,
+                    "datafolder"     : datafolder,
+                    "bin_width"      : bin_width,
+                    "metric"         : metric,
+                    "dbname"         : dbname,
+                    "chromosome_pos" : chromosome_pos,
+                    "chromosome_name": chromosome_name
                 })
+
+                projects[dbname]["bin_widths"][bin_width]["metrics"][metric].sort(key=lambda v: v["chromosome_pos"])
 
         assert len(projects) > 0
 
         if verbose:
             for dbname, dbdata in projects.items():
-                print(f"{'database':19s}: {dbname}")
+                print(f"{'database':23s}: {dbname}")
                 
                 for dataname, datavalue in dbdata.items():
                     if dataname == 'bin_widths':
                         continue
-                    print(f"  {dataname:17s}: {datavalue}")
+                    print(f"  {dataname:21s}: {datavalue}")
                 
                 for bin_width, binvalues in dbdata['bin_widths'].items():
-                    print(f"  {'bin_width':17s}: {bin_width}")
+                    print(f"  {'bin_width':21s}: {bin_width}")
                     
                     for binkey, binvalue in binvalues.items():
                         if binkey == 'metrics':
                             continue
-                        print(f"    {binkey:15s}: {binvalue}")
+                        print(f"    {binkey:19s}: {binvalue}")
 
                     for metrickey, metricvalues in binvalues['metrics'].items():
-                        print(f"    {'metric':15s}: {metrickey}")
+                        print(f"    {'metric':19s}: {metrickey}")
                         
                         for metric_pos, metric in enumerate(metricvalues):
-                            print(f"      {'metric #':13s}: {metric_pos}")
+                            print(f"      {'file #':17s}: {metric_pos}")
                             for metrickey, metricvalue in metric.items():
-                                print(f"        {metrickey:11s}: {metricvalue}")
+                                print(f"        {metrickey:15s}: {metricvalue}")
 
         return projects
 
