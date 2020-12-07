@@ -313,6 +313,22 @@ class Chromosome():
 
         return names, vals
 
+    def todict(self):
+        info_names,info_values     = self._get_infos()
+        meta_names,meta_values     = self._get_meta()
+
+        data =      {k:v for k,v in zip(info_names, info_values)}
+        data.update({k:v for k,v in zip(meta_names, meta_values)})
+        
+        data['sample_names'] = self.sample_names
+        data['countMatrix '] = self.matrixNp.tolist()
+        data['countTotals']  = self.binsnpNp.tolist()
+        data['countPairw']   = self.pairwiNp.tolist()
+        data['alignments']   = self.alignmentNp.tolist()
+        data['positions']    = self.positionNp.tolist()
+
+        return data
+
     def _sample_pos(self, sample_name: str):
         return self.sample_names.index(sample_name)
 
@@ -1335,23 +1351,59 @@ class Genome():
             assert self.genome_bins == chromosome_bins, f"self.genome_bins {self.genome_bins} == {chromosome_bins} chromosome_bins"
             assert self.genome_snps == chromosome_snps, f"self.genome_snps {self.genome_snps} == {chromosome_snps} chromosome_snps"
 
-    def save(self):
-        print(f"{'saving numpy array:':.<32s}{self.filename:.>30s}")
-        print(self)
+    def _get_infos(self):
+        names  = ["bin_width"   , "chromosome_count"   , "sample_count"   , "genome_bins"   , "genome_snps"   ]
+        vals =   [getattr(self,n) for n in names]
 
+        return (names, vals)
+
+    def _get_meta(self):
         type_matrix_counter_name   = self.type_matrix_counter.__name__
         type_matrix_distance_name  = self.type_matrix_distance.__name__
         type_pairwise_counter_name = self.type_pairwise_counter.__name__
         type_positions_name        = self.type_positions.__name__
 
+        names  = ["vcf_name", "metric"]
+        vals   = [getattr(self,n) for n in names]
+
+        names += [
+            "type_matrix_counter_name"  , "type_matrix_distance_name",
+            "type_pairwise_counter_name", "type_positions_name"
+        ]
+        vals  += [
+            type_matrix_counter_name  , type_matrix_distance_name,
+            type_pairwise_counter_name, type_positions_name
+        ]
+
+        return names, vals
+
+    def todict(self):
+        info_names,info_values     = self._get_infos()
+        meta_names,meta_values     = self._get_meta()
+
+        data =      {k:v for k,v in zip(info_names, info_values)}
+        data.update({k:v for k,v in zip(meta_names, meta_values)})
+        
+        data['sample_names'    ] = self.sample_names
+        data['chromosome_names'] = self.chromosome_names
+
+        return data
+
+    def save(self):
+        print(f"{'saving numpy array:':.<32s}{self.filename:.>30s}")
+        print(self)
+
         sample_namesNp             = np.array(self.sample_names    , np.unicode_)
         chromosome_namesNp         = np.array(self.chromosome_names, np.unicode_)
 
-        info_namesNp               = np.array(["bin_width"   , "chromosome_count"   , "sample_count"   , "genome_bins"   , "genome_snps"   ], np.unicode_)
-        info_valuesNp              = np.array([self.bin_width, self.chromosome_count, self.sample_count, self.genome_bins, self.genome_snps], np.int64   )
+        info_names,info_values     = self._get_infos()
+        meta_names,meta_values     = self._get_meta()
 
-        meta_namesNp               = np.array(["vcf_name"   , "metric"   , "type_matrix_counter_name", "type_matrix_distance_name", "type_pairwise_counter_name", "type_positions_name"], np.unicode_)
-        meta_valuesNp              = np.array([self.vcf_name, self.metric, type_matrix_counter_name  , type_matrix_distance_name  , type_pairwise_counter_name  , type_positions_name  ], np.unicode_)
+        info_namesNp               = np.array(info_names , np.unicode_)
+        info_valuesNp              = np.array(info_values, np.int64   )
+
+        meta_namesNp               = np.array(meta_names , np.unicode_)
+        meta_valuesNp              = np.array(meta_values, np.unicode_)
 
         np.savez_compressed(self.filename,
             sample_names     = sample_namesNp,
