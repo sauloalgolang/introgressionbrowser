@@ -16,22 +16,6 @@ DEBUG       = True
 
 
 class browserUI(flx.PyWidget):
-    CSS = """
-    .flx-ComboBox {
-        background: #9d9 !important;
-    }
-    .flx-LineEdit {
-        border: 2px solid #9d9;
-    }
-    .flx-ComboBox.hidden {
-        visibility: hidden;
-    }
-    //.flx-ComboBox.combo_sel {
-    //    width: 250px !important;
-    //    height: 50px !important;
-    //}
-    """
-
     genome_name      = flx.StringProp("", settable=True, doc="current genome")
     bin_width        = flx.IntProp(   -1, settable=True, doc="current bin width")
     metric           = flx.StringProp("", settable=True, doc="current metric")
@@ -44,23 +28,15 @@ class browserUI(flx.PyWidget):
 
     _is_loaded = False
 
-    def init(self):
+    def init(self, parent):
         super().init()
 
         self._is_loaded = False
 
-        with flx.VBox():
-            with flx.HFix(flex=1) as self.header:
-                self.combo_genome_names     = ui.ComboBox(text=self._combo_genome_names_text    , editable=False, options=[], flex=1, css_class="combo_sel")
-                self.combo_bin_widths       = ui.ComboBox(text=self._combo_bin_widths_text      , editable=False, options=[], flex=1, css_class="combo_sel")
-                self.combo_metrics          = ui.ComboBox(text=self._combo_metrics_text         , editable=False, options=[], flex=1, css_class="combo_sel")
-                self.combo_chromosome_names = ui.ComboBox(text=self._combo_chromosome_names_text, editable=False, options=[], flex=1, css_class="combo_sel")
-            with flx.HFix(flex=1) as self.genomeBox:
-                pass
-            #     self.genomeController       = self.root.genome
-            with flx.HFix(flex=28) as self.chromosomeBox:
-                pass
-            #     self.chromosomeController   = self.root.chromosome
+        self.combo_genome_names     = ui.ComboBox(text=self._combo_genome_names_text    , editable=False, options=[], flex=1, parent=parent, css_class="combo_sel")
+        self.combo_bin_widths       = ui.ComboBox(text=self._combo_bin_widths_text      , editable=False, options=[], flex=1, parent=parent, css_class="combo_sel")
+        self.combo_metrics          = ui.ComboBox(text=self._combo_metrics_text         , editable=False, options=[], flex=1, parent=parent, css_class="combo_sel")
+        self.combo_chromosome_names = ui.ComboBox(text=self._combo_chromosome_names_text, editable=False, options=[], flex=1, parent=parent, css_class="combo_sel")
 
         self._is_loaded = True
 
@@ -273,13 +249,13 @@ class browserUI(flx.PyWidget):
 
 
 
-
-
-class ChromosomeController(flx.PyComponent):
-    def init(self):
+class ChromosomeController(flx.PyWidget):
+    def init(self, parent):
         super().init()
 
         self.chromosome : reader.Chromosome = None
+
+        flx.Label(text="chromosome", flex=27, parent=parent)
 
     def set_chromosome(self, chromosome: reader.Chromosome):
         print("ChromosomeController.set_chromosome")
@@ -413,8 +389,8 @@ class ChromosomeController(flx.PyComponent):
 
 
 
-class GenomeController(flx.PyComponent):
-    def init(self):
+class GenomeController(flx.PyWidget):
+    def init(self, parent):
         super().init()
 
         self.genome     : reader.Genome        = None
@@ -422,7 +398,8 @@ class GenomeController(flx.PyComponent):
         # with flx.HFix(flex=19) as self.chromosomeBox:
         #     self.chromosome = ChromosomeController()
             # ui.Label(text=lambda:"vcf_name {}".format(self.vcf_name))
-        ui.Label(text=lambda:"vcf_name {}".format(self.vcf_name))
+        # ui.Label(text=lambda:"vcf_name {}".format(self.vcf_name))
+        flx.Label(text="genome", flex=1, parent=parent)
 
     def set_genome(self, genome: reader.Genome):
         print("GenomeController.set_genome")
@@ -555,36 +532,15 @@ class GenomesController(flx.PyComponent):
     def load_chromosome(self, genome_name: str, bin_width: int, metric: str, chromosome_name: str) -> reader.Chromosome:
         return self._genomes.load_chromosome(genome_name, bin_width, metric, chromosome_name)
 
-    # @flx.action
-    # def update_genome_names(self):
-    #     print(f"MainController.update_genome_names {self.genomes()}")
-    #     self.root.browserUI.update_genome_names(self.genomes())
+
 
     # @flx.action
-    # def update_bin_widths(self, genome_name: str):
-    #     bin_widths = self.bin_widths(genome_name)
-    #     print(f"MainController.update_bin_widths {bin_widths}")
-    #     self.root.browserUI.update_bin_widths(bin_widths)
-
-    # @flx.action
-    # def update_metrics(self, genome_name: str, bin_width: int):
-    #     metrics = self.metrics(genome_name, bin_width)
-    #     print(f"MainController.update_metrics {metrics}")
-    #     self.root.browserUI.update_metrics(metrics)
-
-    # @flx.action
-    # def update_chromosome_names(self, genome_name: str, bin_width: int, metric: str):
-    #     chromosome_names = self.chromosome_names(genome_name, bin_width, metric)
-    #     print(f"MainController.update_chromosome_names {chromosome_names}")
-    #     self.root.browserUI.update_chromosome_names([x[1] for x in chromosome_names])
-
-    @flx.action
     def update_genome(self, genome_name: str, bin_width: int, metric: str):
         print(f"MainController.update_genome genome_name {genome_name} bin_width {bin_width} metric {metric}")
         genome = self.load_genome(genome_name, bin_width, metric)
         self.root.genome.set_genome(genome)
 
-    @flx.action
+    # @flx.action
     def update_chromosome(self, genome_name: str, bin_width: int, metric: str, chromosome_name: str):
         print(f"MainController.update_chromosome genome_name {genome_name} bin_width {bin_width} metric {metric} chromosome_name {chromosome_name}")
         chromosome = self.load_chromosome(genome_name, bin_width, metric, chromosome_name)
@@ -593,6 +549,22 @@ class GenomesController(flx.PyComponent):
 
 
 class MainController(flx.PyComponent):
+    CSS = """
+    .flx-ComboBox {
+        background: #9d9 !important;
+    }
+    .flx-LineEdit {
+        border: 2px solid #9d9;
+    }
+    .flx-ComboBox.hidden {
+        visibility: hidden;
+    }
+    //.flx-ComboBox.combo_sel {
+    //    width: 250px !important;
+    //    height: 50px !important;
+    //}
+    """
+
     genomes_inst : reader.Genomes = None
 
     # https://flexx.readthedocs.io/en/stable/examples/send_data_src.html
@@ -600,11 +572,16 @@ class MainController(flx.PyComponent):
     def init(self):
         super().init()
 
-        self.browserUI  = browserUI()
+        with flx.VBox(flex=1):
+            with flx.HFix(flex=1) as self.header:
+                self.browserUI  = browserUI(self.header)
+            with flx.HFix(flex=1) as self.genomeBox:
+                self.genome     = GenomeController(self.genomeBox)
+            with flx.HFix(flex=27) as self.chromosomeBox:
+                self.chromosome = ChromosomeController(self.chromosomeBox)
+            #     self.chromosomeController   = self.root.chromosome
 
-        self.genomes    : GenomesController    = GenomesController()
-        self.genome     : GenomeController     = GenomeController()
-        self.chromosome : ChromosomeController = ChromosomeController()
+        self.genomes    = GenomesController()
 
         self.genomes.set_genomes(MainController.genomes_inst)
         self.genomes.update(verbose=True)
