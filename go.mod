@@ -14,7 +14,7 @@ require (
 	github.com/sauloalgolang/go-flags v1.4.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1 // indirect
-	golang.org/x/text v0.3.4
+	golang.org/x/text v0.3.8
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
